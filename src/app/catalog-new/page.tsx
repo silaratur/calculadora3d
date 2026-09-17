@@ -77,6 +77,7 @@ export default function CatalogNewPage() {
   const [currentMonthFixedCost, setCurrentMonthFixedCost] = useState<number | null>(null);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [view, setView] = useState<"list" | "form">("list");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [feedback, setFeedback] = useState("");
@@ -173,6 +174,33 @@ export default function CatalogNewPage() {
     }
   }
 
+  function newProduct() {
+    setEditingId(null);
+    setDraft(emptyDraft);
+    setFeedback("");
+    setView("form");
+  }
+
+  function edit(product: Product) {
+    setEditingId(product.id);
+    setDraft({
+      name: product.name,
+      category: product.category,
+      description: product.description ?? "",
+      imageUrl: product.imageUrl ?? "",
+      materialLines: product.materials?.map((line) => ({ materialId: line.materialId, grams: line.grams })) ?? [],
+      hours: String(Math.floor(product.printTimeHours)),
+      minutes: String(Math.round((product.printTimeHours % 1) * 60)),
+      prep: String(product.prepMinutes),
+      cleanup: String(product.cleanupMinutes),
+      printerId: product.printerId ?? "",
+      profitMargin: String(product.profitMargin),
+      active: product.active,
+    });
+    setFeedback("");
+    setView("form");
+  }
+
   async function save(event: FormEvent) {
     event.preventDefault();
     setFeedback("");
@@ -203,29 +231,10 @@ export default function CatalogNewPage() {
       body: JSON.stringify(payload),
     });
     if (!response.ok) { setFeedback("Não foi possível salvar o produto. Verifique o login e os campos."); return; }
-    setFeedback(editingId ? "Produto atualizado." : "Produto cadastrado — SKU gerado automaticamente.");
     setDraft(emptyDraft);
     setEditingId(null);
+    setView("list");
     reload();
-  }
-
-  function edit(product: Product) {
-    setEditingId(product.id);
-    setDraft({
-      name: product.name,
-      category: product.category,
-      description: product.description ?? "",
-      imageUrl: product.imageUrl ?? "",
-      materialLines: product.materials?.map((line) => ({ materialId: line.materialId, grams: line.grams })) ?? [],
-      hours: String(Math.floor(product.printTimeHours)),
-      minutes: String(Math.round((product.printTimeHours % 1) * 60)),
-      prep: String(product.prepMinutes),
-      cleanup: String(product.cleanupMinutes),
-      printerId: product.printerId ?? "",
-      profitMargin: String(product.profitMargin),
-      active: product.active,
-    });
-    document.getElementById("product-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function archive(id: string) {
@@ -235,106 +244,24 @@ export default function CatalogNewPage() {
   }
 
   return (
-    <main className="admin-shell">
+    <main className="calculator-shell">
       <AdminHeader active="catalogNew" badges={{ catalogNew: products.length }} />
-      <div className="admin-content">
+      <div className="calculator-content">
         {needsLogin ? <AuthBanner message="Entre novamente para ver e cadastrar produtos do catálogo." /> : null}
-        <section className="library-heading">
-          <div>
-            <h1>Catálogo Novo <span className="brand-tag">EM TESTE</span></h1>
-            <p>Versão em teste do catálogo — mescla a calculadora (multi-material, tempo, impressora) com o cadastro de produto. Vai substituir o Catálogo atual quando validada.</p>
-          </div>
-          <div className="project-tools">
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar SKU ou produto..." />
-            <a className="new-quote-button" href="#product-form">＋ Novo produto</a>
-          </div>
-        </section>
 
-        <div className="catalog-layout">
-          <form id="product-form" className="preset-form" onSubmit={save}>
-            <h2>{editingId ? "Editar produto" : "Novo produto"}</h2>
-            <p className="sku-hint">
-              {editingId
-                ? <>SKU <strong>{products.find((item) => item.id === editingId)?.sku}</strong> — fixo, não muda ao editar.</>
-                : "O SKU é gerado automaticamente a partir da categoria (ex: Decoração → D.001, Natal → N.001)."}
-            </p>
-
-            <label>Nome do produto<input required value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="Porta Guardanapos" /></label>
-            <label>Categoria<input required value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })} placeholder="Ex: Decoração, Natal..." /></label>
-            <label>Descrição<textarea value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Aparece no card do catálogo" /></label>
-
-            <label>Foto do produto<input type="file" accept="image/*" onChange={handleImage} /></label>
-            {imageError ? <p className="admin-feedback">{imageError}</p> : null}
-            {draft.imageUrl ? (
-              <div className="image-preview">
-                {/* eslint-disable-next-line @next/next/no-img-element -- data URI local, next/image não otimiza isso */}
-                <img src={draft.imageUrl} alt="Prévia do produto" />
-                <button type="button" className="secondary-button" onClick={() => setDraft({ ...draft, imageUrl: "" })}>Remover foto</button>
+        {view === "list" ? (
+          <>
+            <section className="library-heading">
+              <div>
+                <h1>Catálogo Novo <span className="brand-tag">EM TESTE</span></h1>
+                <p>Versão em teste do catálogo — vai substituir o Catálogo atual quando validada.</p>
               </div>
-            ) : null}
-
-            <div className="settings-group">
-              <h3>Material & Filamento</h3>
-              <div className="material-lines">
-                <span className="material-lines-label">Um material por linha — some quantos filamentos o AMS usar nessa peça</span>
-                {draft.materialLines.map((line, index) => (
-                  <div className="material-line" key={index}>
-                    <select value={line.materialId} onChange={(event) => updateMaterialLine(index, { materialId: event.target.value })}>
-                      {materials.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                    </select>
-                    <input inputMode="decimal" value={line.grams} onChange={(event) => updateMaterialLine(index, { grams: n(event.target.value) })} placeholder="Gramas" />
-                    <button type="button" className="delete-button" onClick={() => removeMaterialLine(index)} aria-label="Remover material"><IconTrash className="nav-icon" /></button>
-                  </div>
-                ))}
-                <button type="button" className="secondary-button" onClick={addMaterialLine} disabled={!materials.length}>+ Adicionar material</button>
-                {!materials.length ? <p className="admin-feedback">Cadastre filamentos na Biblioteca para selecioná-los aqui.</p> : null}
+              <div className="project-tools">
+                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar SKU ou produto..." />
+                <button type="button" className="new-quote-button" onClick={newProduct}>＋ Novo produto</button>
               </div>
-            </div>
+            </section>
 
-            <div className="settings-group">
-              <h3>Tempo de produção (peça inteira)</h3>
-              <div className="form-grid">
-                <label>Horas de impressão<input inputMode="numeric" value={draft.hours} onChange={(event) => setDraft({ ...draft, hours: event.target.value })} /></label>
-                <label>Minutos de impressão<input inputMode="numeric" value={draft.minutes} onChange={(event) => setDraft({ ...draft, minutes: event.target.value })} /></label>
-              </div>
-              <div className="form-grid">
-                <label>Fatiamento / Prep (min)<input inputMode="numeric" value={draft.prep} onChange={(event) => setDraft({ ...draft, prep: event.target.value })} /></label>
-                <label>Limpeza / Pós-proc (min)<input inputMode="numeric" value={draft.cleanup} onChange={(event) => setDraft({ ...draft, cleanup: event.target.value })} /></label>
-              </div>
-              <p className="settings-intro">
-                Um kit de vários itens impressos separadamente? Some o tempo total de todas as peças aqui — é o tempo de máquina que esse produto consome por unidade vendida.
-              </p>
-            </div>
-
-            <div className="settings-group">
-              <h3>Impressora</h3>
-              <div className="field-row library-row">
-                <label>Selecionar da Biblioteca<select value={draft.printerId} onChange={(event) => setDraft({ ...draft, printerId: event.target.value })}><option value="">Sem impressora (sem depreciação de máquina)</option>{printers.map((item) => <option key={item.id} value={item.id}>{item.model}</option>)}</select></label>
-                <a className="bookmark-link" href="/admin" title="Gerenciar presets na Biblioteca"><IconBookmark className="nav-icon" /></a>
-              </div>
-              <p className="settings-intro">Depreciação, manutenção e consumo de energia dessa impressora entram automaticamente no custo — não precisa digitar nada.</p>
-            </div>
-
-            <label>Margem (%)<input inputMode="decimal" value={draft.profitMargin} onChange={(event) => setDraft({ ...draft, profitMargin: event.target.value })} /></label>
-
-            <div className="catalog-preview">
-              <span>Custo de material</span><strong>{brl(cost.filament)}</strong>
-              <span>Mão de obra</span><strong>{brl(cost.labor)}</strong>
-              <span>Energia</span><strong>{brl(cost.energy)}</strong>
-              <span>Depreciação da máquina</span><strong>{brl(cost.machine)}</strong>
-              <span>Custos fixos rateados</span><strong>{brl(cost.fixedCosts)}</strong>
-              <span>Custo total</span><strong>{brl(cost.total)}</strong>
-              <span>Preço sugerido</span><strong>{brl(suggestedPrice)}</strong>
-            </div>
-
-            <div className="form-actions">
-              <button className="primary-button" type="submit">{editingId ? "Atualizar produto" : "Salvar produto"}</button>
-              {editingId ? <button className="secondary-button" type="button" onClick={() => { setEditingId(null); setDraft(emptyDraft); }}>Cancelar</button> : null}
-            </div>
-            {feedback ? <p className="admin-feedback">{feedback}</p> : null}
-          </form>
-
-          <section className="catalog-results">
             <div className="catalog-filters">
               <strong>{filtered.length} produtos</strong>
               <select value={category} onChange={(event) => setCategory(event.target.value)}>
@@ -370,10 +297,125 @@ export default function CatalogNewPage() {
                 </article>
               ))}
             </div>
-            {filtered.length === 0 ? <div className="empty-note">Nenhum produto encontrado.</div> : null}
-          </section>
-        </div>
+            {filtered.length === 0 ? <div className="empty-note">Nenhum produto encontrado ainda. Clique em “＋ Novo produto”.</div> : null}
+          </>
+        ) : (
+          <form onSubmit={save}>
+            <div className="catalog-new-formbar">
+              <button type="button" className="quiet-button" onClick={() => setView("list")}>← Voltar para produtos</button>
+              <p className="sku-hint">
+                {editingId
+                  ? <>Editando SKU <strong>{products.find((item) => item.id === editingId)?.sku}</strong> — fixo, não muda.</>
+                  : "O SKU é gerado automaticamente a partir da categoria (ex: Decoração → D.001, Natal → N.001)."}
+              </p>
+            </div>
+
+            <div className="calculator-grid">
+              <div className="calculator-main">
+                <section className="calc-section">
+                  <Title text="INFORMAÇÕES DO PRODUTO" />
+                  <div className="field-grid two">
+                    <label>Nome do produto<input required value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="Porta Guardanapos" /></label>
+                    <label>Categoria<input required value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })} placeholder="Ex: Decoração, Natal..." /></label>
+                  </div>
+                  <label className="notes-field">Descrição<textarea value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Aparece no card do catálogo" /></label>
+                  <div className="field-grid two">
+                    <label>Foto do produto<input type="file" accept="image/*" onChange={handleImage} /></label>
+                    {draft.imageUrl ? (
+                      <div className="image-preview">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- data URI local, next/image não otimiza isso */}
+                        <img src={draft.imageUrl} alt="Prévia do produto" />
+                        <button type="button" className="secondary-button" onClick={() => setDraft({ ...draft, imageUrl: "" })}>Remover foto</button>
+                      </div>
+                    ) : null}
+                  </div>
+                  {imageError ? <p className="admin-feedback">{imageError}</p> : null}
+                </section>
+
+                <section className="calc-section">
+                  <Title text="MATERIAL & FILAMENTO" />
+                  <div className="material-lines">
+                    <span className="material-lines-label">Um material por linha — some quantos filamentos o AMS usar nessa peça</span>
+                    {draft.materialLines.map((line, index) => (
+                      <div className="material-line" key={index}>
+                        <select value={line.materialId} onChange={(event) => updateMaterialLine(index, { materialId: event.target.value })}>
+                          {materials.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                        </select>
+                        <input inputMode="decimal" value={line.grams} onChange={(event) => updateMaterialLine(index, { grams: n(event.target.value) })} placeholder="Gramas" />
+                        <button type="button" className="delete-button" onClick={() => removeMaterialLine(index)} aria-label="Remover material"><IconTrash className="nav-icon" /></button>
+                      </div>
+                    ))}
+                    <button type="button" className="secondary-button" onClick={addMaterialLine} disabled={!materials.length}>+ Adicionar material</button>
+                    {!materials.length ? <p className="admin-feedback">Cadastre filamentos na Biblioteca para selecioná-los aqui.</p> : null}
+                  </div>
+                </section>
+
+                <section className="calc-section">
+                  <Title text="TEMPO DE PRODUÇÃO (PEÇA INTEIRA)" />
+                  <div className="field-grid three">
+                    <label>Horas de impressão<input inputMode="numeric" value={draft.hours} onChange={(event) => setDraft({ ...draft, hours: event.target.value })} /></label>
+                    <label>Minutos de impressão<input inputMode="numeric" value={draft.minutes} onChange={(event) => setDraft({ ...draft, minutes: event.target.value })} /></label>
+                    <div className="metric-box">
+                      <span>Tempo total</span>
+                      <strong>{printTimeHours.toFixed(2)}h</strong>
+                    </div>
+                  </div>
+                  <div className="field-grid two">
+                    <label>Fatiamento / Prep (min)<input inputMode="numeric" value={draft.prep} onChange={(event) => setDraft({ ...draft, prep: event.target.value })} /></label>
+                    <label>Limpeza / Pós-proc (min)<input inputMode="numeric" value={draft.cleanup} onChange={(event) => setDraft({ ...draft, cleanup: event.target.value })} /></label>
+                  </div>
+                  <small>Um kit de vários itens impressos separadamente? Some o tempo total de todas as peças aqui — é o tempo de máquina que esse produto consome por unidade vendida.</small>
+                </section>
+
+                <section className="calc-section">
+                  <Title text="IMPRESSORA" />
+                  <div className="field-row library-row">
+                    <label>Selecionar da Biblioteca<select value={draft.printerId} onChange={(event) => setDraft({ ...draft, printerId: event.target.value })}><option value="">Sem impressora (sem depreciação de máquina)</option>{printers.map((item) => <option key={item.id} value={item.id}>{item.model}</option>)}</select></label>
+                    <a className="bookmark-link" href="/admin" title="Gerenciar presets na Biblioteca"><IconBookmark className="nav-icon" /></a>
+                  </div>
+                  <small>Depreciação, manutenção e consumo de energia dessa impressora entram automaticamente no custo — não precisa digitar nada.</small>
+                </section>
+
+                <section className="calc-section">
+                  <Title text="MARGEM DE LUCRO" />
+                  <label>Margem (%)<input inputMode="decimal" value={draft.profitMargin} onChange={(event) => setDraft({ ...draft, profitMargin: event.target.value })} /></label>
+                </section>
+              </div>
+
+              <aside className="price-summary">
+                <span className="summary-eyebrow">PREÇO SUGERIDO</span>
+                <h2>{brl(suggestedPrice)}</h2>
+                <hr />
+                <div className="summary-title"><span>Composição de custo</span><strong>Total: {brl(cost.total)}</strong></div>
+                <div className="summary-card">
+                  <Cost label="Material" value={cost.filament} />
+                  <Cost label="Mão de obra" value={cost.labor} />
+                  <Cost label="Energia" value={cost.energy} />
+                  <Cost label="Depreciação" value={cost.machine} />
+                  <Cost label="Custos fixos rateados" value={cost.fixedCosts} />
+                  <hr />
+                  <Cost label="Custo Total" value={cost.total} bold />
+                </div>
+                <div className="form-actions">
+                  <button className="primary-button" type="submit">{editingId ? "Atualizar produto" : "Salvar produto"}</button>
+                  <button className="secondary-button" type="button" onClick={() => setView("list")}>Cancelar</button>
+                </div>
+                {feedback ? <p className="admin-feedback">{feedback}</p> : null}
+              </aside>
+            </div>
+          </form>
+        )}
       </div>
     </main>
+  );
+}
+
+function Title({ text }: { text: string }) { return <div className="section-title"><span />{text}</div>; }
+function Cost({ label, value, bold = false }: { label: string; value: number; bold?: boolean }) {
+  return (
+    <div className={bold ? "cost-line bold" : "cost-line"}>
+      <span>{label}</span>
+      <strong>{brl(value)}</strong>
+    </div>
   );
 }

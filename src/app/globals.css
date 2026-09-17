@@ -798,6 +798,9 @@ a.primary-button {
 .project-tools { align-items: center; display: flex; gap: 8px; }
 .project-tools input { background: #faf3ec; border: 1px solid var(--admin-border); border-radius: 9px; color: var(--admin-ink); min-height: 35px; padding: 8px 11px; width: 255px; }
 .new-quote-button, .load-editor-button { background: var(--admin-copper); border-radius: 9px; color: white; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; padding: 10px 13px; text-decoration: none; }
+button.new-quote-button { border: 0; cursor: pointer; }
+.catalog-new-formbar { align-items: center; display: flex; gap: 16px; justify-content: space-between; margin-bottom: 18px; }
+.catalog-new-formbar .sku-hint { flex: 1; margin: 0; }
 .project-tabs { display: flex; gap: 6px; margin: 0 0 16px; }
 .project-tabs button { background: #faf3ec; border: 1px solid var(--admin-border); border-radius: 9px; color: var(--admin-muted); cursor: pointer; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; padding: 9px 13px; }
 .project-tabs button.selected { background: var(--admin-olive); border-color: var(--admin-olive); color: white; }
