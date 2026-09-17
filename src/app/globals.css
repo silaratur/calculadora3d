@@ -837,6 +837,14 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .catalog-filters strong { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; }
 .catalog-filters input { background: #faf3ec; border: 1px solid var(--admin-border); border-radius: 8px; color: var(--admin-ink); flex: 1; min-height: 35px; min-width: 200px; padding: 8px 11px; }
 .catalog-filters select { background: var(--admin-paper); border: 1px solid var(--admin-border); border-radius: 8px; color: var(--admin-ink); padding: 8px 10px; }
+.catalog-filters-right { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; }
+.items-per-page { align-items: center; color: var(--admin-muted); display: flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; gap: 6px; }
+
+.pagination { align-items: center; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 22px 0 4px; }
+.pagination button { background: var(--admin-paper); border: 1px solid var(--admin-border); border-radius: 8px; color: var(--admin-muted); cursor: pointer; font-family: var(--font-mono); font-size: 12px; min-width: 32px; padding: 7px 9px; }
+.pagination button:hover:not(:disabled) { border-color: var(--admin-copper); color: var(--admin-copper); }
+.pagination button.selected { background: var(--admin-copper); border-color: var(--admin-copper); color: white; }
+.pagination button:disabled { cursor: not-allowed; opacity: .4; }
 
 .sim-panel { background: #f8ede0; border: 1px solid #e3cfc9; border-radius: 12px; margin: 4px 0; padding: 14px 16px; }
 .sim-title { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; letter-spacing: .1em; margin-bottom: 10px; text-transform: uppercase; }
@@ -871,6 +879,9 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .product-grid-compact { gap: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .product-grid-compact .product-card { padding: 12px; }
 .product-grid-compact .product-card-photo { aspect-ratio: 3 / 1; margin: -12px -12px 10px; }
+/* contain (não cover) — reduz mantendo a proporção, sem cortar o produto; o
+   fundo (#f2e6da, igual ao do container) preenche a sobra dos dois lados. */
+.product-grid-compact .product-card-photo img { height: 100%; object-fit: contain; width: 100%; }
 .product-grid-compact .product-card-photo-placeholder { font-size: 22px; }
 .product-grid-compact .card-description { -webkit-box-orient: vertical; -webkit-line-clamp: 2; display: -webkit-box; overflow: hidden; }
 @media (max-width: 1100px) { .product-grid-compact { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

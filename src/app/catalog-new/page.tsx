@@ -80,6 +80,8 @@ export default function CatalogNewPage() {
   const [view, setView] = useState<"list" | "form">("list");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [page, setPage] = useState(1);
   const [feedback, setFeedback] = useState("");
   const [imageError, setImageError] = useState("");
   const [needsLogin, setNeedsLogin] = useState(false);
@@ -121,6 +123,9 @@ export default function CatalogNewPage() {
       ),
     [category, products, search],
   );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const materialLinesWithData = draft.materialLines
     .map((line) => ({ line, material: materials.find((item) => item.id === line.materialId) }))
@@ -257,19 +262,26 @@ export default function CatalogNewPage() {
                 <p>Versão em teste do catálogo — vai substituir o Catálogo atual quando validada.</p>
               </div>
               <div className="project-tools">
-                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar SKU ou produto..." />
+                <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar SKU ou produto..." />
                 <button type="button" className="new-quote-button" onClick={newProduct}>＋ Novo produto</button>
               </div>
             </section>
 
             <div className="catalog-filters">
               <strong>{filtered.length} produtos</strong>
-              <select value={category} onChange={(event) => setCategory(event.target.value)}>
-                {categories.map((item) => <option key={item} value={item}>{item === "all" ? "Todas as categorias" : item}</option>)}
-              </select>
+              <div className="catalog-filters-right">
+                <select value={category} onChange={(event) => { setCategory(event.target.value); setPage(1); }}>
+                  {categories.map((item) => <option key={item} value={item}>{item === "all" ? "Todas as categorias" : item}</option>)}
+                </select>
+                <label className="items-per-page">Por página
+                  <select value={itemsPerPage} onChange={(event) => { setItemsPerPage(Number(event.target.value)); setPage(1); }}>
+                    {[10, 12, 24, 32].map((value) => <option key={value} value={value}>{value}</option>)}
+                  </select>
+                </label>
+              </div>
             </div>
             <div className="product-grid product-grid-compact">
-              {filtered.map((product) => (
+              {paginated.map((product) => (
                 <article className="product-card" key={product.id}>
                   <div className="product-card-photo">
                     {product.imageUrl ? (
@@ -298,6 +310,7 @@ export default function CatalogNewPage() {
               ))}
             </div>
             {filtered.length === 0 ? <div className="empty-note">Nenhum produto encontrado ainda. Clique em “＋ Novo produto”.</div> : null}
+            <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
           </>
         ) : (
           <form onSubmit={save}>
@@ -417,5 +430,17 @@ function Cost({ label, value, bold = false }: { label: string; value: number; bo
       <span>{label}</span>
       <strong>{brl(value)}</strong>
     </div>
+  );
+}
+function Pagination({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (page: number) => void }) {
+  if (totalPages <= 1) return null;
+  return (
+    <nav className="pagination" aria-label="Páginas do catálogo">
+      <button type="button" onClick={() => onChange(page - 1)} disabled={page === 1} aria-label="Página anterior">‹</button>
+      {Array.from({ length: totalPages }, (_, index) => index + 1).map((item) => (
+        <button type="button" key={item} className={item === page ? "selected" : ""} onClick={() => onChange(item)}>{item}</button>
+      ))}
+      <button type="button" onClick={() => onChange(page + 1)} disabled={page === totalPages} aria-label="Próxima página">›</button>
+    </nav>
   );
 }
