@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
+import { IconTrash } from "@/components/Icons";
 
 type FixedCostMonth = {
   id: string;
@@ -186,7 +187,7 @@ export default function CostsPage() {
                     <span className="material-badge">{item.month}</span>
                     <span className="card-actions">
                       <button className="edit-button" onClick={() => setFixedDraft(fixedMonthToDraft(item))}>Editar</button>
-                      <button className="delete-button" onClick={() => deleteFixed(item.id)} aria-label={`Excluir ${item.month}`}>♧</button>
+                      <button className="delete-button" onClick={() => deleteFixed(item.id)} aria-label={`Excluir ${item.month}`}><IconTrash className="nav-icon" /></button>
                     </span>
                   </div>
                   <h3>Total do mês</h3>
@@ -221,7 +222,7 @@ export default function CostsPage() {
                 <article className="preset-card" key={item.id}>
                   <div className="card-top">
                     <span className="material-badge">{new Date(item.date).toLocaleDateString("pt-BR")}</span>
-                    <button className="delete-button" onClick={() => deleteVariable(item.id)} aria-label="Excluir lançamento">♧</button>
+                    <button className="delete-button" onClick={() => deleteVariable(item.id)} aria-label="Excluir lançamento"><IconTrash className="nav-icon" /></button>
                   </div>
                   <h3>{item.description || "Custo variável"}</h3>
                   <strong>{brl(item.total)}</strong>

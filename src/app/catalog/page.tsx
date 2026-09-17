@@ -3,6 +3,7 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
+import { IconTrash } from "@/components/Icons";
 import { calculateMultiMaterialCost, calculateSuggestedPrice } from "@/lib/costing";
 
 type Material = { id: string; name: string; type: string; unitPrice: number; unitWeightGrams: number; costPerKg: number };
@@ -246,7 +247,7 @@ export default function CatalogPage() {
                     {materials.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
                   </select>
                   <input inputMode="decimal" value={line.grams} onChange={(event) => updateMaterialLine(index, { grams: n(event.target.value) })} placeholder="Gramas" />
-                  <button type="button" className="delete-button" onClick={() => removeMaterialLine(index)} aria-label="Remover material">♧</button>
+                  <button type="button" className="delete-button" onClick={() => removeMaterialLine(index)} aria-label="Remover material"><IconTrash className="nav-icon" /></button>
                 </div>
               ))}
               <button type="button" className="secondary-button" onClick={addMaterialLine} disabled={!materials.length}>+ Adicionar material</button>
@@ -298,7 +299,7 @@ export default function CatalogPage() {
                     <span className="material-badge">{product.sku}</span>
                     <span className="card-actions">
                       <button className="edit-button" onClick={() => edit(product)}>Editar</button>
-                      <button className="delete-button" onClick={() => archive(product.id)}>♧</button>
+                      <button className="delete-button" onClick={() => archive(product.id)}><IconTrash className="nav-icon" /></button>
                     </span>
                   </div>
                   <h2>{product.name}</h2>

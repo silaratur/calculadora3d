@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
+import { IconTrash } from "@/components/Icons";
 
 type Tab = "filaments" | "printers" | "supplies";
 
@@ -303,7 +304,7 @@ export default function AdminPage() {
                       <span className="material-badge">{item.type}</span>
                       <span className="card-actions">
                         <button className="edit-button" onClick={() => editPreset("filaments", item)}>Editar</button>
-                        <button className="delete-button" onClick={() => deletePreset("/api/materials", item.id)} aria-label={`Excluir ${item.name}`}>♧</button>
+                        <button className="delete-button" onClick={() => deletePreset("/api/materials", item.id)} aria-label={`Excluir ${item.name}`}><IconTrash className="nav-icon" /></button>
                       </span>
                     </div>
                     <h3>{item.name}</h3>
@@ -332,7 +333,7 @@ export default function AdminPage() {
               <div className="form-actions"><button className="primary-button" type="submit">{editingId ? "Atualizar Impressora" : "Salvar Impressora"}</button>{editingId ? <button className="secondary-button" type="button" onClick={() => { setEditingId(null); setPrinter(emptyPrinter); }}>Cancelar</button> : null}</div>
             </form>
             <div className="preset-grid printer-grid">
-              {printers.map((item) => { const hourly = item.purchasePrice / item.usefulLifeHours + item.maintenancePerHour; return <article className="preset-card" key={item.id}><div className="card-top"><span className="material-badge printer-badge">Impressora</span><span className="card-actions"><button className="edit-button" onClick={() => editPreset("printers", item)}>Editar</button><button className="delete-button" onClick={() => deletePreset("/api/printers", item.id)} aria-label={`Excluir ${item.model}`}>♧</button></span></div><h3>{item.model}</h3><p>Valor {money(item.purchasePrice)} | Potência {item.powerWatts}W</p><p>Vida útil: {item.usefulLifeHours}h | Manut.: {money(item.maintenancePerHour)}/h</p><strong className="cost-pill">Custo máquina: {money(hourly)}/hora</strong><p className="card-detail">Compra: {item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString("pt-BR") : "não informada"} {item.purchaseLink ? <a href={item.purchaseLink} target="_blank" rel="noreferrer">Abrir link</a> : null}</p></article>; })}
+              {printers.map((item) => { const hourly = item.purchasePrice / item.usefulLifeHours + item.maintenancePerHour; return <article className="preset-card" key={item.id}><div className="card-top"><span className="material-badge printer-badge">Impressora</span><span className="card-actions"><button className="edit-button" onClick={() => editPreset("printers", item)}>Editar</button><button className="delete-button" onClick={() => deletePreset("/api/printers", item.id)} aria-label={`Excluir ${item.model}`}><IconTrash className="nav-icon" /></button></span></div><h3>{item.model}</h3><p>Valor {money(item.purchasePrice)} | Potência {item.powerWatts}W</p><p>Vida útil: {item.usefulLifeHours}h | Manut.: {money(item.maintenancePerHour)}/h</p><strong className="cost-pill">Custo máquina: {money(hourly)}/hora</strong><p className="card-detail">Compra: {item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString("pt-BR") : "não informada"} {item.purchaseLink ? <a href={item.purchaseLink} target="_blank" rel="noreferrer">Abrir link</a> : null}</p></article>; })}
             </div>
           </section>
         ) : null}
@@ -348,7 +349,7 @@ export default function AdminPage() {
               <div className="form-actions"><button className="primary-button" type="submit">{editingId ? "Atualizar Insumo" : "Salvar Insumo Preset"}</button>{editingId ? <button className="secondary-button" type="button" onClick={() => { setEditingId(null); setSupply(emptySupply); }}>Cancelar</button> : null}</div>
             </form>
             <div className="preset-grid">
-              {supplies.map((item) => <article className="preset-card" key={item.id}><div className="card-top"><span className="material-badge supply-badge">{item.category}</span><span className="card-actions"><button className="edit-button" onClick={() => editPreset("supplies", item)}>Editar</button><button className="delete-button" onClick={() => deletePreset("/api/supplies", item.id)} aria-label={`Excluir ${item.name}`}>♧</button></span></div><h3>{item.name}</h3><p>Categoria: {item.category}</p><strong>{money(item.unitCost)} <small>por unidade</small></strong><p className="card-detail">Compra: {item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString("pt-BR") : "não informada"} {item.purchaseLink ? <a href={item.purchaseLink} target="_blank" rel="noreferrer">Abrir link</a> : null}</p></article>)}
+              {supplies.map((item) => <article className="preset-card" key={item.id}><div className="card-top"><span className="material-badge supply-badge">{item.category}</span><span className="card-actions"><button className="edit-button" onClick={() => editPreset("supplies", item)}>Editar</button><button className="delete-button" onClick={() => deletePreset("/api/supplies", item.id)} aria-label={`Excluir ${item.name}`}><IconTrash className="nav-icon" /></button></span></div><h3>{item.name}</h3><p>Categoria: {item.category}</p><strong>{money(item.unitCost)} <small>por unidade</small></strong><p className="card-detail">Compra: {item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString("pt-BR") : "não informada"} {item.purchaseLink ? <a href={item.purchaseLink} target="_blank" rel="noreferrer">Abrir link</a> : null}</p></article>)}
             </div>
           </section>
         ) : null}

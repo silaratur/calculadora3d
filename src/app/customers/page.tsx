@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
+import { IconTrash } from "@/components/Icons";
 
 type CustomerOrder = { id: string; totalAmount: number; paidAmount: number; createdAt: string };
 type Customer = { id: string; name: string; email: string; phone: string; notes: string; orders: CustomerOrder[] };
@@ -112,7 +113,7 @@ export default function CustomersPage() {
                       <span className="material-badge">{customer.orders.length} pedido(s)</span>
                       <span className="card-actions">
                         <button className="edit-button" onClick={() => edit(customer)}>Editar</button>
-                        <button className="delete-button" onClick={() => archive(customer.id)} aria-label={`Excluir ${customer.name}`}>♧</button>
+                        <button className="delete-button" onClick={() => archive(customer.id)} aria-label={`Excluir ${customer.name}`}><IconTrash className="nav-icon" /></button>
                       </span>
                     </div>
                     <h3>{customer.name}</h3>

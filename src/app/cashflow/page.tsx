@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
+import { IconTrash } from "@/components/Icons";
 
 type CashEntry = {
   id: string;
@@ -118,7 +119,7 @@ export default function CashflowPage() {
                     <td>{entry.sourceType ? sourceLabel[entry.sourceType] ?? entry.sourceType : "Manual"}</td>
                     <td>{entry.status === "REALIZED" ? "Realizado" : "Previsto"}</td>
                     <td className={entry.type === "IN" ? "cash-in" : "cash-out"}>{entry.type === "IN" ? "+" : "-"}{brl(entry.amount)}</td>
-                    <td>{!entry.sourceType ? <button className="delete-button" onClick={() => void remove(entry)} aria-label="Excluir lançamento">♧</button> : null}</td>
+                    <td>{!entry.sourceType ? <button className="delete-button" onClick={() => void remove(entry)} aria-label="Excluir lançamento"><IconTrash className="nav-icon" /></button> : null}</td>
                   </tr>
                 ))}
                 {entries.length === 0 ? <tr><td colSpan={7} className="empty-note">Nenhum lançamento ainda.</td></tr> : null}

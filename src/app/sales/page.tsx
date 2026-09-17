@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
+import { IconTrash } from "@/components/Icons";
 import { assessMargin, assessProfitPerHour, calculateOrderMetrics } from "@/lib/costing";
 
 type Customer = { id: string; name: string };
@@ -282,7 +283,7 @@ export default function SalesPage() {
                   <span className="card-actions">
                     <span className="project-status">{statusLabel[order.status] ?? order.status}</span>
                     <button className="edit-button" onClick={() => edit(order)} disabled={order.paidAmount > 0} title={order.paidAmount > 0 ? "Pedido já recebeu pagamento — não pode ser editado" : undefined}>Editar</button>
-                    <button className="delete-button" onClick={() => archive(order.id)} aria-label={`Excluir ${order.orderNumber}`}>♧</button>
+                    <button className="delete-button" onClick={() => archive(order.id)} aria-label={`Excluir ${order.orderNumber}`}><IconTrash className="nav-icon" /></button>
                   </span>
                 </div>
                 <h2>{order.productName}</h2>

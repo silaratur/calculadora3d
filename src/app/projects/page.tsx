@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
+import { IconTrash } from "@/components/Icons";
 
 type Quote = { id: string; productName: string; customerName: string; status: string; baseCost: number; finalPrice: number; margin: number; notes: string; createdAt: string; updatedAt: string };
 type Competitor = { id: string; productName: string; competitor: string; channel: string; price: number; url: string; checkedAt: string };
@@ -81,7 +82,7 @@ export default function ProjectsPage() {
                   <span className="material-badge">ORÇAMENTO</span>
                   <div>
                     <span className="project-status">{statusLabel[quote.status] ?? quote.status}</span>
-                    <button className="delete-button" onClick={() => archiveQuote(quote.id)}>♧</button>
+                    <button className="delete-button" onClick={() => archiveQuote(quote.id)} aria-label={`Excluir ${quote.productName}`}><IconTrash className="nav-icon" /></button>
                   </div>
                 </div>
                 <div className="project-card-heading">
