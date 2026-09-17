@@ -67,8 +67,16 @@ type MaterialLine = { materialId: string; grams: number };
 
 /** Resolve o custo e o nome de material a partir das linhas de material selecionadas na Biblioteca. */
 async function resolveMaterials(lines: MaterialLine[] | undefined) {
-  const usable = (lines ?? []).filter((line) => line.grams > 0);
-  if (!usable.length) return null;
+  const rawUsable = (lines ?? []).filter((line) => line.grams > 0);
+  if (!rawUsable.length) return null;
+
+  // Duas linhas com o mesmo material (ex: "+ Adicionar material" duas vezes
+  // sem trocar o filamento da segunda) violavam a constraint @@unique de
+  // ProductMaterial e derrubavam a gravação inteira — aqui mescla somando as
+  // gramas em vez de deixar virar erro 500.
+  const gramsByMaterialId = new Map<string, number>();
+  for (const line of rawUsable) gramsByMaterialId.set(line.materialId, (gramsByMaterialId.get(line.materialId) ?? 0) + line.grams);
+  const usable = Array.from(gramsByMaterialId, ([materialId, grams]) => ({ materialId, grams }));
 
   const materials = await prisma.material.findMany({ where: { id: { in: usable.map((line) => line.materialId) } } });
   const withMaterial: { line: MaterialLine; material: (typeof materials)[number] }[] = [];

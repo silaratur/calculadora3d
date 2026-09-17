@@ -159,7 +159,12 @@ export default function CatalogNewPage() {
 
   function addMaterialLine() {
     if (!materials.length) return;
-    setDraft({ ...draft, materialLines: [...draft.materialLines, { materialId: materials[0].id, grams: 0 }] });
+    const usedIds = new Set(draft.materialLines.map((line) => line.materialId));
+    // Sugere sempre um material ainda não usado nessa peça — se todos já
+    // estiverem em uso, cai no primeiro (o <select> de cada linha impede
+    // duas linhas ficarem com o mesmo material de qualquer forma).
+    const next = materials.find((item) => !usedIds.has(item.id)) ?? materials[0];
+    setDraft({ ...draft, materialLines: [...draft.materialLines, { materialId: next.id, grams: 0 }] });
   }
   function updateMaterialLine(index: number, patch: Partial<MaterialLine>) {
     setDraft({ ...draft, materialLines: draft.materialLines.map((line, i) => (i === index ? { ...line, ...patch } : line)) });
@@ -352,13 +357,17 @@ export default function CatalogNewPage() {
                     {draft.materialLines.map((line, index) => (
                       <div className="material-line" key={index}>
                         <select value={line.materialId} onChange={(event) => updateMaterialLine(index, { materialId: event.target.value })}>
-                          {materials.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                          {materials
+                            // Um material só pode estar em uma linha por vez — sem isso,
+                            // duas linhas com o mesmo filamento derrubavam o salvamento.
+                            .filter((item) => item.id === line.materialId || !draft.materialLines.some((other, otherIndex) => otherIndex !== index && other.materialId === item.id))
+                            .map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
                         </select>
                         <input inputMode="decimal" value={line.grams} onChange={(event) => updateMaterialLine(index, { grams: n(event.target.value) })} placeholder="Gramas" />
                         <button type="button" className="delete-button" onClick={() => removeMaterialLine(index)} aria-label="Remover material"><IconTrash className="nav-icon" /></button>
                       </div>
                     ))}
-                    <button type="button" className="secondary-button" onClick={addMaterialLine} disabled={!materials.length}>+ Adicionar material</button>
+                    <button type="button" className="secondary-button" onClick={addMaterialLine} disabled={!materials.length || draft.materialLines.length >= materials.length}>+ Adicionar material</button>
                     {!materials.length ? <p className="admin-feedback">Cadastre filamentos na Biblioteca para selecioná-los aqui.</p> : null}
                   </div>
                 </section>
