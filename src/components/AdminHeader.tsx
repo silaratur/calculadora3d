@@ -12,6 +12,7 @@ import {
   IconLogout,
   IconPrinter,
   IconSettings,
+  IconSparkles,
   IconTag,
   IconUser,
   IconCoins,
@@ -23,6 +24,7 @@ type Section =
   | "calculator"
   | "library"
   | "catalog"
+  | "catalogNew"
   | "customers"
   | "projects"
   | "sales"
@@ -36,6 +38,9 @@ const links: { id: Section; href: string; label: string; icon: (props: { classNa
   { id: "calculator", href: "/calculator", label: "Calculadora", icon: IconCalculator },
   { id: "library", href: "/admin", label: "Biblioteca", icon: IconBook },
   { id: "catalog", href: "/catalog", label: "Catálogo", icon: IconGrid },
+  // Área em teste (ver DEPLOY.md/memória do projeto) — vai substituir /catalog
+  // quando validada; por ora convivem em paralelo.
+  { id: "catalogNew", href: "/catalog-new", label: "Catálogo Novo", icon: IconSparkles },
   { id: "customers", href: "/customers", label: "Clientes", icon: IconUser },
   { id: "projects", href: "/projects", label: "Projetos", icon: IconFolder },
   { id: "sales", href: "/sales", label: "Vendas", icon: IconTag },

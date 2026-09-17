@@ -46,6 +46,12 @@ export type PieceCostInput = {
   materialUnitPrice: number;
   /** Peso do rolo em gramas (1000 para 1kg). */
   materialUnitWeightGrams: number;
+  /**
+   * Quando informado, ignora weightGrams/materialUnitPrice/materialUnitWeightGrams
+   * e usa este valor direto como custo de filamento — para produtos multi-material
+   * (Catálogo Novo), cujo custo já vem somado de `calculateMultiMaterialCost`.
+   */
+  filamentCostOverride?: number;
   printTimeHours: number;
   /** Mão de obra de preparo e de limpeza, em minutos, fora do tempo de máquina. */
   prepMinutes?: number;
@@ -102,7 +108,7 @@ export function calculatePieceCost(input: PieceCostInput): PieceCost {
   const laborHours = printTimeHours + (input.prepMinutes ?? 0) / 60 + (input.cleanupMinutes ?? 0) / 60;
 
   const rollWeight = input.materialUnitWeightGrams || 1000;
-  const filament = (input.weightGrams / rollWeight) * input.materialUnitPrice;
+  const filament = input.filamentCostOverride ?? (input.weightGrams / rollWeight) * input.materialUnitPrice;
   const labor = laborHours * input.laborRatePerHour;
   const energy = (input.powerWatts / 1000) * printTimeHours * input.energyRatePerKwh;
 

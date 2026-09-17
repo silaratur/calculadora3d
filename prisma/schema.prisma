@@ -99,6 +99,7 @@ model Printer {
   purchaseDate       DateTime?
   purchaseLink       String   @default("")
   active             Boolean  @default(true)
+  products           Product[]
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 }
@@ -134,6 +135,14 @@ model Product {
   cost          Float
   price         Float
   active        Boolean  @default(true)
+  // Campos do Catálogo Novo (src/app/catalog-new) — só populados por ele;
+  // produtos criados no Catálogo atual ficam com os padrões (0/nenhum).
+  prepMinutes    Float    @default(0)
+  cleanupMinutes Float    @default(0)
+  energyCost     Float    @default(0)
+  machineCost    Float    @default(0)
+  printerId      String?
+  printer        Printer? @relation(fields: [printerId], references: [id])
   materials      ProductMaterial[]
   supplies       ProductSupply[]
   quotes         Quote[]

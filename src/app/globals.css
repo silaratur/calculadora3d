@@ -84,6 +84,10 @@ body {
 .label-hint-row em { color: var(--calc-copper); font-size: 9px; font-style: normal; font-weight: 600; letter-spacing: normal; text-transform: none; }
 .label-icon-text { align-items: center; display: inline-flex; gap: 5px; }
 .bookmark-link { align-items: center; color: var(--calc-copper); display: inline-flex; margin-bottom: 10px; padding: 4px; }
+/* .field-row/.library-row/.bookmark-link nasceram dentro do .calculator-shell
+   (--calc-copper); o Catálogo Novo reusa o mesmo layout dentro do .admin-shell
+   (--admin-copper) — sem isto o link do "Selecionar Impressora" ficava sem cor. */
+.admin-shell .field-row a, .admin-shell .library-row a, .admin-shell .bookmark-link { color: var(--admin-copper); }
 .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .chip { background: #faf3ec; border: 1px solid var(--calc-border); border-radius: 20px; color: var(--calc-muted); cursor: pointer; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; padding: 5px 10px; }
 .chip.selected, .chip:hover { background: #f8dee7; border-color: var(--calc-copper); color: var(--calc-copper); }

@@ -24,6 +24,13 @@ const productSchema = z.object({
   cost: z.number().min(0),
   price: z.number().min(0),
   active: z.boolean().optional(),
+  // Só preenchidos pelo Catálogo Novo (src/app/catalog-new) — o Catálogo
+  // atual não manda nada disso, e fica tudo no padrão (0/nenhum).
+  prepMinutes: z.number().min(0).optional(),
+  cleanupMinutes: z.number().min(0).optional(),
+  energyCost: z.number().min(0).optional(),
+  machineCost: z.number().min(0).optional(),
+  printerId: z.string().optional().nullable(),
 });
 
 async function ensureAuthenticated() {
@@ -84,7 +91,7 @@ export async function GET() {
   const products = await prisma.product.findMany({
     where: { active: true },
     orderBy: { createdAt: "desc" },
-    include: { materials: true },
+    include: { materials: true, printer: true },
   });
   return NextResponse.json(products);
 }
@@ -114,6 +121,11 @@ export async function POST(request: Request) {
     cost: data.cost,
     price: data.price,
     active: data.active ?? true,
+    prepMinutes: data.prepMinutes ?? 0,
+    cleanupMinutes: data.cleanupMinutes ?? 0,
+    energyCost: data.energyCost ?? 0,
+    machineCost: data.machineCost ?? 0,
+    printerId: data.printerId ?? null,
     ...(resolved ? { materials: { create: resolved.lines } } : {}),
   };
 
@@ -124,7 +136,7 @@ export async function POST(request: Request) {
     try {
       const product = await prisma.product.create({
         data: { ...baseData, sku: await nextSkuForCategory(data.category) },
-        include: { materials: true },
+        include: { materials: true, printer: true },
       });
       return NextResponse.json(product, { status: 201 });
     } catch (error) {
@@ -175,9 +187,14 @@ export async function PUT(request: Request) {
         cost: data.cost,
         price: data.price,
         active: data.active ?? true,
+        prepMinutes: data.prepMinutes ?? 0,
+        cleanupMinutes: data.cleanupMinutes ?? 0,
+        energyCost: data.energyCost ?? 0,
+        machineCost: data.machineCost ?? 0,
+        printerId: data.printerId ?? null,
         ...(resolved ? { materials: { create: resolved.lines } } : {}),
       },
-      include: { materials: true },
+      include: { materials: true, printer: true },
     });
   });
 
