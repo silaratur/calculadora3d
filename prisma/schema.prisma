@@ -1,0 +1,316 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("ADMIN")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Customer {
+  id        String       @id @default(cuid())
+  name      String
+  email     String       @default("")
+  phone     String       @default("")
+  notes     String       @default("")
+  active    Boolean      @default(true)
+  orders    SalesOrder[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model PricingSettings {
+  id                    String   @id @default("default")
+  energyRate            Float    @default(0.85)
+  defaultPowerWatts     Float    @default(250)
+  laborRate             Float    @default(25)
+  monthlyRent           Float    @default(0)
+  monthlySubscriptions  Float    @default(50)
+  monthlyMaintenance    Float    @default(40)
+  monthlyOtherCosts     Float    @default(0)
+  monthlyPieces         Float    @default(60)
+  defaultMarkup         Float    @default(40)
+  defaultLossRate       Float    @default(5)
+  updatedAt             DateTime @updatedAt
+}
+
+model MarketplaceChannel {
+  id             String   @id @default(cuid())
+  name           String   @unique
+  commissionRate Float    @default(0)
+  fixedFee       Float    @default(0)
+  adsRate        Float    @default(0)
+  notes          String   @default("")
+  active         Boolean  @default(true)
+  orders         SalesOrder[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Material {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  brand           String   @default("")
+  type            String
+  color           String   @default("")
+  costPerKg       Float
+  unitPrice       Float    @default(0)
+  unitWeightGrams Float    @default(1000)
+  stockGrams      Float    @default(0)
+  lowStockThresholdGrams Float @default(200)
+  purchaseDate    DateTime?
+  purchaseLink    String   @default("")
+  active          Boolean  @default(true)
+  purchases       MaterialPurchase[]
+  productMaterials ProductMaterial[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Printer {
+  id                 String   @id @default(cuid())
+  model              String   @unique
+  purchasePrice      Float
+  powerWatts         Float
+  usefulLifeHours    Float
+  maintenancePerHour Float
+  purchaseDate       DateTime?
+  purchaseLink       String   @default("")
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Supply {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  category    String
+  unitCost    Float
+  purchaseDate DateTime?
+  purchaseLink String   @default("")
+  active      Boolean  @default(true)
+  productSupplies ProductSupply[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  sku           String   @unique
+  name          String
+  category      String
+  description   String?
+  imageUrl      String   @default("")
+  material      String
+  weightGrams   Float
+  volumeCm3     Float    @default(0)
+  printTimeHours Float
+  materialCost  Float
+  laborCost     Float
+  overheadCost  Float
+  profitMargin  Float
+  cost          Float
+  price         Float
+  active        Boolean  @default(true)
+  materials      ProductMaterial[]
+  supplies       ProductSupply[]
+  quotes         Quote[]
+  orders         SalesOrder[]
+  competitors    CompetitorPrice[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model MaterialPurchase {
+  id           String   @id @default(cuid())
+  materialId   String
+  material     Material @relation(fields: [materialId], references: [id])
+  purchaseDate DateTime
+  unitPrice    Float
+  weightGrams  Float
+  supplier     String   @default("")
+  purchaseLink String   @default("")
+  lot          String   @default("")
+  createdAt    DateTime @default(now())
+}
+
+model ProductMaterial {
+  id          String   @id @default(cuid())
+  productId   String
+  materialId  String
+  grams       Float
+  product     Product  @relation(fields: [productId], references: [id])
+  material    Material @relation(fields: [materialId], references: [id])
+  @@unique([productId, materialId])
+}
+
+model ProductSupply {
+  id        String  @id @default(cuid())
+  productId String
+  supplyId  String
+  quantity  Float   @default(1)
+  product   Product @relation(fields: [productId], references: [id])
+  supply    Supply  @relation(fields: [supplyId], references: [id])
+  @@unique([productId, supplyId])
+}
+
+model Quote {
+  id           String   @id @default(cuid())
+  productId    String?
+  product      Product? @relation(fields: [productId], references: [id])
+  productName  String
+  customerName String   @default("")
+  status       String   @default("DRAFT")
+  baseCost     Float
+  finalPrice   Float
+  margin       Float
+  snapshotJson String
+  notes        String   @default("")
+  order        SalesOrder?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model SalesOrder {
+  id            String          @id @default(cuid())
+  orderNumber   String          @unique
+  customerId    String?
+  customer      Customer?       @relation(fields: [customerId], references: [id])
+  quoteId       String?          @unique
+  quote         Quote?           @relation(fields: [quoteId], references: [id])
+  productId     String?
+  product       Product?        @relation(fields: [productId], references: [id])
+  productName   String
+  quantity      Float           @default(1)
+  channel       String          @default("Venda Direta")
+  channelId     String?
+  marketplace   MarketplaceChannel? @relation(fields: [channelId], references: [id])
+  status        String          @default("PENDING")
+  paymentStatus String          @default("PENDING")
+
+  // Preço praticado e custo do item congelados na data da venda, para que
+  // reprecificar o produto depois não reescreva o histórico.
+  unitPrice        Float @default(0)
+  unitCostSnapshot Float @default(0)
+  printTimeHours   Float @default(0)
+
+  discountPerUnit Float @default(0)
+  marketplaceFee  Float @default(0)
+  shippingCost    Float @default(0)
+
+  totalAmount   Float
+  paidAmount    Float           @default(0)
+  paymentMethod String          @default("PIX")
+
+  dueDate               DateTime?
+  plannedProductionDate DateTime?
+  expectedPaymentDate   DateTime?
+
+  notes         String          @default("")
+  production    ProductionJob?
+  payments      Payment[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+// Um recebimento registrado contra um pedido. `SalesOrder.paidAmount` é
+// incrementado a cada pagamento (não recalculado pela soma), então pedidos
+// antigos sem histórico de pagamentos continuam corretos.
+model Payment {
+  id        String     @id @default(cuid())
+  orderId   String
+  order     SalesOrder @relation(fields: [orderId], references: [id])
+  date      DateTime   @default(now())
+  amount    Float
+  method    String     @default("PIX")
+  notes     String     @default("")
+  createdAt DateTime   @default(now())
+}
+
+model ProductionJob {
+  id             String     @id @default(cuid())
+  orderId        String     @unique
+  order          SalesOrder @relation(fields: [orderId], references: [id])
+  status         String     @default("WAITING")
+  priority       String     @default("NORMAL")
+  printerName    String     @default("")
+  plannedMinutes Int        @default(0)
+  completedAt    DateTime?
+  notes          String     @default("")
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model CompetitorPrice {
+  id          String   @id @default(cuid())
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id])
+  productName String
+  competitor  String
+  channel     String   @default("")
+  price       Float
+  url         String   @default("")
+  checkedAt   DateTime @default(now())
+}
+
+// Custos fixos lançados por mês (AAAA-MM), com histórico.
+model FixedCostMonth {
+  id             String   @id @default(cuid())
+  month          String   @unique
+  rent           Float    @default(0)
+  software       Float    @default(0)
+  accounting     Float    @default(0)
+  internet       Float    @default(0)
+  maintenance    Float    @default(0)
+  marketing      Float    @default(0)
+  energy         Float    @default(0)
+  subscriptions  Float    @default(0)
+  other          Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// Um custo variável datado (compra de material, comissão, frete, perda...).
+model VariableCostEntry {
+  id           String   @id @default(cuid())
+  date         DateTime
+  description  String   @default("")
+  filament     Float    @default(0)
+  commission   Float    @default(0)
+  energy       Float    @default(0)
+  shipping     Float    @default(0)
+  packaging    Float    @default(0)
+  waste        Float    @default(0)
+  salesFee     Float    @default(0)
+  maintenance  Float    @default(0)
+  createdAt    DateTime @default(now())
+}
+
+// Extrato de caixa. Entradas de recebimento e saídas de custo variável são
+// geradas automaticamente (via `sourceType`/`sourceId`) e mantidas em sincronia
+// quando a origem é editada ou apagada; lançamentos manuais não têm origem.
+model CashEntry {
+  id          String    @id @default(cuid())
+  date        DateTime
+  category    String
+  type        String // "IN" | "OUT"
+  description String    @default("")
+  status      String    @default("REALIZED") // "REALIZED" | "PLANNED"
+  amount      Float
+  orderId     String?
+  sourceType  String? // "PAYMENT" | "VARIABLE_COST" | "FIXED_COST" | null (manual)
+  sourceId    String?
+  createdAt   DateTime  @default(now())
+
+  @@unique([sourceType, sourceId])
+}

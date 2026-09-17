@@ -1,0 +1,834 @@
+<title>Gaps Mínima 3D</title>
+<style>
+  :root {
+    --bg: #f6f3ee;
+    --paper: #fffdfa;
+    --ink: #1f1b18;
+    --muted: #7d6858;
+    --faint: #9b8877;
+    --border: #e4dacf;
+    --copper: #bd6b42;
+    --olive: #5e6040;
+    --red: #a8402a;
+    --amber: #b07d1e;
+    --green: #4f7a43;
+    --code-bg: #f1ece4;
+    --shadow: 0 2px 6px rgba(80, 58, 40, .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17140f;
+      --paper: #201c16;
+      --ink: #efe7dc;
+      --muted: #a89684;
+      --faint: #8b7967;
+      --border: #332c23;
+      --copper: #d78957;
+      --olive: #9aa06c;
+      --red: #e08268;
+      --amber: #dbae52;
+      --green: #8dbd7c;
+      --code-bg: #14110d;
+      --shadow: 0 2px 6px rgba(0, 0, 0, .3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17140f;
+    --paper: #201c16;
+    --ink: #efe7dc;
+    --muted: #a89684;
+    --faint: #8b7967;
+    --border: #332c23;
+    --copper: #d78957;
+    --olive: #9aa06c;
+    --red: #e08268;
+    --amber: #dbae52;
+    --green: #8dbd7c;
+    --code-bg: #14110d;
+    --shadow: 0 2px 6px rgba(0, 0, 0, .3);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Iowan Old Style", Georgia, "Times New Roman", serif;
+    font-size: 16px;
+    line-height: 1.6;
+    padding-inline: 20px;
+    padding-block: 0;
+  }
+  .wrap { margin: 0 auto; max-width: 900px; padding-block: 48px 72px; }
+
+  .eyebrow {
+    color: var(--copper);
+    font-family: ui-sans-serif, system-ui, Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .28em;
+    margin: 0 0 14px;
+    text-transform: uppercase;
+  }
+  h1 { font-size: clamp(30px, 6vw, 44px); font-weight: 500; letter-spacing: -.01em; line-height: 1.12; margin: 0 0 18px; }
+  .lede { color: var(--muted); font-size: 17px; margin: 0 0 8px; max-width: 62ch; }
+  .source {
+    border-top: 1px solid var(--border);
+    color: var(--faint);
+    font-family: ui-sans-serif, system-ui, Arial, sans-serif;
+    font-size: 12px;
+    margin-top: 28px;
+    padding-top: 14px;
+  }
+  .source a { color: var(--copper); }
+
+  h2 {
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-family: ui-sans-serif, system-ui, Arial, sans-serif;
+    font-weight: 700;
+    letter-spacing: .16em;
+    margin: 56px 0 22px;
+    padding-bottom: 10px;
+    text-transform: uppercase;
+  }
+  h3 { font-size: 19px; font-weight: 500; margin: 0 0 4px; }
+  p { margin: 0 0 14px; }
+  .note { color: var(--muted); font-size: 14px; }
+
+  .tiles { display: grid; gap: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 8px; }
+  .tile { background: var(--paper); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 16px 18px; }
+  .tile span {
+    color: var(--muted);
+    display: block;
+    font-family: ui-sans-serif, system-ui, Arial, sans-serif;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .tile strong { display: block; font-size: 32px; font-weight: 500; margin-top: 4px; }
+  .t-none strong { color: var(--red); }
+  .t-part strong { color: var(--amber); }
+  .t-ok strong { color: var(--green); }
+  .t-tot strong { color: var(--copper); }
+
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; font-size: 14px; min-width: 620px; width: 100%; }
+  th {
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    font-family: ui-sans-serif, system-ui, Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    padding: 0 12px 9px 0;
+    text-align: left;
+    text-transform: uppercase;
+  }
+  td { border-bottom: 1px solid var(--border); padding: 11px 12px 11px 0; vertical-align: top; }
+  td:first-child { font-weight: 500; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+
+  .chip {
+    border-radius: 5px;
+    display: inline-block;
+    font-family: ui-sans-serif, system-ui, Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    padding: 3px 7px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .c-none { background: color-mix(in srgb, var(--red) 16%, transparent); color: var(--red); }
+  .c-part { background: color-mix(in srgb, var(--amber) 18%, transparent); color: var(--amber); }
+  .c-ok { background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green); }
+
+  .gap {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+    padding: 20px 22px;
+  }
+  .gap.p0 { border-left-color: var(--red); }
+  .gap.p1 { border-left-color: var(--amber); }
+  .gap.p2 { border-left-color: var(--olive); }
+  .gap-head { align-items: baseline; display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+  .gap-head .ts {
+    color: var(--faint);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    margin-left: auto;
+  }
+  .gap dl { display: grid; gap: 4px 16px; grid-template-columns: 96px minmax(0, 1fr); margin: 0; }
+  .gap dt {
+    color: var(--muted);
+    font-family: ui-sans-serif, system-ui, Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    padding-top: 5px;
+    text-transform: uppercase;
+  }
+  .gap dd { font-size: 15px; margin: 0 0 8px; }
+  .gap dd:last-child { margin-bottom: 0; }
+  .gap ul { margin: 0; padding-left: 18px; }
+  .gap li { margin-bottom: 4px; }
+
+  code {
+    background: var(--code-bg);
+    border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: .86em;
+    padding: 1px 5px;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+    margin: 0 0 18px;
+    overflow-x: auto;
+    padding: 16px 18px;
+  }
+  pre code { background: none; font-size: 1em; padding: 0; }
+
+  .phase { border-left: 2px solid var(--border); margin-left: 6px; padding: 0 0 4px 22px; position: relative; }
+  .phase::before {
+    background: var(--copper);
+    border-radius: 50%;
+    content: "";
+    height: 9px;
+    left: -5.5px;
+    position: absolute;
+    top: 7px;
+    width: 9px;
+  }
+  .phase + .phase { margin-top: 26px; }
+  .phase h3 { font-size: 17px; }
+  .phase .when {
+    color: var(--faint);
+    font-family: ui-sans-serif, system-ui, Arial, sans-serif;
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+  .phase ol { margin: 10px 0 0; padding-left: 20px; }
+  .phase li { margin-bottom: 6px; }
+
+  .keep { background: var(--paper); border: 1px solid var(--border); border-radius: 14px; padding: 6px 22px 18px; }
+  .keep ul { margin: 0; padding-left: 18px; }
+  .keep li { margin-top: 10px; }
+
+  .caveat {
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    color: var(--muted);
+    font-size: 14px;
+    padding: 16px 20px;
+  }
+  .caveat ul { margin: 8px 0 0; padding-left: 18px; }
+
+  @media (max-width: 720px) {
+    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .gap dl { grid-template-columns: 1fr; }
+    .gap dt { padding-top: 8px; }
+    .gap-head .ts { margin-left: 0; }
+  }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">Análise de requisitos · Impressão 3D</p>
+  <h1>O que falta no Mínima&nbsp;3D</h1>
+  <p class="lede">
+    Revisão completa do vídeo do PrimePrint 3D, módulo por módulo, cruzada com o estado atual
+    do <code>calculadora-app</code>. Dos 13 módulos que o sistema do vídeo tem, nenhum está
+    completo no Mínima 3D: 6 não existem e 7 existem só em parte.
+  </p>
+  <p class="lede note">
+    O ponto crítico não é a calculadora — essa está melhor que a do vídeo. É que o sistema não
+    fecha o ciclo <strong>orçamento → venda → produção → recebimento → caixa</strong>, e sem
+    isso não há dashboard, não há fluxo de caixa e não há como saber se a operação dá lucro.
+  </p>
+
+  <p class="source">
+    Fonte: <a href="https://www.youtube.com/watch?v=4DmVGx3zh9A" target="_blank" rel="noreferrer">PARE DE USAR PLANILHAS | Sistema de Gestão Completa para Impressão 3D</a>
+    — PrimePrint3D, 9min38s. Legenda pt-BR integral + 64 frames analisados.
+  </p>
+
+  <h2>Panorama</h2>
+
+  <div class="tiles">
+    <div class="tile t-tot"><span>Módulos no vídeo</span><strong>13</strong></div>
+    <div class="tile t-ok"><span>Completos hoje</span><strong>0</strong></div>
+    <div class="tile t-part"><span>Parciais</span><strong>7</strong></div>
+    <div class="tile t-none"><span>Ausentes</span><strong>6</strong></div>
+  </div>
+
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>Módulo do vídeo</th><th>Status</th><th>Situação no Mínima 3D</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Calculadora de Precificação</td>
+          <td><span class="chip c-part">Parcial</span></td>
+          <td><code>/calculator</code> — modelo de custo mais rico que o do vídeo, mas sem quantidade de pedido, sem preço mínimo, sem lucro/hora, sem análise automática e sem as ações de saída.</td>
+        </tr>
+        <tr>
+          <td>Cadastro de Itens</td>
+          <td><span class="chip c-part">Parcial</span></td>
+          <td><code>/catalog</code> — cadastra e lista, mas SKU é digitado à mão, não há preço definido vs. sugerido, nem toggle ativo/inativo na tela.</td>
+        </tr>
+        <tr>
+          <td>Vendas</td>
+          <td><span class="chip c-part">Parcial</span></td>
+          <td><code>/sales</code> — é o módulo mais raso do sistema. Produto é texto livre, sem desconto, sem taxa de canal, sem forma de pagamento, sem simulação, sem lista filtrável.</td>
+        </tr>
+        <tr>
+          <td>Orçamento</td>
+          <td><span class="chip c-part">Parcial</span></td>
+          <td><code>/projects</code> lista os <code>Quote</code> salvos pela calculadora. Não há código rastreável, PDF de verdade, prazo por backlog nem conversão em venda.</td>
+        </tr>
+        <tr>
+          <td>Pendências</td>
+          <td><span class="chip c-part">Parcial</span></td>
+          <td><code>/production</code> cobre a aba de produção. Falta toda a aba financeira (a receber, recebimento parcial).</td>
+        </tr>
+        <tr>
+          <td>Dashboard</td>
+          <td><span class="chip c-none">Ausente</span></td>
+          <td>A home é uma tela de login + calculadora. Não existe nenhum indicador consolidado.</td>
+        </tr>
+        <tr>
+          <td>Custos Fixos</td>
+          <td><span class="chip c-part">Parcial</span></td>
+          <td>Existem 4 campos globais em <code>PricingSettings</code>. O vídeo tem lançamento <em>por mês</em> com 9 rubricas e histórico.</td>
+        </tr>
+        <tr>
+          <td>Custos Variáveis</td>
+          <td><span class="chip c-none">Ausente</span></td>
+          <td>Só existe <code>MaterialPurchase</code> (compra de filamento). Sem lançamento de comissão, frete, perdas, taxas.</td>
+        </tr>
+        <tr>
+          <td>Investimentos</td>
+          <td><span class="chip c-none">Ausente</span></td>
+          <td><code>Printer</code> guarda preço e vida útil em horas, mas não há tabela de investimentos, depreciação mensal nem payback.</td>
+        </tr>
+        <tr>
+          <td>Fluxo de Caixa</td>
+          <td><span class="chip c-none">Ausente</span></td>
+          <td>Nada. Nem saldo, nem entradas/saídas, nem projeção.</td>
+        </tr>
+        <tr>
+          <td>Análise Automática</td>
+          <td><span class="chip c-none">Ausente</span></td>
+          <td>Nenhum ranking, treemap, alerta de margem baixa ou top produtos.</td>
+        </tr>
+        <tr>
+          <td>Exportar Excel</td>
+          <td><span class="chip c-none">Ausente</span></td>
+          <td>Nenhuma exportação em nenhuma tela.</td>
+        </tr>
+        <tr>
+          <td>Configurações</td>
+          <td><span class="chip c-part">Parcial</span></td>
+          <td><code>/settings</code> cobre bem produção e canais. Faltam os padrões de embalagem/acabamento/frete e os dados da empresa para o PDF.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>P0 — Fecha o ciclo de venda e caixa</h2>
+  <p class="note">
+    Sem estes seis itens o sistema não consegue responder “quanto eu tenho para receber” nem
+    “isso deu lucro”. É aqui que o vídeo ganha da planilha, e é aqui que o Mínima 3D está mais atrás.
+  </p>
+
+  <div class="gap p0">
+    <div class="gap-head"><h3>1. Venda ligada ao item do catálogo</h3><span class="ts">02:16 – 03:00</span></div>
+    <dl>
+      <dt>No vídeo</dt>
+      <dd>Produto é um <em>select</em> do catálogo que já traz o preço unitário definido; os custos (material, energia, embalagem, tempo de impressão) descem automaticamente do item e ficam editáveis.</dd>
+      <dt>Hoje</dt>
+      <dd><code>SalesOrder.productName</code> é texto livre digitado. A venda não referencia <code>Product</code>, então nenhum custo é conhecido — e sem custo não existe lucro, margem nem dashboard.</dd>
+      <dt>Fazer</dt>
+      <dd>
+        <ul>
+          <li>Adicionar <code>productId</code> em <code>SalesOrder</code> e trocar o input por select do catálogo.</li>
+          <li>Congelar no pedido os custos unitários vindos do item (snapshot), para que reprecificar o produto depois não reescreva o histórico.</li>
+          <li>Manter o texto livre apenas como fallback para venda avulsa.</li>
+        </ul>
+      </dd>
+      <dt>Onde</dt>
+      <dd><code>prisma/schema.prisma</code>, <code>src/app/api/orders/route.ts</code>, <code>src/app/sales/page.tsx</code></dd>
+    </dl>
+  </div>
+
+  <div class="gap p0">
+    <div class="gap-head"><h3>2. Recebimento parcial com abatimento</h3><span class="ts">04:14 – 04:45</span></div>
+    <dl>
+      <dt>No vídeo</dt>
+      <dd>Aba <strong>Pendências → Financeiro</strong>: Total a Receber (R$ 1.653,35), Pedidos Pendentes (10), Parcialmente Recebidos (1). Abre o pedido e mostra Valor Total, Já Recebido, Pendente, Forma de Pagamento, Data Prevista. Campo “Valor a receber” + botão <strong>Registrar Recebimento</strong> que abate do total.</dd>
+      <dt>Hoje</dt>
+      <dd><code>paidAmount</code> existe no schema mas <strong>nenhuma tela usa</strong>. O POST de pedido só decide <code>PAID</code>/<code>PENDING</code> comparando com o total, e o PUT nunca é chamado pela UI. Não existe histórico de recebimentos.</dd>
+      <dt>Fazer</dt>
+      <dd>
+        <ul>
+          <li>Modelo <code>Payment</code> (pedido, data, valor, forma, observação) em vez de só um campo acumulado — é o que permite extrato e conferência.</li>
+          <li>Recalcular <code>paymentStatus</code> para <code>PENDING</code> / <code>PARTIAL</code> / <code>PAID</code> a cada recebimento.</li>
+          <li>Aba Financeiro em <code>/production</code> (ou página <code>/pendencias</code>) com os 3 indicadores do topo.</li>
+        </ul>
+      </dd>
+      <dt>Onde</dt>
+      <dd>novo <code>src/app/api/payments/route.ts</code>, <code>src/app/production/page.tsx</code></dd>
+    </dl>
+  </div>
+
+  <div class="gap p0">
+    <div class="gap-head"><h3>3. Dashboard financeiro</h3><span class="ts">06:52 – 08:20</span></div>
+    <dl>
+      <dt>No vídeo</dt>
+      <dd>
+        12 indicadores no topo: Total Vendido, Total Recebido, A Receber, Lucro Bruto, Lucro Líquido,
+        Ticket Médio, Nº Vendas, Pedidos em Produção, Horas Prod. Pendente, Saldo Caixa Real,
+        Projeção a Receber e um score de <strong>Saúde Financeira</strong> (100/100). Abaixo:
+        faturamento bruto/líquido/lucro por mês (barras), gauge de saúde, evolução da margem líquida
+        (linha com meta pontilhada), faturamento por canal (donut), margem por produto (barras),
+        custos fixos vs. variáveis (donut), fluxo de caixa mensal (entradas/saídas/saldo acumulado)
+        e um bloco de <strong>Alertas</strong>.
+      </dd>
+      <dt>Hoje</dt>
+      <dd>Não existe. A rota <code>/</code> é login + cadastro rápido de material + calculadora.</dd>
+      <dt>Fazer</dt>
+      <dd>
+        <ul>
+          <li>Um endpoint agregador (<code>/api/dashboard</code>) que devolve tudo de uma vez — não 8 fetches na página.</li>
+          <li>Começar pelos indicadores numéricos; gráficos depois. Metade do valor está nos 12 cards.</li>
+          <li>Definir as fórmulas <em>antes</em> de codar a tela: lucro bruto, lucro líquido (após taxas de canal e frete), ticket médio, saldo de caixa real.</li>
+        </ul>
+      </dd>
+      <dt>Onde</dt>
+      <dd>nova <code>src/app/dashboard/page.tsx</code> + <code>src/lib/metrics.ts</code></dd>
+    </dl>
+  </div>
+
+  <div class="gap p0">
+    <div class="gap-head"><h3>4. Custos fixos por mês</h3><span class="ts">04:46 – 04:58</span></div>
+    <dl>
+      <dt>No vídeo</dt>
+      <dd>Tela “Custos Fixos Mensais” com campo <strong>Mês (AAAA-MM)</strong> e 9 rubricas: Aluguel, Software/SaaS, Contabilidade, Internet, Manutenção, Marketing, Energia (parte fixa), Assinaturas, Outros. Total do mês somado ao vivo + histórico de meses.</dd>
+      <dt>Hoje</dt>
+      <dd><code>PricingSettings</code> tem 4 campos globais (aluguel, assinaturas, manutenção, outros) num único registro <code>default</code>. Serve para ratear por peça, mas não guarda histórico — logo não existe “evolução de custo” nem comparação mês a mês.</dd>
+      <dt>Fazer</dt>
+      <dd>Modelo <code>FixedCostMonth</code> com <code>@@unique([month])</code>. Manter o rateio por peça lendo o mês corrente e caindo nos valores de <code>PricingSettings</code> quando o mês não foi lançado.</dd>
+      <dt>Onde</dt>
+      <dd>novo <code>src/app/costs/fixed/page.tsx</code> + rota de API</dd>
+    </dl>
+  </div>
+
+  <div class="gap p0">
+    <div class="gap-head"><h3>5. Custos variáveis como lançamento datado</h3><span class="ts">04:51 – 05:02</span></div>
+    <dl>
+      <dt>No vídeo</dt>
+      <dd>Lançamento com Data, Descrição e 8 rubricas: Filamento, Comissão, Energia de impressão, Frete, Embalagem, Perdas/Refugo, Taxas de venda, Manutenção por peça. Total somado + histórico.</dd>
+      <dt>Hoje</dt>
+      <dd>Só <code>MaterialPurchase</code>, e só para filamento (com lote e fornecedor — o que é bom). Todo o resto do custo variável real não é registrado em lugar nenhum.</dd>
+      <dt>Fazer</dt>
+      <dd>Modelo <code>VariableCostEntry</code>. Manter <code>MaterialPurchase</code> como está (ele tem mais detalhe que o vídeo) e tratá-lo como uma das fontes de custo variável na agregação.</dd>
+      <dt>Onde</dt>
+      <dd>novo <code>src/app/costs/variable/page.tsx</code> + rota de API</dd>
+    </dl>
+  </div>
+
+  <div class="gap p0">
+    <div class="gap-head"><h3>6. Fluxo de caixa</h3><span class="ts">08:20 – 08:26</span></div>
+    <dl>
+      <dt>No vídeo</dt>
+      <dd>Total Entradas, Total Saídas, Saldo Caixa Real, Contas a Receber, Projeção de Caixa (com recebimento), Capital de Giro Recuperado. Mais lançamento manual: Data, Categoria (Venda, …), Tipo (entrada/saída), Descrição, Status (realizado/previsto), Valor — e um extrato.</dd>
+      <dt>Hoje</dt>
+      <dd>Não existe.</dd>
+      <dt>Fazer</dt>
+      <dd>
+        <ul>
+          <li>Modelo <code>CashEntry</code> com <code>status</code> realizado/previsto — é o que separa saldo real de projeção.</li>
+          <li>Gerar entrada automática a cada recebimento registrado, e saída a cada custo lançado; permitir lançamento manual por cima.</li>
+        </ul>
+      </dd>
+      <dt>Onde</dt>
+      <dd>nova <code>src/app/cashflow/page.tsx</code> + rota de API</dd>
+    </dl>
+  </div>
+
+  <h2>P1 — Profissionaliza o atendimento</h2>
+  <p class="note">
+    É o que o vídeo usa como argumento de venda: “pare de mandar preço no WhatsApp”. Tudo aqui
+    é visível para o cliente, então tem retorno direto de imagem.
+  </p>
+
+  <div class="gap p1">
+    <div class="gap-head"><h3>7. Orçamento em PDF com código rastreável</h3><span class="ts">05:13 – 06:52</span></div>
+    <dl>
+      <dt>No vídeo</dt>
+      <dd>Formulário gera código automático (<code>ORC-20260512-0003</code>), botão <strong>Gerar Orçamento em PDF</strong> e depois <strong>Baixar PDF</strong>. O PDF sai com nome da marca, código, tabela cliente/data/prazo estimado, itens (produto, qtd, preço unit., desconto, total), <strong>VALOR TOTAL</strong> destacado, observações e rodapé com data de emissão e <em>“válido por 7 dias”</em>. Há aba “Orçamentos Gerados”.</dd>
+      <dt>Hoje</dt>
+      <dd>A calculadora salva um <code>Quote</code> e <code>/projects</code> lista. O botão “Gerar Relatório em PDF” é <code>window.print()</code> da página inteira — sai a interface, não um orçamento. O de WhatsApp só copia uma linha de texto para a área de transferência. Não há código, validade, nem status do orçamento.</dd>
+      <dt>Fazer</dt>
+      <dd>
+        <ul>
+          <li>Campo <code>code</code> sequencial por dia em <code>Quote</code> + <code>validUntil</code>.</li>
+          <li>Rota de impressão dedicada (<code>/quotes/[id]/print</code>) com CSS de impressão próprio, em vez de imprimir o app.</li>
+          <li>Status do orçamento: rascunho → enviado → aprovado → convertido/perdido, com botão <strong>converter em venda</strong> (o <code>Quote.order</code> já existe no schema e nunca é usado).</li>
+        </ul>
+      </dd>
+      <dt>Onde</dt>
+      <dd><code>src/app/api/quotes/route.ts</code>, <code>src/app/projects/page.tsx</code>, nova rota de impressão</dd>
+    </dl>
+  </div>
+
+  <div class="gap p1">
+    <div class="gap-head"><h3>8. Prazo calculado pelo backlog</h3><span class="ts">05:51 – 06:07</span></div>
+    <dl>
+      <dt>No vídeo</dt>
+      <dd>Painel lateral “Prazo por Backlog” em tempo real enquanto monta o orçamento: <em>Backlog atual 127,4h · Itens pedidos 20,0h · Capacidade/dia 18h · Dias calculados 8 dias · +1 dia de segurança · Prazo sugerido 11 dias</em>. O prazo final fica editável e é o que vai impresso no PDF.</dd>
+      <dt>Hoje</dt>
+      <dd>Não existe nada de capacidade. O prazo do pedido é uma data digitada à mão, sem relação com a fila.</dd>
+      <dt>Fazer</dt>
+      <dd>
+        <ul>
+          <li>Configuração de <strong>capacidade de produção por dia</strong> (horas) e margem de segurança em <code>PricingSettings</code>.</li>
+          <li>Função que soma o tempo dos jobs abertos e devolve prazo em dias — reaproveitável no orçamento, na venda e no dashboard.</li>
+        </ul>
+      </dd>
+      <dt>Onde</dt>
+      <dd><code>src/lib/</code> (novo módulo de capacidade), <code>/settings</code></dd>
+    </dl>
+  </div>
+
+  <div class="gap p1">
+    <div class="gap-head"><h3>9. Simulação em tempo real na venda</h3><span class="ts">03:19 – 03:35</span></div>
+    <dl>
+      <dt>No vídeo</dt>
+      <dd>Enquanto preenche a venda, aparecem 8 números ao vivo: Fat. Bruto, Descontos, Taxas+Frete, Fat. Líquido, Custo Total, Lucro Total (com % de margem), Lucro/Unid., <strong>Lucro/Hora</strong>, mais Tempo total de produção e 2 alertas — “Margem saudável 57,0%” e <em>“Lucro por hora baixo: para peças longas, pode não compensar a máquina parada”</em>.</dd>
+      <dt>Hoje</dt>
+      <dd>O formulário de venda pede só o total em reais. Nenhum cálculo, nenhum alerta.</dd>
+      <dt>Fazer</dt>
+      <dd>Aproveitar o cálculo que já existe em <code>/calculator</code> — extrair para <code>src/lib/costing.ts</code> (hoje ele tem uma função simples e desconectada) e reusar nas três telas. <strong>Lucro por hora é a métrica que mais importa em impressão 3D</strong> e não existe em lugar nenhum do sistema.</dd>
+      <dt>Onde</dt>
+      <dd><code>src/lib/costing.ts</code>, <code>src/app/sales/page.tsx</code></dd>
+    </dl>
+  </div>
+
+  <div class="gap p1">
+    <div class="gap-head"><h3>10. Campos de venda que faltam</h3><span class="ts">02:22 – 03:19</span></div>
+    <dl>
+      <dt>No vídeo</dt>
+      <dd>Desconto por unidade · Taxa marketplace por unidade · Frete pago pela empresa · <strong>Forma de pagamento</strong> (PIX, Cartão de Crédito…) · <strong>Data Prevista Produção</strong> e <strong>Data Prevista Recebimento</strong> separadas · Status de Produção e Status Financeiro como dois campos distintos.</dd>
+      <dt>Hoje</dt>
+      <dd>Existem <code>status</code> e <code>paymentStatus</code> (bom), mas só um <code>dueDate</code> para as duas datas, nenhuma forma de pagamento, nenhum desconto e nenhuma taxa de canal aplicada — <code>MarketplaceChannel</code> está cadastrado em <code>/settings</code> e só é usado na calculadora, nunca na venda real.</dd>
+      <dt>Fazer</dt>
+      <dd>Adicionar <code>paymentMethod</code>, <code>discountPerUnit</code>, <code>marketplaceFee</code>, <code>shippingCost</code>, <code>plannedProductionDate</code> e <code>expectedPaymentDate</code> em <code>SalesOrder</code>; trocar <code>channel</code> string por FK para <code>MarketplaceChannel</code>.</dd>
+      <dt>Onde</dt>
+      <dd><code>prisma/schema.prisma</code>, <code>src/app/api/orders/route.ts</code></dd>
+    </dl>
+  </div>
+
+  <div class="gap p1">
+    <div class="gap-head"><h3>11. Lista de vendas com busca e filtros</h3><span class="ts">03:35 – 03:41</span></div>
+    <dl>
+      <dt>No vídeo</dt>
+      <dd>“Vendas no período (28 registros)”, busca por código/cliente/produto, dois filtros (Status Produção, Status Financeiro) e tabela com Código, Data, Produto, Qtd, Preço Unit., Fat. Bruto, Custos, Lucro Líq., Canal, Cliente, Status Prod., Status Fin., Pagamento — com editar e excluir.</dd>
+      <dt>Hoje</dt>
+      <dd><code>/sales</code> mostra cards sem busca, sem filtro, sem edição e sem exclusão. Não há PUT nem DELETE sendo chamado pela UI.</dd>
+      <dt>Fazer</dt>
+      <dd>Tabela com busca e os dois filtros de status; adicionar DELETE na API de pedidos (hoje só GET/POST/PUT).</dd>
+      <dt>Onde</dt>
+      <dd><code>src/app/sales/page.tsx</code>, <code>src/app/api/orders/route.ts</code></dd>
+    </dl>
+  </div>
+
+  <div class="gap p1">
+    <div class="gap-head"><h3>12. Preço definido vs. preço sugerido no item</h3><span class="ts">01:53 – 02:14</span></div>
+    <dl>
+      <dt>No vídeo</dt>
+      <dd>Cadastro de Itens mostra 10 cards de Cálculo Automático, depois um bloco <strong>Preço de Venda Definido</strong>: você digita R$ 25,00 e ele mostra Preço Sugerido R$ 22,39, Diferença +R$ 2,61 e Margem Real 46,2%, avisando que <em>“este valor prevalecerá nas vendas e orçamentos”</em>. O código do item é sequencial com padrão (<code>PP-017</code>).</dd>
+      <dt>Hoje</dt>
+      <dd><code>/catalog</code> calcula custo e preço sugerido, mas grava um único <code>price</code> — não há distinção entre sugerido e praticado, então não existe “margem real”. O SKU é digitado, sem sequencial nem padrão configurável.</dd>
+      <dt>Fazer</dt>
+      <dd>Separar <code>suggestedPrice</code> de <code>definedPrice</code> em <code>Product</code>; gerar SKU a partir de um prefixo configurável + contador. Expor o toggle ativo/inativo (o campo <code>active</code> já existe e a UI não mostra).</dd>
+      <dt>Onde</dt>
+      <dd><code>prisma/schema.prisma</code>, <code>src/app/catalog/page.tsx</code></dd>
+    </dl>
+  </div>
+
+  <div class="gap p1">
+    <div class="gap-head"><h3>13. Cadastro de clientes</h3><span class="ts">02:37</span></div>
+    <dl>
+      <dt>No vídeo</dt>
+      <dd>Nome do cliente é texto livre no formulário de venda (o apresentador diz que dá para deixar automático).</dd>
+      <dt>Hoje</dt>
+      <dd>Aqui o Mínima 3D é <em>melhor</em> — tem modelo <code>Customer</code> e API <code>/api/customers</code>. O problema é que <strong>não existe tela para cadastrar cliente</strong>: o select em <code>/sales</code> lista clientes que nunca podem ser criados pela interface.</dd>
+      <dt>Fazer</dt>
+      <dd>Página de clientes (ou criação inline no select da venda) + histórico de pedidos por cliente. Isso já é CRM de verdade e o vídeo não tem.</dd>
+      <dt>Onde</dt>
+      <dd>nova <code>src/app/customers/page.tsx</code></dd>
+    </dl>
+  </div>
+
+  <h2>P2 — Camada analítica</h2>
+
+  <div class="gap p2">
+    <div class="gap-head"><h3>14. Página de Análise Automática</h3><span class="ts">08:26 – 08:44</span></div>
+    <dl>
+      <dt>No vídeo</dt>
+      <dd>Ranking de Produtos (barras empilhadas lucro × custo), <strong>Mapa de Lucro por Produto</strong> (treemap colorido por margem %), <strong>Produtos com baixa margem (&lt;15%)</strong> com sugestão de ação escrita, <strong>Top 3 Produtos Mais Lucrativos</strong> e uma seção “Fórmulas Financeiras Utilizadas”.</dd>
+      <dt>Hoje</dt>
+      <dd>Não existe.</dd>
+      <dt>Fazer</dt>
+      <dd>Depende de venda-com-custo (item 1). A seção de fórmulas é barata e vale muito: documenta o cálculo para você mesmo conferir.</dd>
+    </dl>
+  </div>
+
+  <div class="gap p2">
+    <div class="gap-head"><h3>15. Investimentos, depreciação e payback</h3><span class="ts">05:03 – 05:12</span></div>
+    <dl>
+      <dt>No vídeo</dt>
+      <dd>Data, Categoria (Impressora 3D, ferramenta, material de pintura…), Descrição, Valor, <strong>Vida útil estimada em meses</strong> → mostra <strong>Depreciação mensal</strong> calculada. No dashboard isso vira <em>“payback excelente: em 10 meses recupero todo o valor investido”</em>.</dd>
+      <dt>Hoje</dt>
+      <dd>A calculadora já deprecia a impressora <em>por hora</em> (<code>purchasePrice / usefulLifeHours</code>), o que é mais preciso que o vídeo para precificar. Mas não há registro de investimentos além de impressoras, nem depreciação mensal, nem payback.</dd>
+      <dt>Fazer</dt>
+      <dd>Modelo <code>Investment</code> + cálculo de payback no dashboard. Manter a depreciação por hora para precificar.</dd>
+    </dl>
+  </div>
+
+  <div class="gap p2">
+    <div class="gap-head"><h3>16. Filtro global de período</h3><span class="ts">visível em todos os frames</span></div>
+    <dl>
+      <dt>No vídeo</dt>
+      <dd>Sidebar tem “Filtros Globais” com De/Até; o dashboard exibe <em>“Período: 01/11/2024 a 12/05/2026 · Canal: Todos”</em>. Todas as telas respeitam o recorte.</dd>
+      <dt>Hoje</dt>
+      <dd>Não existe. Cada página busca tudo.</dd>
+      <dt>Fazer</dt>
+      <dd>Decidir cedo — período global muda a assinatura de quase toda API de leitura. Mais barato fazer junto com o dashboard do que depois.</dd>
+    </dl>
+  </div>
+
+  <div class="gap p2">
+    <div class="gap-head"><h3>17. Exportação Excel</h3><span class="ts">01:21 e menu lateral</span></div>
+    <dl>
+      <dt>No vídeo</dt>
+      <dd>Item de menu próprio “Exportar Excel”, e a calculadora tem “Exportar Orçamento Excel”.</dd>
+      <dt>Hoje</dt>
+      <dd>Não existe.</dd>
+      <dt>Fazer</dt>
+      <dd>CSV com BOM UTF-8 resolve 90% do caso e abre direto no Excel em pt-BR — não precisa de biblioteca de xlsx para começar.</dd>
+    </dl>
+  </div>
+
+  <h2>Ajustes no que já existe</h2>
+  <p class="note">Coisas que estão no ar e funcionam errado, pela metade, ou em contradição com o resto do sistema.</p>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Onde</th><th>Problema</th><th>Ajuste</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Duas calculadoras</td>
+          <td><code>/</code> e <code>/calculator</code> são duas telas de precificação diferentes, com visuais incompatíveis (uma Tailwind escura, outra serif clara) e cálculos separados.</td>
+          <td>Escolher uma. O vídeo tem uma só. Sugestão: <code>/</code> passa a ser o dashboard e a precificação fica só em <code>/calculator</code>.</td>
+        </tr>
+        <tr>
+          <td>“Gerar Relatório em PDF”</td>
+          <td>É <code>window.print()</code> da tela inteira — imprime a interface do app.</td>
+          <td>Rota de impressão dedicada com layout de documento.</td>
+        </tr>
+        <tr>
+          <td>Botão WhatsApp</td>
+          <td>Só copia <code>"nome: preço | custo"</code> para a área de transferência — inclusive o <em>custo</em>, que o cliente não deveria ver.</td>
+          <td>Link <code>wa.me</code> com mensagem formatada, sem custo interno.</td>
+        </tr>
+        <tr>
+          <td>Código do pedido</td>
+          <td><code>PED-20260914-4821</code> usa <code>Math.random()</code> — pode colidir e não é sequencial.</td>
+          <td>Contador por dia, como o <code>#31</code> / <code>VEN-...-0031</code> do vídeo.</td>
+        </tr>
+        <tr>
+          <td>Quantidade na calculadora</td>
+          <td>Não existe quantidade de pedido; <code>quantities</code> é só de insumos. Só sai preço unitário.</td>
+          <td>Campo quantidade + separar “unitário” de “total do pedido” nos resultados, como o vídeo.</td>
+        </tr>
+        <tr>
+          <td>Preço atacado</td>
+          <td>Card “PREÇO ATACADO” é <code>preço × 0,85</code> fixo no código.</td>
+          <td>Ou vira regra configurável, ou sai da tela.</td>
+        </tr>
+        <tr>
+          <td><code>Quote.order</code></td>
+          <td>A relação orçamento→pedido existe no schema e nunca é usada.</td>
+          <td>Implementar a conversão (item 7).</td>
+        </tr>
+        <tr>
+          <td>E-mail no topo</td>
+          <td><code>silaratur@gmail.com</code> está escrito na mão no <code>AdminHeader</code>.</td>
+          <td>Ler da sessão — a API <code>/api/login</code> já emite o JWT com o e-mail.</td>
+        </tr>
+        <tr>
+          <td>Autenticação das páginas</td>
+          <td>As APIs exigem login, mas as páginas não: sem sessão elas carregam vazias sem explicar o motivo (só <code>/production</code> avisa).</td>
+          <td>Middleware ou guarda comum de sessão.</td>
+        </tr>
+        <tr>
+          <td><code>npm run lint</code></td>
+          <td>Falha em todas as páginas com <code>react-hooks/set-state-in-effect</code>.</td>
+          <td>Padronizar o carregamento de dados antes que a base cresça mais.</td>
+        </tr>
+        <tr>
+          <td>Migrations</td>
+          <td>O banco é mantido com <code>prisma db push</code>, sem migrations. Com as mudanças de schema abaixo, isso passa a ser risco real de perda de dados.</td>
+          <td>Criar o baseline de migrations antes de começar o P0.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Mudanças de schema consolidadas</h2>
+  <p class="note">Tudo que os itens acima pedem em <code>prisma/schema.prisma</code>, junto, para planejar uma migration só.</p>
+
+  <pre><code>// --- alterações em modelos existentes ---
+model SalesOrder {
+  productId             String?   // liga a venda ao catálogo   (item 1)
+  product               Product?  @relation(...)
+  unitPrice             Float     // preço praticado congelado  (item 1)
+  unitCostSnapshot      Float     // custo do item na data      (item 1)
+  discountPerUnit       Float     @default(0)                // (item 10)
+  marketplaceFee        Float     @default(0)                // (item 10)
+  shippingCost          Float     @default(0)                // (item 10)
+  paymentMethod         String    @default("PIX")            // (item 10)
+  plannedProductionDate DateTime?                            // (item 10)
+  expectedPaymentDate   DateTime?                            // (item 10)
+  channelId             String?   // FK em vez de string      (item 10)
+  payments              Payment[]                            // (item 2)
+}
+
+model Product {
+  suggestedPrice Float   // calculado                          (item 12)
+  definedPrice   Float?  // o que prevalece em venda/orçamento (item 12)
+}
+
+model Quote {
+  code       String    @unique  // ORC-AAAAMMDD-0001           (item 7)
+  validUntil DateTime?                                       // (item 7)
+  // status já existe: usar DRAFT/SENT/APPROVED/CONVERTED/LOST
+}
+
+model PricingSettings {
+  dailyCapacityHours Float @default(18)  // prazo por backlog   (item 8)
+  safetyMarginDays   Int   @default(1)                       // (item 8)
+  skuPrefix          String @default("PP")                   // (item 12)
+  companyName        String @default("")   // cabeçalho do PDF  (item 7)
+  quoteFooter        String @default("")                     // (item 7)
+  quoteValidityDays  Int    @default(7)                      // (item 7)
+}
+
+// --- modelos novos ---
+model Payment          { id, orderId, date, amount, method, notes }        // item 2
+model FixedCostMonth   { id, month @unique, rent, software, accounting,
+                         internet, maintenance, marketing, energy,
+                         subscriptions, other }                           // item 4
+model VariableCostEntry{ id, date, description, filament, commission,
+                         energy, shipping, packaging, waste, salesFee,
+                         maintenance }                                     // item 5
+model CashEntry        { id, date, category, type, description,
+                         status, amount, orderId? }                        // item 6
+model Investment       { id, date, category, description, amount,
+                         usefulLifeMonths }                                // item 15</code></pre>
+
+  <h2>Ordem sugerida</h2>
+
+  <div class="phase">
+    <p class="when">Fase 1 · fundação</p>
+    <h3>Tornar a venda calculável</h3>
+    <ol>
+      <li>Criar o baseline de migrations (hoje é só <code>db push</code>).</li>
+      <li>Ligar <code>SalesOrder</code> ao <code>Product</code> com snapshot de custo.</li>
+      <li>Campos que faltam na venda: desconto, taxa de canal, frete, forma de pagamento, as duas datas.</li>
+      <li>Unificar o cálculo em <code>src/lib/costing.ts</code> e reusar em calculadora, catálogo e venda.</li>
+    </ol>
+  </div>
+
+  <div class="phase">
+    <p class="when">Fase 2 · o ciclo fecha</p>
+    <h3>Recebimento e caixa</h3>
+    <ol>
+      <li><code>Payment</code> + aba Financeiro nas pendências, com recebimento parcial.</li>
+      <li>Custos fixos por mês e custos variáveis como lançamento.</li>
+      <li><code>CashEntry</code> alimentado automaticamente por recebimentos e custos.</li>
+    </ol>
+  </div>
+
+  <div class="phase">
+    <p class="when">Fase 3 · visão</p>
+    <h3>Dashboard</h3>
+    <ol>
+      <li>Filtro global de período (decidir aqui, não depois).</li>
+      <li>Endpoint agregador e os 12 indicadores.</li>
+      <li>Gráficos, na ordem: faturamento/lucro mensal → margem por produto → canais → fluxo de caixa.</li>
+      <li>Alertas automáticos e score de saúde.</li>
+    </ol>
+  </div>
+
+  <div class="phase">
+    <p class="when">Fase 4 · cliente vê</p>
+    <h3>Orçamento profissional</h3>
+    <ol>
+      <li>Código rastreável, validade e status do orçamento.</li>
+      <li>Prazo calculado pelo backlog + capacidade diária.</li>
+      <li>PDF em rota própria e conversão orçamento → venda.</li>
+      <li>Cadastro de clientes com histórico.</li>
+    </ol>
+  </div>
+
+  <div class="phase">
+    <p class="when">Fase 5 · refino</p>
+    <h3>Análise e exportação</h3>
+    <ol>
+      <li>Página de Análise Automática (ranking, treemap, margem baixa, top 3).</li>
+      <li>Investimentos, depreciação mensal e payback.</li>
+      <li>Exportação CSV/Excel.</li>
+    </ol>
+  </div>
+
+  <h2>O que o Mínima 3D já faz melhor</h2>
+
+  <div class="keep">
+    <ul>
+      <li><strong>Modelo de custo mais completo.</strong> A calculadora já considera depreciação da impressora por hora, manutenção por hora, mão de obra de preparo e limpeza separadas do tempo de impressão, rateio de custo fixo por peça e reserva para perdas. O vídeo não mostra esse nível.</li>
+      <li><strong>Biblioteca de presets.</strong> Filamentos com marca, cor, estoque em gramas, data e link da compra; impressoras com vida útil; insumos por categoria. O vídeo trabalha com um custo de kg global nas configurações.</li>
+      <li><strong>Histórico de compra de material</strong> com fornecedor e lote (<code>MaterialPurchase</code>) — rastreabilidade que o vídeo não tem.</li>
+      <li><strong>Lista de materiais por produto</strong> (<code>ProductMaterial</code> e <code>ProductSupply</code>): produto multi-material com gramatura por material. No vídeo cada item tem um único filamento.</li>
+      <li><strong>Preços de concorrência</strong> (<code>CompetitorPrice</code>) — não existe no vídeo e é um diferencial real de precificação.</li>
+      <li><strong>Cadastro de clientes</strong> no modelo de dados, com pedidos relacionados. Falta só a tela.</li>
+    </ul>
+    <p class="note" style="margin-top:16px">
+      Ou seja: o Mínima 3D é melhor em <em>precificar uma peça</em> e o do vídeo é melhor em
+      <em>gerir o negócio</em>. O trabalho é ligar um no outro — não recomeçar.
+    </p>
+  </div>
+
+  <h2>Ressalvas desta análise</h2>
+
+  <div class="caveat">
+    <ul>
+      <li>O YouTube só liberou o vídeo em 360p aqui (as faixas HD exigem token de navegador). Números pequenos e rótulos de campo em alguns frames ficaram ilegíveis; o que está afirmado acima vem da legenda ou de texto que deu para ler.</li>
+      <li>As telas <strong>Configurações</strong> e <strong>Exportar Excel</strong> aparecem no menu do vídeo mas nunca são abertas — o conteúdo delas é inferência a partir dos campos que as outras telas consomem.</li>
+      <li>O vídeo é material de divulgação: “análises automáticas com inteligência artificial” (07:01) provavelmente descreve regras de negócio e thresholds, não um modelo. As sugestões acima assumem regras.</li>
+      <li>Não há como saber pelo vídeo como o sistema do PrimePrint 3D trata multiusuário, backup ou permissões.</li>
+    </ul>
+  </div>
+
+</div>

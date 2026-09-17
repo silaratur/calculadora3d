@@ -1,0 +1,342 @@
+[00:00] Eu tenho pelo menos 15 anos em experiência em produção e de modo geral
+[00:04] experiência em produção e de modo geral consegui aplicar algumas coisas e
+[00:05] consegui aplicar algumas coisas e algumas ferramentas para controlar
+[00:07] algumas ferramentas para controlar melhor minha produtividade e toda a
+[00:09] melhor minha produtividade e toda a minha empresa de modo geral. E aí eu te
+[00:10] minha empresa de modo geral. E aí eu te pergunto, hoje você faz a gestão em
+[00:12] pergunto, hoje você faz a gestão em planilhas, igual lá em 2016, 17, ou você
+[00:16] planilhas, igual lá em 2016, 17, ou você já tem um sistema rodando? Se você ainda
+[00:18] já tem um sistema rodando? Se você ainda não tem um sistema, fica aqui que eu vou
+[00:19] não tem um sistema, fica aqui que eu vou apresentar para vocês agora algo
+[00:20] apresentar para vocês agora algo inovador que a nossa empresa desenvolveu
+[00:22] inovador que a nossa empresa desenvolveu para melhorar nosso fluxo, todo o nosso
+[00:24] para melhorar nosso fluxo, todo o nosso controle financeiro. Fica aí que você
+[00:25] controle financeiro. Fica aí que você vai gostar. E agora vamos pra primeira
+[00:27] vai gostar. E agora vamos pra primeira função que é a calculadora de
+[00:28] função que é a calculadora de precificação rápida. Uma ferramenta
+[00:29] precificação rápida. Uma ferramenta muito prática, só pr você entender a
+[00:30] muito prática, só pr você entender a margem e os gastos que você vai ter com
+[00:32] margem e os gastos que você vai ter com aquela peça. Vamos pegar um exemplo
+[00:33] aquela peça. Vamos pegar um exemplo prático aqui. Eu deixei aberto um feed
+[00:34] prático aqui. Eu deixei aberto um feed de estrela, uma peça bem tranquila de
+[00:36] de estrela, uma peça bem tranquila de fazer, 1,7 horas e apenas 87 g de
+[00:39] fazer, 1,7 horas e apenas 87 g de filamento. Aqui no sistema podemos
+[00:40] filamento. Aqui no sistema podemos colocar 1,7 horas, que foi a informação
+[00:42] colocar 1,7 horas, que foi a informação que a gente pegou, e 87 g de filamento.
+[00:46] que a gente pegou, e 87 g de filamento. E é um, eu não preciso colocar o nome,
+[00:47] E é um, eu não preciso colocar o nome, né, porque não é um cadastro, mas é um
+[00:48] né, porque não é um cadastro, mas é um fidget estrela, também tem um espaço, se
+[00:50] fidget estrela, também tem um espaço, se quiser aqui, quantidade, se por acaso
+[00:52] quiser aqui, quantidade, se por acaso você quiser fazer um kit disso ou algo
+[00:53] você quiser fazer um kit disso ou algo do tipo, qual a perda que você costuma
+[00:55] do tipo, qual a perda que você costuma ter no seu processo, desconto por
+[00:56] ter no seu processo, desconto por unidade, todos os dados de maneira bem
+[00:58] unidade, todos os dados de maneira bem prática, se caso você quiser ajustar,
+[00:59] prática, se caso você quiser ajustar, mas são dos padrões de configuração. Pós
+[01:01] mas são dos padrões de configuração. Pós preenchimento, o sistema já nos dá os
+[01:02] preenchimento, o sistema já nos dá os resultados de cálculo, então custo de
+[01:04] resultados de cálculo, então custo de filamento e todos os custos geral, qual
+[01:06] filamento e todos os custos geral, qual o custo unitário dessa peça. E ele já
+[01:07] o custo unitário dessa peça. E ele já calcula para você também qual o valor
+[01:09] calcula para você também qual o valor sugerido cada unidade produzida e faz
+[01:11] sugerido cada unidade produzida e faz uma análise automática se a margem tá
+[01:12] uma análise automática se a margem tá saudável e também se faz sentido você
+[01:14] saudável e também se faz sentido você produzir esse item aqui. você já
+[01:15] produzir esse item aqui. você já consegue salvar ele como item para ele
+[01:17] consegue salvar ele como item para ele existir dentro da sua empresa, como de
+[01:18] existir dentro da sua empresa, como de fato um produto, registrar uma venda ou
+[01:20] fato um produto, registrar uma venda ou limpar todos os campos para fazer
+[01:21] limpar todos os campos para fazer novamente ou exportar isso em Excel. A
+[01:23] novamente ou exportar isso em Excel. A segunda ferramenta de cadastro de itens,
+[01:25] segunda ferramenta de cadastro de itens, ela é responsável por fazer os itens
+[01:26] ela é responsável por fazer os itens nascer de fato dentro da sua empresa.
+[01:28] nascer de fato dentro da sua empresa. Então vamos usar o mesmo exemplo que é o
+[01:29] Então vamos usar o mesmo exemplo que é o feed estrela. Para controle de todos os
+[01:31] feed estrela. Para controle de todos os produtos que eu tenho, eu uso um código
+[01:33] produtos que eu tenho, eu uso um código para esses itens. Então no caso é sempre
+[01:35] para esses itens. Então no caso é sempre PP por padrão que eu criei, seguido de
+[01:37] PP por padrão que eu criei, seguido de três números. São 0 17 é o número
+[01:39] três números. São 0 17 é o número sequencial que eu tô agora. A categoria,
+[01:40] sequencial que eu tô agora. A categoria, que vou colocar aqui como brinquedo, o
+[01:42] que vou colocar aqui como brinquedo, o nome que é um widget estrela, ele consta
+[01:45] nome que é um widget estrela, ele consta como ativo. Tempo de impressão a gente
+[01:46] como ativo. Tempo de impressão a gente já viu que é 1,7 horas, filamento 87 g.
+[01:49] já viu que é 1,7 horas, filamento 87 g. Não vou mexer em nenhum desses itens e
+[01:50] Não vou mexer em nenhum desses itens e vou deixar sem taxa de marketplace por
+[01:52] vou deixar sem taxa de marketplace por enquanto. Sistema já calcula pra gente
+[01:53] enquanto. Sistema já calcula pra gente também todos os gastos, igual foi no
+[01:55] também todos os gastos, igual foi no preço anterior, te fala, preço sugerido
+[01:56] preço anterior, te fala, preço sugerido nesse item é 22.39. Eu vou alterar e vou
+[01:59] nesse item é 22.39. Eu vou alterar e vou colocar ele como R$ 25. Ele fala que o
+[02:01] colocar ele como R$ 25. Ele fala que o preço definido R$ 25, ele vai prevalecer
+[02:03] preço definido R$ 25, ele vai prevalecer para tudo que você fizer dentro do seu
+[02:04] para tudo que você fizer dentro do seu sistema. Então ele fala a diferença
+[02:06] sistema. Então ele fala a diferença versus o preço sugerido e a e a margem
+[02:08] versus o preço sugerido e a e a margem real deste produto. Então a gente
+[02:09] real deste produto. Então a gente cadastra ele e aqui você consegue ver
+[02:11] cadastra ele e aqui você consegue ver todos os itens que você tem, todas as
+[02:12] todos os itens que você tem, todas as margens e controlar bem os produtos que
+[02:14] margens e controlar bem os produtos que você tem disponível na sua loja. A
+[02:16] você tem disponível na sua loja. A próxima aba é de vendas. Então você
+[02:17] próxima aba é de vendas. Então você controla todas as suas vendas por todos
+[02:19] controla todas as suas vendas por todos os canais para você conseguir entender a
+[02:21] os canais para você conseguir entender a saúde financeira da sua empresa. Então
+[02:23] saúde financeira da sua empresa. Então aqui eu vou simular uma venda se a gente
+[02:24] aqui eu vou simular uma venda se a gente tivesse vendido aquele fidget que
+[02:25] tivesse vendido aquele fidget que estamos usando como exemplo. Então hoje
+[02:27] estamos usando como exemplo. Então hoje no dia 12 o produto Fidget estrela,
+[02:29] no dia 12 o produto Fidget estrela, vamos ver se a gente acha aqui. Fidget
+[02:31] vamos ver se a gente acha aqui. Fidget estrela, que custa R$ 25. Aqui eu
+[02:34] estrela, que custa R$ 25. Aqui eu prefiro deixar para preencher, mas
+[02:35] prefiro deixar para preencher, mas também tem como deixar isso automático.
+[02:37] também tem como deixar isso automático. O nome do cliente é o Prime Print Test,
+[02:40] O nome do cliente é o Prime Print Test, ele que tá comprando da gente. Ele vai
+[02:41] ele que tá comprando da gente. Ele vai comprar 12 itens. Ele vai comprar 12
+[02:43] comprar 12 itens. Ele vai comprar 12 itens desse feed estrela. Eu vou dar um
+[02:45] itens desse feed estrela. Eu vou dar um desconto para ele de R$ 1 por unidade
+[02:47] desconto para ele de R$ 1 por unidade pela quantidade. Como foi uma venda
+[02:48] pela quantidade. Como foi uma venda direta, não tem taxa de marketplace. O
+[02:49] direta, não tem taxa de marketplace. O frete também não. O canal foi loja
+[02:51] frete também não. O canal foi loja física, ele buscou diretamente na minha
+[02:52] física, ele buscou diretamente na minha loja. Todos os dados calculados de
+[02:53] loja. Todos os dados calculados de maneira padrão, tanto tempo de impressão
+[02:55] maneira padrão, tanto tempo de impressão e tudo mais. E aqui começa de aqui de
+[02:56] e tudo mais. E aqui começa de aqui de fato vocês vão ver como isso começa a
+[02:58] fato vocês vão ver como isso começa a consolidar você mesmo como uma empresa e
+[03:00] consolidar você mesmo como uma empresa e diferenciar dos seus concorrentes. Nesse
+[03:01] diferenciar dos seus concorrentes. Nesse ponto de status e data, você consegue
+[03:02] ponto de status e data, você consegue colocar o status de produção. Então no
+[03:04] colocar o status de produção. Então no meu caso, eu ainda não produzi esse
+[03:05] meu caso, eu ainda não produzi esse item. O status financeiro, eu também não
+[03:07] item. O status financeiro, eu também não recebi esse item. Qual a forma de
+[03:09] recebi esse item. Qual a forma de pagamento que meu cliente pretende usar?
+[03:10] pagamento que meu cliente pretende usar? Aqui você consegue alterar. Vou manter
+[03:12] Aqui você consegue alterar. Vou manter como Pix. E eu vou colocar aqui que essa
+[03:13] como Pix. E eu vou colocar aqui que essa produção eu quero iniciar ela hoje. E a
+[03:15] produção eu quero iniciar ela hoje. E a previsão de recebimento meu cliente só
+[03:16] previsão de recebimento meu cliente só vai vir buscar na segunda-feira. Então
+[03:18] vai vir buscar na segunda-feira. Então eu vou receber esse valor só na
+[03:19] eu vou receber esse valor só na segunda-feira. Isso é importante também
+[03:20] segunda-feira. Isso é importante também para ajustar o seu fluxo de caixa. A
+[03:21] para ajustar o seu fluxo de caixa. A simulação em tempo real. Então ele vai
+[03:22] simulação em tempo real. Então ele vai falar o faturamento bruto, o custo
+[03:24] falar o faturamento bruto, o custo total. Ele te dá todos os dados com base
+[03:25] total. Ele te dá todos os dados com base nessa venda que você tá fazendo, beleza?
+[03:27] nessa venda que você tá fazendo, beleza? Aqui ele diz o quanto vai ocupar da sua
+[03:29] Aqui ele diz o quanto vai ocupar da sua produção, a margem, se está saudável ou
+[03:31] produção, a margem, se está saudável ou não e o lucro por hora, nesse caso não
+[03:32] não e o lucro por hora, nesse caso não está tão bom, mas ainda assim é uma
+[03:34] está tão bom, mas ainda assim é uma venda OK. E a gente vai aqui em salvar
+[03:35] venda OK. E a gente vai aqui em salvar vendas. Após salvar a venda, ela também
+[03:37] vendas. Após salvar a venda, ela também aqui também tem um campo para você
+[03:38] aqui também tem um campo para você conseguir editar ou ver a lista das suas
+[03:40] conseguir editar ou ver a lista das suas vendas de modo geral. E aqui saindo um
+[03:41] vendas de modo geral. E aqui saindo um pouquinho da parte de vendas, indo pra
+[03:42] pouquinho da parte de vendas, indo pra parte de produção, você consegue
+[03:44] parte de produção, você consegue enxergar as suas pendências. Aqui no
+[03:45] enxergar as suas pendências. Aqui no campo de pendências, ele vai te falar
+[03:47] campo de pendências, ele vai te falar quantos pedidos você tem pendente, qual
+[03:48] quantos pedidos você tem pendente, qual tempo estimado para zerar o seu backlog
+[03:50] tempo estimado para zerar o seu backlog de produção, quantas peças faltam
+[03:52] de produção, quantas peças faltam produzir. Então vou abrir aqui aquele
+[03:53] produzir. Então vou abrir aqui aquele exemplo que a gente deu que é o fidget
+[03:55] exemplo que a gente deu que é o fidget estrela. Então ele já indica pra gente
+[03:57] estrela. Então ele já indica pra gente que é a venda número 31, fed de estrela,
+[03:58] que é a venda número 31, fed de estrela, quem é o cliente, data e se falta
+[04:00] quem é o cliente, data e se falta produzir. A quantidade são 12 itens, o
+[04:01] produzir. A quantidade são 12 itens, o tempo estimado é de 20 horas no total, a
+[04:03] tempo estimado é de 20 horas no total, a data prevista para iniciar a produção é
+[04:05] data prevista para iniciar a produção é dia 12 e falta produzir ainda. Agora eu
+[04:07] dia 12 e falta produzir ainda. Agora eu vou simular que nós acabamos a produção
+[04:09] vou simular que nós acabamos a produção dele. Eu venho aqui em marcar como
+[04:10] dele. Eu venho aqui em marcar como produzido. Ele já calcula as horas da
+[04:13] produzido. Ele já calcula as horas da minha produção, ajustando a quantidade
+[04:14] minha produção, ajustando a quantidade que eu tenho de BK. Até na aba de
+[04:15] que eu tenho de BK. Até na aba de pendências também temos o financeiro e
+[04:17] pendências também temos o financeiro e aqui diz o total que a gente tem para
+[04:18] aqui diz o total que a gente tem para receber ainda dos nossos clientes e
+[04:20] receber ainda dos nossos clientes e quantos pedidos pendentes. Para esse
+[04:21] quantos pedidos pendentes. Para esse caso, vamos lá no nosso exemplo
+[04:22] caso, vamos lá no nosso exemplo novamente. Pedia de estrela e aqui o
+[04:24] novamente. Pedia de estrela e aqui o valor a receber. Então tem todos os
+[04:26] valor a receber. Então tem todos os dados importantes. Você consegue colocar
+[04:28] dados importantes. Você consegue colocar o valor a receber parcial, se for o
+[04:30] o valor a receber parcial, se for o caso, mas aqui eu vou registrar o
+[04:31] caso, mas aqui eu vou registrar o recebimento integral desse valor. Então
+[04:33] recebimento integral desse valor. Então aqui a gente tem um total para receber
+[04:34] aqui a gente tem um total para receber R$600. Registrando esse valor, ele já
+[04:37] R$600. Registrando esse valor, ele já abate no que a gente tem para receber.
+[04:38] abate no que a gente tem para receber. Isso aqui é excelente para você parar de
+[04:40] Isso aqui é excelente para você parar de controlar com planilha e de fato
+[04:41] controlar com planilha e de fato conseguir entender o que você tem de
+[04:43] conseguir entender o que você tem de fluxo de caixa para receber. E se você
+[04:45] fluxo de caixa para receber. E se você tá gostando desse vídeo, não esquece de
+[04:46] tá gostando desse vídeo, não esquece de se inscrever no canal. O próximo passo,
+[04:47] se inscrever no canal. O próximo passo, que é bem importante, são os custos.
+[04:49] que é bem importante, são os custos. Então, todos os seus custos fixos devem
+[04:51] Então, todos os seus custos fixos devem estar registrados na sua empresa. Todos
+[04:53] estar registrados na sua empresa. Todos os seus custos variáveis, que no caso
+[04:55] os seus custos variáveis, que no caso são custo de filamento, compra de
+[04:57] são custo de filamento, compra de material, tudo que você tem de custo
+[04:59] material, tudo que você tem de custo variável, tá registrado aqui também pro
+[05:00] variável, tá registrado aqui também pro sistema calcular, te entregar o melhor
+[05:02] sistema calcular, te entregar o melhor resultado possível do seu status
+[05:03] resultado possível do seu status financeiro atual de empresa. Aqui você
+[05:05] financeiro atual de empresa. Aqui você imputa seus investimentos, no caso,
+[05:07] imputa seus investimentos, no caso, compra de alguma nova impressora, compra
+[05:09] compra de alguma nova impressora, compra de ferramenta, compra de material para
+[05:10] de ferramenta, compra de material para pintura, tudo que você investiu na sua
+[05:11] pintura, tudo que você investiu na sua empresa. Antes de ir pro dashboard e a
+[05:13] empresa. Antes de ir pro dashboard e a gente conseguir ver os números de fato,
+[05:15] gente conseguir ver os números de fato, tem mais uma funcionalidade muito bacana
+[05:17] tem mais uma funcionalidade muito bacana que é de orçamento. Então, quando o
+[05:18] que é de orçamento. Então, quando o cliente pede um orçamento para você,
+[05:19] cliente pede um orçamento para você, você não precisa mais ficar mandando no
+[05:21] você não precisa mais ficar mandando no WhatsApp: "Ah, ficou tanto" e tal. Isso
+[05:23] WhatsApp: "Ah, ficou tanto" e tal. Isso aqui é profissional e ajustado de acordo
+[05:25] aqui é profissional e ajustado de acordo com a sua empresa. Então aqui eu vou
+[05:26] com a sua empresa. Então aqui eu vou simular que o nosso cliente Prime Print
+[05:28] simular que o nosso cliente Prime Print novamente, Prime Print teste, ele pediu
+[05:31] novamente, Prime Print teste, ele pediu um orçamento daquele fidget que estamos
+[05:32] um orçamento daquele fidget que estamos usando como exemplo. Foi no dia de hoje.
+[05:34] usando como exemplo. Foi no dia de hoje. O produto é o fidget estrela, ele quer
+[05:36] O produto é o fidget estrela, ele quer saber 15 desse produto. Eu vou dar um
+[05:38] saber 15 desse produto. Eu vou dar um desconto de R$ 2 por cada especificação.
+[05:41] desconto de R$ 2 por cada especificação. Vou colocar uma observação só pra gente
+[05:42] Vou colocar uma observação só pra gente ver como é que vai ficar no relatório
+[05:44] ver como é que vai ficar no relatório final. desconto devido quantidade. E
+[05:46] final. desconto devido quantidade. E aqui ele fala o preço unitário. É 25
+[05:48] aqui ele fala o preço unitário. É 25 meses que você vai vender? Vai ser a 25
+[05:50] meses que você vai vender? Vai ser a 25 meses e aplica o desconto. Dado todas
+[05:51] meses e aplica o desconto. Dado todas essas informações, o sistema já vai nos
+[05:53] essas informações, o sistema já vai nos dizer qual o nosso backlog atual. Se a
+[05:55] dizer qual o nosso backlog atual. Se a gente conseguir concluir esse orçamento
+[05:56] gente conseguir concluir esse orçamento e transformar ele em venda, o quanto de
+[05:58] e transformar ele em venda, o quanto de tempo de produção vai aumentar a nossa
+[05:59] tempo de produção vai aumentar a nossa capacidade de produção por dia, os dias
+[06:01] capacidade de produção por dia, os dias calculados para executar esse pedido, um
+[06:03] calculados para executar esse pedido, um dia de margem de segurança e o prazo
+[06:05] dia de margem de segurança e o prazo sugerido para esse pedido para passar
+[06:07] sugerido para esse pedido para passar pro cliente. Mas não é isso que você vai
+[06:08] pro cliente. Mas não é isso que você vai enviar para ele. Você vai aqui em gerar
+[06:09] enviar para ele. Você vai aqui em gerar orçamento, o sistema gera para você um
+[06:11] orçamento, o sistema gera para você um código rastreável automaticamente. Para
+[06:14] código rastreável automaticamente. Para aquele cliente que pediu orçamento,
+[06:15] aquele cliente que pediu orçamento, demorou 20 dias e fala para você: "Oh,
+[06:17] demorou 20 dias e fala para você: "Oh, lembra daquele orçamento que eu te pedi
+[06:18] lembra daquele orçamento que eu te pedi lá?" "Eu vou fechar aí. Você tá, mas que
+[06:20] lá?" "Eu vou fechar aí. Você tá, mas que orçamento que é esse?" esse problema não
+[06:22] orçamento que é esse?" esse problema não vai ter mais, porque você vai ter um
+[06:23] vai ter mais, porque você vai ter um código para conseguir controlar e
+[06:24] código para conseguir controlar e rastrear esses orçamentos. Depois disso,
+[06:26] rastrear esses orçamentos. Depois disso, você baixa ele e aí você consegue
+[06:28] você baixa ele e aí você consegue encontrar ele aqui na sua aba de
+[06:29] encontrar ele aqui na sua aba de downloads e ele já vem completo para
+[06:32] downloads e ele já vem completo para você com todas as informações, pronto
+[06:33] você com todas as informações, pronto para só enviar pro seu cliente. No meu
+[06:35] para só enviar pro seu cliente. No meu caso, eu deixo o nome da marca e aqui
+[06:36] caso, eu deixo o nome da marca e aqui tem todos os dados, o nome do cliente, o
+[06:38] tem todos os dados, o nome do cliente, o data de orçamento, quantos dias
+[06:39] data de orçamento, quantos dias estimados de acordo com a nossa produção
+[06:41] estimados de acordo com a nossa produção e com todo o nosso cadastro, qual o nome
+[06:43] e com todo o nosso cadastro, qual o nome do produto, quantidade, preço unitário,
+[06:44] do produto, quantidade, preço unitário, qual o desconto, o valor total que esse
+[06:46] qual o desconto, o valor total que esse cliente tem que pagar, a observação que
+[06:48] cliente tem que pagar, a observação que você quer colocar e aqui também um
+[06:49] você quer colocar e aqui também um rodapé indicando os dados que você quer
+[06:51] rodapé indicando os dados que você quer passar pro seu cliente. Isso aqui é top,
+[06:52] passar pro seu cliente. Isso aqui é top, né? falar a verdade, voltando pro
+[06:54] né? falar a verdade, voltando pro sistema, ele é na parte que todo mundo
+[06:55] sistema, ele é na parte que todo mundo deve estar curioso para ver, que é o
+[06:57] deve estar curioso para ver, que é o dashboard financeiro da sua empresa.
+[06:58] dashboard financeiro da sua empresa. Então, aqui é a nossa saúde financeira
+[07:00] Então, aqui é a nossa saúde financeira atual. O sistema, além de pegar os dados
+[07:01] atual. O sistema, além de pegar os dados que você impula, ele já te dá análises
+[07:03] que você impula, ele já te dá análises automáticas com inteligência artificial,
+[07:04] automáticas com inteligência artificial, fazendo todo o controle e cruzando todos
+[07:07] fazendo todo o controle e cruzando todos os dados que você imputa no sistema. Por
+[07:08] os dados que você imputa no sistema. Por isso que não tem como, não tem como uma
+[07:11] isso que não tem como, não tem como uma planilha ser melhor do que isso, não tem
+[07:12] planilha ser melhor do que isso, não tem como você fazer isso no braço e não tem
+[07:14] como você fazer isso no braço e não tem como você deixar de registrar, já que é
+[07:16] como você deixar de registrar, já que é o seu dinheiro que tá aqui dentro. Vou
+[07:17] o seu dinheiro que tá aqui dentro. Vou passar por cada um desses pontos de
+[07:18] passar por cada um desses pontos de maneira um pouco rápida e simples, mas
+[07:20] maneira um pouco rápida e simples, mas vocês conseguem pausar e olhando com
+[07:21] vocês conseguem pausar e olhando com detalhe, tá? Ele mostra o total vendido
+[07:24] detalhe, tá? Ele mostra o total vendido na sua empresa, o total que você já
+[07:25] na sua empresa, o total que você já recebeu, o quanto falta você receber, o
+[07:27] recebeu, o quanto falta você receber, o seu lucro bruto, o seu lucro líquido,
+[07:29] seu lucro bruto, o seu lucro líquido, seu ticket médio, quantidade de vendas,
+[07:32] seu ticket médio, quantidade de vendas, horas de produção pendente, o saldo que
+[07:34] horas de produção pendente, o saldo que você tem em caixa, a projeção que você
+[07:35] você tem em caixa, a projeção que você tem a receber e a saúde financeira da
+[07:38] tem a receber e a saúde financeira da sua empresa. Isso é muito importante.
+[07:40] sua empresa. Isso é muito importante. Aqui ele deixa um gráfico para você de
+[07:41] Aqui ele deixa um gráfico para você de faturamento bruto, líquido e lucro
+[07:42] faturamento bruto, líquido e lucro líquido. A saúde financeira também ele
+[07:44] líquido. A saúde financeira também ele faz o cálculo. Qual é a evolução da sua
+[07:47] faz o cálculo. Qual é a evolução da sua margem líquida? a distribuição dos
+[07:49] margem líquida? a distribuição dos canais de venda dentro da sua empresa, a
+[07:50] canais de venda dentro da sua empresa, a margem por produto pr você conseguir
+[07:52] margem por produto pr você conseguir entender os produtos campeões que você
+[07:53] entender os produtos campeões que você tem, a distribuição dos seus custos fixo
+[07:56] tem, a distribuição dos seus custos fixo e variável, o seu fluxo de caixa, então
+[07:58] e variável, o seu fluxo de caixa, então aquele dinheiro que entra para você
+[07:59] aquele dinheiro que entra para você entender como é que tá a saúde da do seu
+[08:01] entender como é que tá a saúde da do seu fluxo de caixa e a já te diz alguns
+[08:03] fluxo de caixa e a já te diz alguns alertas tanto pro lado bom quanto pro
+[08:04] alertas tanto pro lado bom quanto pro lado ruim. Então aqui ele me fala que a
+[08:05] lado ruim. Então aqui ele me fala que a minha margem líquida ela tá saudável em
+[08:08] minha margem líquida ela tá saudável em 41.7, 7. Então é uma boa saúde
+[08:09] 41.7, 7. Então é uma boa saúde financeira e o meu payback está
+[08:11] financeira e o meu payback está excelente. Em 10 meses eu consigo
+[08:13] excelente. Em 10 meses eu consigo recuperar todo o valor investido. Fala
+[08:14] recuperar todo o valor investido. Fala se isso daqui não é uma empresa de
+[08:16] se isso daqui não é uma empresa de verdade. Eu tenho certeza que um sistema
+[08:17] verdade. Eu tenho certeza que um sistema desse vai mudar o patamar da sua
+[08:19] desse vai mudar o patamar da sua empresa. Além disso, temos também um
+[08:20] empresa. Além disso, temos também um campo de fluxo de caixa para você
+[08:22] campo de fluxo de caixa para você conseguir entender e imputar até algumas
+[08:24] conseguir entender e imputar até algumas entradas manuais.
+[08:26] entradas manuais. Análises automáticas. Então você
+[08:27] Análises automáticas. Então você consegue entender também de maneira mais
+[08:29] consegue entender também de maneira mais detalhada algumas análises além do
+[08:31] detalhada algumas análises além do dashboard, tá? Então tem todos os
+[08:32] dashboard, tá? Então tem todos os detalhes aqui. Mapa de lucro por
+[08:34] detalhes aqui. Mapa de lucro por produto, ranking de produto. Ele fala
+[08:36] produto, ranking de produto. Ele fala produto que tem a menor margem. No meu
+[08:38] produto que tem a menor margem. No meu caso aqui é um ovo infinito, por
+[08:39] caso aqui é um ovo infinito, por exemplo, que ele tem uma margem de 9.5.
+[08:41] exemplo, que ele tem uma margem de 9.5. Então ele me dá alertas também,
+[08:42] Então ele me dá alertas também, conseguir detalhar melhor como tá a sua
+[08:44] conseguir detalhar melhor como tá a sua empresa atualmente. Hoje eu confesso
+[08:45] empresa atualmente. Hoje eu confesso para vocês que eu não consigo tocar
+[08:47] para vocês que eu não consigo tocar minha operação sem esse sistema. Ele não
+[08:49] minha operação sem esse sistema. Ele não ajuda só a organizar os pedidos, ele
+[08:50] ajuda só a organizar os pedidos, ele ajuda de fato eu controlar e crescer,
+[08:53] ajuda de fato eu controlar e crescer, que é o principal ponto. E pensa assim,
+[08:55] que é o principal ponto. E pensa assim, quanto mais demanda entra para você,
+[08:57] quanto mais demanda entra para você, mais sem controle a sua empresa vai
+[08:58] mais sem controle a sua empresa vai ficando. São mais linhas naquela
+[09:00] ficando. São mais linhas naquela planilha, são mais colunas que você quer
+[09:01] planilha, são mais colunas que você quer colocar, é mais puxadinho que daí, ah,
+[09:03] colocar, é mais puxadinho que daí, ah, joga um orçamento aqui, faz um PDF, não
+[09:06] joga um orçamento aqui, faz um PDF, não sei na onde, faz um Word, não sei na
+[09:08] sei na onde, faz um Word, não sei na onde e aí vai tudo fora de controle,
+[09:09] onde e aí vai tudo fora de controle, fora de padrão pro cliente. Tudo isso é
+[09:10] fora de padrão pro cliente. Tudo isso é um indicativo pro cliente de qu prêmio é
+[09:13] um indicativo pro cliente de qu prêmio é sua marca, de quão valiosa é sua
+[09:14] sua marca, de quão valiosa é sua empresa. Então falo pra vocês, se vocês
+[09:16] empresa. Então falo pra vocês, se vocês querem de fato profissionalizar sua
+[09:17] querem de fato profissionalizar sua empresa, levar isso a sério, para de
+[09:19] empresa, levar isso a sério, para de apagar incêndio, coloca isso daqui pr
+[09:21] apagar incêndio, coloca isso daqui pr funcionar, pr você ter uma visão real do
+[09:23] funcionar, pr você ter uma visão real do seu negócio. E se quiser mais
+[09:24] seu negócio. E se quiser mais atualizações e outras tantas dicas que
+[09:26] atualizações e outras tantas dicas que eu vou trazer, segue a gente no
+[09:27] eu vou trazer, segue a gente no Instagram, primeprint 3DBR, e também
+[09:30] Instagram, primeprint 3DBR, e também aqui no YouTube para se manter
+[09:31] aqui no YouTube para se manter atualizado sobreudo de impressão 3D.
+[09:34] atualizado sobreudo de impressão 3D. Aqui eu vou trazer só exemplo na prática
+[09:35] Aqui eu vou trazer só exemplo na prática e o que eu vivo no dia a dia.
