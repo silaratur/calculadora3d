@@ -63,8 +63,13 @@ async function nextOrderNumber() {
 
 type OrderInput = z.infer<typeof orderSchema>;
 
-/** Resolve produto/canal e calcula os valores congelados do pedido — usado tanto ao criar quanto ao editar. */
-async function resolveOrderPricing(data: OrderInput) {
+/**
+ * Resolve produto/canal e calcula os valores congelados do pedido — usado
+ * tanto ao criar quanto ao editar. `existing` é o pedido atual (só na edição):
+ * sem ele, editar uma venda avulsa (sem produto do catálogo, então sem preço
+ * pra puxar) zerava o valor sempre que o formulário não reenviava unitPrice.
+ */
+async function resolveOrderPricing(data: OrderInput, existing?: { unitPrice: number; unitCostSnapshot: number } | null) {
   const product = data.productId ? await prisma.product.findUnique({ where: { id: data.productId } }) : null;
   if (data.productId && !product) return { error: "Produto não encontrado" as const };
 
@@ -76,8 +81,8 @@ async function resolveOrderPricing(data: OrderInput) {
 
   // Custo e preço do item ficam congelados no pedido: reprecificar o produto
   // depois não reescreve o histórico de vendas já feitas.
-  const unitCostSnapshot = product?.cost ?? 0;
-  const unitPrice = data.unitPrice ?? product?.price ?? 0;
+  const unitCostSnapshot = product?.cost ?? existing?.unitCostSnapshot ?? 0;
+  const unitPrice = data.unitPrice ?? product?.price ?? existing?.unitPrice ?? 0;
   const printTimeHours = product?.printTimeHours ?? 0;
   const marketplaceFee = data.marketplaceFee ?? (channel ? unitPrice * channel.commissionRate : 0);
 
@@ -197,7 +202,7 @@ export async function PUT(request: Request) {
     );
   }
 
-  const resolved = await resolveOrderPricing(data);
+  const resolved = await resolveOrderPricing(data, existing);
   if ("error" in resolved) return NextResponse.json({ error: resolved.error }, { status: 400 });
   const { product, channel, productName, unitCostSnapshot, unitPrice, printTimeHours, marketplaceFee, metrics } = resolved;
 

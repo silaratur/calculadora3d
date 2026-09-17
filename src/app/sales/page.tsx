@@ -44,6 +44,7 @@ const dateValue = (value: string | null) => (value ? value.slice(0, 10) : "");
 const emptyForm = {
   productId: "",
   productName: "",
+  unitPrice: "",
   quantity: "1",
   customerId: "",
   channelId: "",
@@ -100,7 +101,9 @@ export default function SalesPage() {
   const product = products.find((item) => item.id === form.productId);
   const channel = channels.find((item) => item.id === form.channelId);
   const quantity = n(form.quantity);
-  const unitPrice = product?.price ?? 0;
+  // Venda avulsa (sem produto do catálogo) não tem de onde puxar o preço —
+  // usa o que foi digitado no campo "Preço unitário".
+  const unitPrice = product?.price ?? n(form.unitPrice);
   const marketplaceFee = channel ? unitPrice * channel.commissionRate + channel.adsRate * unitPrice : 0;
 
   const metrics = useMemo(
@@ -122,6 +125,7 @@ export default function SalesPage() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!form.productId && !form.productName) { setFeedback("Selecione um produto do catálogo ou informe o nome."); return; }
+    if (!form.productId && !n(form.unitPrice)) { setFeedback("Informe o preço unitário da venda avulsa."); return; }
     const url = editingId ? `/api/orders?id=${encodeURIComponent(editingId)}` : "/api/orders";
     const response = await fetch(url, {
       method: editingId ? "PUT" : "POST",
@@ -129,6 +133,10 @@ export default function SalesPage() {
       body: JSON.stringify({
         productId: form.productId || null,
         productName: form.productId ? undefined : form.productName,
+        // Produto do catálogo sempre usa o preço do catálogo (não reenvia);
+        // venda avulsa não tem outro lugar de onde o servidor possa puxar o
+        // preço, então precisa mandar explicitamente.
+        unitPrice: form.productId ? undefined : n(form.unitPrice),
         quantity,
         customerId: form.customerId || null,
         channelId: form.channelId || null,
@@ -158,6 +166,7 @@ export default function SalesPage() {
     setForm({
       productId: order.productId ?? "",
       productName: order.productId ? "" : order.productName,
+      unitPrice: order.productId ? "" : String(order.unitPrice),
       quantity: String(order.quantity),
       customerId: order.customerId ?? "",
       channelId: order.channelId ?? "",
@@ -220,7 +229,10 @@ export default function SalesPage() {
               </select>
             </label>
             {!form.productId ? (
-              <label>Nome do produto<input required value={form.productName} onChange={(event) => setForm({ ...form, productName: event.target.value })} placeholder="Produto fora do catálogo" /></label>
+              <div className="form-grid">
+                <label>Nome do produto<input required value={form.productName} onChange={(event) => setForm({ ...form, productName: event.target.value })} placeholder="Produto fora do catálogo" /></label>
+                <label>Preço unitário (R$)<input required inputMode="decimal" value={form.unitPrice} onChange={(event) => setForm({ ...form, unitPrice: event.target.value })} placeholder="0,00" /></label>
+              </div>
             ) : null}
             <label>Cliente<select value={form.customerId} onChange={(event) => setForm({ ...form, customerId: event.target.value })}><option value="">Cliente não informado</option>{customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}</select></label>
 
@@ -238,7 +250,7 @@ export default function SalesPage() {
               <label>Data prevista de recebimento<input type="date" value={form.expectedPaymentDate} onChange={(event) => setForm({ ...form, expectedPaymentDate: event.target.value })} /></label>
             </div>
 
-            {product ? (
+            {unitPrice > 0 ? (
               <div className="sim-panel">
                 <span className="sim-title">Simulação em tempo real</span>
                 <div className="sim-grid">
