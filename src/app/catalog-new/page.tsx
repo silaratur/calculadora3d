@@ -9,6 +9,10 @@ import { resizeImage } from "@/lib/image";
 
 type Material = { id: string; name: string; type: string; unitPrice: number; unitWeightGrams: number; costPerKg: number };
 type MaterialLine = { materialId: string; grams: number };
+// No formulário o peso fica como texto (não número) igual ao resto do app —
+// se o valor ligado ao <input> for number, digitar "64,9" perde a vírgula no
+// meio da digitação porque o value volta arredondado a cada tecla.
+type DraftMaterialLine = { materialId: string; grams: string };
 type Printer = { id: string; model: string; purchasePrice: number; powerWatts: number; usefulLifeHours: number; maintenancePerHour: number };
 type PricingSettings = { energyRate: number; defaultPowerWatts: number; laborRate: number; defaultMarkup: number; defaultLossRate: number; monthlyRent: number; monthlySubscriptions: number; monthlyMaintenance: number; monthlyOtherCosts: number; monthlyPieces: number };
 type Product = {
@@ -41,7 +45,7 @@ type Draft = {
   category: string;
   description: string;
   imageUrl: string;
-  materialLines: MaterialLine[];
+  materialLines: DraftMaterialLine[];
   hours: string;
   minutes: string;
   prep: string;
@@ -129,9 +133,9 @@ export default function CatalogNewPage() {
 
   const materialLinesWithData = draft.materialLines
     .map((line) => ({ line, material: materials.find((item) => item.id === line.materialId) }))
-    .filter((entry): entry is { line: MaterialLine; material: Material } => Boolean(entry.material));
-  const materialCost = calculateMultiMaterialCost(materialLinesWithData.map((entry) => ({ grams: entry.line.grams, material: entry.material })));
-  const totalWeightGrams = materialLinesWithData.reduce((sum, entry) => sum + entry.line.grams, 0);
+    .filter((entry): entry is { line: DraftMaterialLine; material: Material } => Boolean(entry.material));
+  const materialCost = calculateMultiMaterialCost(materialLinesWithData.map((entry) => ({ grams: n(entry.line.grams), material: entry.material })));
+  const totalWeightGrams = materialLinesWithData.reduce((sum, entry) => sum + n(entry.line.grams), 0);
   const printTimeHours = n(draft.hours) + n(draft.minutes) / 60;
   const printer = printers.find((item) => item.id === draft.printerId);
 
@@ -164,9 +168,9 @@ export default function CatalogNewPage() {
     // estiverem em uso, cai no primeiro (o <select> de cada linha impede
     // duas linhas ficarem com o mesmo material de qualquer forma).
     const next = materials.find((item) => !usedIds.has(item.id)) ?? materials[0];
-    setDraft({ ...draft, materialLines: [...draft.materialLines, { materialId: next.id, grams: 0 }] });
+    setDraft({ ...draft, materialLines: [...draft.materialLines, { materialId: next.id, grams: "" }] });
   }
-  function updateMaterialLine(index: number, patch: Partial<MaterialLine>) {
+  function updateMaterialLine(index: number, patch: Partial<DraftMaterialLine>) {
     setDraft({ ...draft, materialLines: draft.materialLines.map((line, i) => (i === index ? { ...line, ...patch } : line)) });
   }
   function removeMaterialLine(index: number) {
@@ -198,7 +202,7 @@ export default function CatalogNewPage() {
       category: product.category,
       description: product.description ?? "",
       imageUrl: product.imageUrl ?? "",
-      materialLines: product.materials?.map((line) => ({ materialId: line.materialId, grams: line.grams })) ?? [],
+      materialLines: product.materials?.map((line) => ({ materialId: line.materialId, grams: String(line.grams).replace(".", ",") })) ?? [],
       hours: String(Math.floor(product.printTimeHours)),
       minutes: String(Math.round((product.printTimeHours % 1) * 60)),
       prep: String(product.prepMinutes),
@@ -224,7 +228,7 @@ export default function CatalogNewPage() {
       prepMinutes: n(draft.prep),
       cleanupMinutes: n(draft.cleanup),
       printerId: draft.printerId || null,
-      materials: draft.materialLines.filter((line) => line.grams > 0),
+      materials: draft.materialLines.filter((line) => n(line.grams) > 0).map((line) => ({ materialId: line.materialId, grams: n(line.grams) })),
       materialCost: cost.filament,
       laborCost: cost.labor,
       energyCost: cost.energy,
@@ -354,6 +358,13 @@ export default function CatalogNewPage() {
                   <Title text="MATERIAL & FILAMENTO" />
                   <div className="material-lines">
                     <span className="material-lines-label">Um material por linha — some quantos filamentos o AMS usar nessa peça</span>
+                    {draft.materialLines.length ? (
+                      <div className="material-line material-line-header">
+                        <span>Filamento (da Biblioteca)</span>
+                        <span>Peso da peça (g)</span>
+                        <span />
+                      </div>
+                    ) : null}
                     {draft.materialLines.map((line, index) => (
                       <div className="material-line" key={index}>
                         <select value={line.materialId} onChange={(event) => updateMaterialLine(index, { materialId: event.target.value })}>
@@ -363,7 +374,9 @@ export default function CatalogNewPage() {
                             .filter((item) => item.id === line.materialId || !draft.materialLines.some((other, otherIndex) => otherIndex !== index && other.materialId === item.id))
                             .map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
                         </select>
-                        <input inputMode="decimal" value={line.grams} onChange={(event) => updateMaterialLine(index, { grams: n(event.target.value) })} placeholder="Gramas" />
+                        {/* Texto (não number) e vírgula aceita — mantém "64,9" enquanto
+                            digita, sem arredondar a cada tecla (n() só converte ao calcular/salvar). */}
+                        <input inputMode="decimal" value={line.grams} onChange={(event) => updateMaterialLine(index, { grams: event.target.value })} placeholder="Ex: 64,9" />
                         <button type="button" className="delete-button" onClick={() => removeMaterialLine(index)} aria-label="Remover material"><IconTrash className="nav-icon" /></button>
                       </div>
                     ))}

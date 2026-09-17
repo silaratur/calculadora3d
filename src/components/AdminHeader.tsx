@@ -51,14 +51,24 @@ const links: { id: Section; href: string; label: string; icon: (props: { classNa
 ];
 
 export function AdminHeader({ active, badges }: { active: Section; badges?: Partial<Record<Section, number>> }) {
+  // Enquanto não confirma sessão válida (ou se não tiver), nenhuma opção de
+  // menu aparece — só a logo. O middleware (src/middleware.ts) já barra o
+  // acesso às páginas protegidas sem sessão; isto cobre a "/" (login), onde
+  // o AdminHeader roda mesmo deslogado, e evita o menu inteiro piscar antes
+  // da checagem de sessão terminar.
+  const [status, setStatus] = useState<"checking" | "authenticated" | "unauthenticated">("checking");
   const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     fetch("/api/session")
       .then((response) => (response.ok ? response.json() : null))
-      .then((data: { email?: string } | null) => { if (!cancelled) setEmail(data?.email ?? null); })
-      .catch(() => { if (!cancelled) setEmail(null); });
+      .then((data: { email?: string } | null) => {
+        if (cancelled) return;
+        setEmail(data?.email ?? null);
+        setStatus(data?.email ? "authenticated" : "unauthenticated");
+      })
+      .catch(() => { if (!cancelled) { setEmail(null); setStatus("unauthenticated"); } });
     return () => { cancelled = true; };
   }, []);
 
@@ -80,26 +90,30 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
           <small>PAINEL DE PRECIFICAÇÃO & LOGÍSTICA</small>
         </span>
       </Link>
-      <nav className="admin-nav" aria-label="Navegação principal">
-        {links.map((link) => {
-          const badge = badges?.[link.id];
-          const Icon = link.icon;
-          return (
-            <Link key={link.id} className={link.id === active ? "active" : undefined} href={link.href}>
-              <Icon className="nav-icon" />
-              {link.label}
-              {badge ? <b>{badge}</b> : null}
-            </Link>
-          );
-        })}
-      </nav>
-      <Link className="new-order-cta" href="/calculator">
-        <IconCirclePlus className="nav-icon" /> Novo Orçamento
-      </Link>
-      <div className="admin-account">
-        {email ?? ""}
-        {email ? <button className="logout-button" onClick={logout} aria-label="Sair" title="Sair"><IconLogout className="nav-icon" /></button> : null}
-      </div>
+      {status === "authenticated" ? (
+        <>
+          <nav className="admin-nav" aria-label="Navegação principal">
+            {links.map((link) => {
+              const badge = badges?.[link.id];
+              const Icon = link.icon;
+              return (
+                <Link key={link.id} className={link.id === active ? "active" : undefined} href={link.href}>
+                  <Icon className="nav-icon" />
+                  {link.label}
+                  {badge ? <b>{badge}</b> : null}
+                </Link>
+              );
+            })}
+          </nav>
+          <Link className="new-order-cta" href="/calculator">
+            <IconCirclePlus className="nav-icon" /> Novo Orçamento
+          </Link>
+          <div className="admin-account">
+            {email ?? ""}
+            <button className="logout-button" onClick={logout} aria-label="Sair" title="Sair"><IconLogout className="nav-icon" /></button>
+          </div>
+        </>
+      ) : null}
     </header>
   );
 }

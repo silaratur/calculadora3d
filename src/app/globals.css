@@ -896,7 +896,8 @@ button.new-quote-button { border: 0; cursor: pointer; }
 
 .material-lines { display: grid; gap: 8px; }
 .material-lines-label { color: #8a7472; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; }
-.material-line { align-items: center; display: grid; gap: 8px; grid-template-columns: 1fr 90px auto; }
+.material-line { align-items: center; display: grid; gap: 8px; grid-template-columns: 1fr 100px auto; }
+.material-line-header span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .product-card-prices { border-top: 1px solid #e8ddd7; display: grid; gap: 10px; grid-template-columns: 1fr 1fr; margin-top: 13px; padding-top: 11px; }
 .product-card-prices span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; }
 .product-card-prices strong { color: var(--admin-copper); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 17px; margin-top: 3px; }
