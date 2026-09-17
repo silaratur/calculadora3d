@@ -865,6 +865,18 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .product-card-photo img { display: block; height: 100%; object-fit: cover; width: 100%; }
 .product-card-photo-placeholder { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 34px; }
 
+/* Catálogo Novo (src/app/catalog-new) — cards menores, mais por linha, pra
+   ficar navegável com muitos produtos; o Catálogo atual não usa esta classe
+   e continua do jeito que estava. */
+.product-grid-compact { gap: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.product-grid-compact .product-card { padding: 12px; }
+.product-grid-compact .product-card-photo { aspect-ratio: 3 / 1; margin: -12px -12px 10px; }
+.product-grid-compact .product-card-photo-placeholder { font-size: 22px; }
+.product-grid-compact .card-description { -webkit-box-orient: vertical; -webkit-line-clamp: 2; display: -webkit-box; overflow: hidden; }
+@media (max-width: 1100px) { .product-grid-compact { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .product-grid-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .product-grid-compact { grid-template-columns: 1fr; } }
+
 .sku-hint { background: #f8ede0; border-radius: 8px; color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; margin: -4px 0 2px; padding: 8px 10px; }
 .sku-hint strong { color: var(--admin-copper); }
 

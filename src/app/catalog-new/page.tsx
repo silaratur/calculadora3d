@@ -268,7 +268,7 @@ export default function CatalogNewPage() {
                 {categories.map((item) => <option key={item} value={item}>{item === "all" ? "Todas as categorias" : item}</option>)}
               </select>
             </div>
-            <div className="product-grid">
+            <div className="product-grid product-grid-compact">
               {filtered.map((product) => (
                 <article className="product-card" key={product.id}>
                   <div className="product-card-photo">
