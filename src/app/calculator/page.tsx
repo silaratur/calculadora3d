@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AdminHeader } from "@/components/AdminHeader";
 import { IconBookmark, IconClock, IconCopy, IconDownload, IconSave, IconShieldAlert, IconShoppingBag, IconSparkles, IconTrash } from "@/components/Icons";
 import { calculatePieceCost, calculateSuggestedPrice, fixedCostPerPiece, type PricingMethod } from "@/lib/costing";
@@ -12,6 +13,31 @@ type PricingSettings = { energyRate: number; defaultPowerWatts: number; laborRat
 type Marketplace = { id: string; name: string; commissionRate: number; fixedFee: number; adsRate: number };
 type CustomExtra = { id: string; name: string; unitCost: number };
 type CustomerLead = { id: string; name: string };
+// Formato salvo em Quote.snapshotJson — precisa bater com o que saveQuote()
+// grava, senão "Carregar no Editor" não restaura tudo exatamente como foi
+// criado.
+type QuoteSnapshot = {
+  material?: Material;
+  printer?: Printer;
+  weightGrams?: number;
+  hours?: string;
+  minutes?: string;
+  prep?: string;
+  cleanup?: string;
+  laborRate?: string;
+  energyRate?: string;
+  power?: string;
+  maintenancePerHour?: string;
+  markup?: string;
+  lossRate?: string;
+  discount?: string;
+  supplies?: { id: string; name: string; quantity: number; unitCost: number }[];
+  customExtras?: CustomExtra[];
+  calculations?: Record<string, number>;
+  marketplace?: Marketplace;
+  settings?: PricingSettings;
+  pricingMethod?: PricingMethod;
+};
 
 const demoMaterials: Material[] = [{ id: "pla", name: "Filamento PLA Premium F3D 1,75mm, 1kg, Vermelho", type: "PLA", unitPrice: 109, unitWeightGrams: 1000, costPerKg: 109 }, { id: "petg", name: "Filamento PETG 1,75mm 1kg Impressão 3D", type: "PETG", unitPrice: 99.9, unitWeightGrams: 1000, costPerKg: 99.9 }];
 const demoPrinters: Printer[] = [{ id: "a1", model: "Bambu Lab A1 - Combo", purchasePrice: 4607, powerWatts: 220, usefulLifeHours: 6000, maintenancePerHour: 0.77 }];
@@ -37,6 +63,16 @@ const editingCurrency = (value: string) => value.replace(/^R\$\s?/, "");
 const categoryTag = (category: string) => category.split(/[\s&]/)[0]?.toUpperCase() ?? category.toUpperCase();
 
 export default function CalculatorPage() {
+  return (
+    <Suspense fallback={null}>
+      <CalculatorForm />
+    </Suspense>
+  );
+}
+
+// useSearchParams() (para restaurar um orçamento salvo via ?quoteId=) exige
+// um limite de Suspense acima — daí o componente estar separado do default export.
+function CalculatorForm() {
   const [materials, setMaterials] = useState<Material[]>(demoMaterials);
   const [printers, setPrinters] = useState<Printer[]>(demoPrinters);
   const [supplies, setSupplies] = useState<Supply[]>(demoSupplies);
@@ -74,6 +110,18 @@ export default function CalculatorPage() {
   // a soma dos 4 campos antigos de PricingSettings (fallback abaixo).
   const [currentMonthFixedCost, setCurrentMonthFixedCost] = useState<number | null>(null);
 
+  const searchParams = useSearchParams();
+  // Vindo de "Carregar no Editor"/"Abrir na calculadora" (?quoteId=...): os
+  // valores do orçamento salvo têm que prevalecer sobre os padrões globais.
+  // Sem id na URL (ex: clicou em "Calculadora" no menu) a calculadora abre
+  // em branco/com os padrões, como sempre.
+  const quoteId = searchParams.get("quoteId");
+  // Vindo do Catálogo (?productId=...): produto não passa pela calculadora
+  // pra ser criado (usa outro motor de custo, multi-material, sem
+  // impressora/energia/mão de obra detalhados) — então só dá pra restaurar
+  // nome, peso, tempo e o primeiro material; o resto fica no padrão global.
+  const productId = searchParams.get("productId");
+
   useEffect(() => {
     async function load() {
       // Mês local, não UTC — perto da meia-noite no Brasil toISOString() já mostraria o mês seguinte.
@@ -81,9 +129,19 @@ export default function CalculatorPage() {
       const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
       const responses = await Promise.all([fetch("/api/materials"), fetch("/api/printers"), fetch("/api/supplies"), fetch("/api/settings"), fetch("/api/marketplaces"), fetch("/api/costs/fixed"), fetch("/api/customers")]);
       if (responses[0].ok) { const data = (await responses[0].json()) as Material[]; if (data.length) setMaterials(data); }
-      if (responses[1].ok) { const data = (await responses[1].json()) as Printer[]; if (data.length) { setPrinters(data); setPrinterId(data[0].id); setMaintenancePerHour(String(data[0].maintenancePerHour).replace(".", ",")); } }
+      if (responses[1].ok) {
+        const data = (await responses[1].json()) as Printer[];
+        if (data.length) {
+          setPrinters(data);
+          if (!quoteId) { setPrinterId(data[0].id); setMaintenancePerHour(String(data[0].maintenancePerHour).replace(".", ",")); }
+        }
+      }
       if (responses[2].ok) { const data = (await responses[2].json()) as Supply[]; if (data.length) setSupplies(data); }
-      if (responses[3].ok) { const data = (await responses[3].json()) as PricingSettings; setSettings(data); setLaborRate(String(data.laborRate).replace(".", ",")); setEnergyRate(String(data.energyRate).replace(".", ",")); setMarkup(String(data.defaultMarkup)); setLossRate(String(data.defaultLossRate)); setPower(String(data.defaultPowerWatts)); }
+      if (responses[3].ok) {
+        const data = (await responses[3].json()) as PricingSettings;
+        setSettings(data);
+        if (!quoteId) { setLaborRate(String(data.laborRate).replace(".", ",")); setEnergyRate(String(data.energyRate).replace(".", ",")); setMarkup(String(data.defaultMarkup)); setLossRate(String(data.defaultLossRate)); setPower(String(data.defaultPowerWatts)); }
+      }
       // "Venda Direta" (0% de taxas) fica sempre disponível — antes, se você já
       // tivesse canais cadastrados em Configurações, ela desaparecia da lista.
       if (responses[4].ok) { const data = (await responses[4].json()) as Marketplace[]; setMarketplaces([defaultMarketplace, ...data]); }
@@ -94,7 +152,62 @@ export default function CalculatorPage() {
       if (responses[6].ok) setCustomers((await responses[6].json()) as CustomerLead[]);
     }
     void load();
-  }, []);
+  }, [quoteId]);
+
+  useEffect(() => {
+    if (!quoteId) return;
+    async function loadQuote() {
+      const response = await fetch(`/api/quotes/${quoteId}`);
+      if (!response.ok) return;
+      const quote = (await response.json()) as { productName: string; customerName: string; notes: string; snapshotJson: string };
+      setName(quote.productName);
+      setClient(quote.customerName);
+      setNotes(quote.notes);
+      let s: QuoteSnapshot = {};
+      try { s = JSON.parse(quote.snapshotJson) as QuoteSnapshot; } catch { s = {}; }
+      if (s.material?.id) setMaterialId(s.material.id);
+      if (s.printer?.id) setPrinterId(s.printer.id);
+      if (typeof s.weightGrams === "number") setWeight(String(s.weightGrams).replace(".", ","));
+      if (s.hours !== undefined) setHours(s.hours);
+      if (s.minutes !== undefined) setMinutes(s.minutes);
+      if (s.prep !== undefined) setPrep(s.prep);
+      if (s.cleanup !== undefined) setCleanup(s.cleanup);
+      if (s.laborRate !== undefined) setLaborRate(s.laborRate);
+      if (s.energyRate !== undefined) setEnergyRate(s.energyRate);
+      if (s.power !== undefined) setPower(s.power);
+      if (s.maintenancePerHour !== undefined) setMaintenancePerHour(s.maintenancePerHour);
+      if (s.markup !== undefined) setMarkup(s.markup);
+      if (s.lossRate !== undefined) setLossRate(s.lossRate);
+      if (s.discount !== undefined) setDiscount(s.discount);
+      if (s.marketplace?.id) setMarketplaceId(s.marketplace.id);
+      if (s.pricingMethod) setPricingMethod(s.pricingMethod);
+      if (s.supplies) {
+        setSelected(s.supplies.map((item) => item.id));
+        setQuantities(Object.fromEntries(s.supplies.map((item) => [item.id, item.quantity ?? 1])));
+        setPriceOverrides(Object.fromEntries(s.supplies.map((item) => [item.id, item.unitCost ?? 0])));
+      }
+      if (s.customExtras) setCustomExtras(s.customExtras);
+    }
+    void loadQuote();
+  }, [quoteId]);
+
+  useEffect(() => {
+    if (!productId) return;
+    async function loadProduct() {
+      const response = await fetch("/api/products");
+      if (!response.ok) return;
+      const products = (await response.json()) as { id: string; name: string; weightGrams: number; printTimeHours: number; materials?: { materialId: string }[] }[];
+      const product = products.find((item) => item.id === productId);
+      if (!product) return;
+      setName(product.name);
+      setWeight(String(product.weightGrams).replace(".", ","));
+      setHours(String(Math.floor(product.printTimeHours)));
+      setMinutes(String(Math.round((product.printTimeHours % 1) * 60)));
+      const firstMaterialId = product.materials?.[0]?.materialId;
+      if (firstMaterialId) setMaterialId(firstMaterialId);
+    }
+    void loadProduct();
+  }, [productId]);
 
   const material = materials.find((item) => item.id === materialId);
   const printer = printers.find((item) => item.id === printerId) ?? printers[0];
@@ -189,11 +302,27 @@ export default function CalculatorPage() {
     // Nome dos insumos vai junto no snapshot (não só o id) — o orçamento em
     // PDF (src/app/quotes/[id]/print) lista "o que está incluso" sem precisar
     // reconsultar a Biblioteca, que pode ter mudado ou perdido o preset depois.
-    const snapshot = {
+    const snapshot: QuoteSnapshot = {
       material,
       printer,
       weightGrams: n(weight),
-      supplies: selected.map((id) => ({ id, name: supplies.find((item) => item.id === id)?.name ?? "", quantity: quantities[id] ?? 1 })),
+      hours,
+      minutes,
+      prep,
+      cleanup,
+      laborRate,
+      energyRate,
+      power,
+      maintenancePerHour,
+      markup,
+      lossRate,
+      discount,
+      supplies: selected.map((id) => ({
+        id,
+        name: supplies.find((item) => item.id === id)?.name ?? "",
+        quantity: quantities[id] ?? 1,
+        unitCost: priceOverrides[id] ?? supplies.find((item) => item.id === id)?.unitCost ?? 0,
+      })),
       customExtras,
       calculations: calc,
       marketplace,

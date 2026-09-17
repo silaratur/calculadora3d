@@ -98,7 +98,7 @@ export default function ProjectsPage() {
                   <span>Atualizado em: {new Date(quote.updatedAt).toLocaleDateString("pt-BR")}</span>
                 </div>
                 <div className="project-card-actions">
-                  <a className="load-editor-button" href="/calculator">▱ Carregar no Editor</a>
+                  <a className="load-editor-button" href={`/calculator?quoteId=${quote.id}`}>▱ Carregar no Editor</a>
                   <a className="load-editor-button" href={`/quotes/${quote.id}/print`} target="_blank" rel="noreferrer">🖨 Ver / Baixar PDF</a>
                   {quote.status !== "CONVERTED" ? (
                     <button className="primary-button" type="button" disabled={converting === quote.id} onClick={() => convertQuote(quote.id)}>

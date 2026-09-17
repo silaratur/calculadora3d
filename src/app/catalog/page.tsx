@@ -310,7 +310,7 @@ export default function CatalogPage() {
                     <div><span>Preço</span><strong>{brl(product.price)}</strong></div>
                   </div>
                   <p className="card-detail">Margem: {product.profitMargin}% · Impressão: {product.printTimeHours}h</p>
-                  <a className="load-editor-button" href="/calculator">Abrir na calculadora</a>
+                  <a className="load-editor-button" href={`/calculator?productId=${product.id}`}>Abrir na calculadora</a>
                 </article>
               ))}
             </div>
