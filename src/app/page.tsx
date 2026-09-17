@@ -75,7 +75,7 @@ export default function HomePage() {
         <AdminHeader active="dashboard" />
         <div className="admin-content login-content">
           <form className="preset-form login-form" onSubmit={handleLogin}>
-            <h2><span>◇</span> Entrar no Mínima 3D</h2>
+            <h2><span>◇</span> Entrar no AC3D</h2>
             <label>E-mail<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@empresa.com" /></label>
             <label>Senha<input required type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" /></label>
             <button className="primary-button" type="submit">Entrar</button>

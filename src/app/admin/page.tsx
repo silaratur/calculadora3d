@@ -276,7 +276,7 @@ export default function AdminPage() {
               <h2><span>＋</span> {editingId ? "Editar Filamento" : "Cadastrar Novo Filamento"}</h2>
               <label>Nome / Descrição<input required value={filament.name} onChange={(event) => setFilament({ ...filament, name: event.target.value })} placeholder="Ex: PLA Terracota Silk" /></label>
               <div className="form-grid">
-                <label>Marca<input value={filament.brand} onChange={(event) => setFilament({ ...filament, brand: event.target.value })} placeholder="Ex: Minima3D" /></label>
+                <label>Marca<input value={filament.brand} onChange={(event) => setFilament({ ...filament, brand: event.target.value })} placeholder="Ex: AC3D" /></label>
                 <label>Material<select value={filament.type} onChange={(event) => setFilament({ ...filament, type: event.target.value })}>{filamentTypes.map((type) => <option key={type}>{type}</option>)}</select></label>
               </div>
               <div className="form-grid">

@@ -22,7 +22,7 @@ const markupPresets = ["50", "65", "100", "150", "200"];
 // Mesma paleta do site de referência para os 6 blocos de custo, na ordem
 // Filamento, Depreciação, Mão de Obra (coluna 1) / Energia, Insumos, Reserva
 // Perdas (coluna 2) — usada tanto nos pontos da legenda quanto na barra.
-const legendColors = ["#8b735b", "#5a5a40", "#4a443f", "#a09687", "#c8c2b7", "#ebe7df"];
+const legendColors = ["#602f32", "#777f5d", "#8a4a4e", "#d1a94a", "#f4bbd3", "#e8ddd7"];
 
 const n = (value: string) => {
   const cleanValue = value.replace(/R\$\s?/g, "").replace(/\s/g, "");

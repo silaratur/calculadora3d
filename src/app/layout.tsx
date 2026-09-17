@@ -18,7 +18,7 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mínima 3D | Gestão de Produção",
+  title: "AC3D | Gestão de Produção",
   description: "Sistema de catálogo, precificação e gestão de custos para produtos 3D.",
 };
 

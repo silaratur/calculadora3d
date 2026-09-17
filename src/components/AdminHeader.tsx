@@ -69,9 +69,9 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
   return (
     <header className="admin-topbar">
       <Link className="admin-brand" href="/">
-        <span className="brand-mark">M3D</span>
+        <span className="brand-mark" role="img" aria-label="AC3D" />
         <span>
-          <span className="admin-brand-title"><strong>MÍNIMA 3D</strong><span className="brand-tag">PRECIFICAÇÃO</span></span>
+          <span className="admin-brand-title"><strong>AC3D</strong><span className="brand-tag">PRECIFICAÇÃO</span></span>
           <small>PAINEL DE PRECIFICAÇÃO & LOGÍSTICA</small>
         </span>
       </Link>
