@@ -185,12 +185,35 @@ export default function CalculatorPage() {
   function removeCustomExtra(id: string) {
     setCustomExtras((current) => current.filter((item) => item.id !== id));
   }
-  async function save() {
-    const snapshot = { material, printer, supplies: selected.map((id) => ({ id, quantity: quantities[id] ?? 1 })), customExtras, calculations: calc, marketplace, settings, pricingMethod };
+  async function saveQuote(): Promise<{ id: string } | null> {
+    // Nome dos insumos vai junto no snapshot (não só o id) — o orçamento em
+    // PDF (src/app/quotes/[id]/print) lista "o que está incluso" sem precisar
+    // reconsultar a Biblioteca, que pode ter mudado ou perdido o preset depois.
+    const snapshot = {
+      material,
+      printer,
+      weightGrams: n(weight),
+      supplies: selected.map((id) => ({ id, name: supplies.find((item) => item.id === id)?.name ?? "", quantity: quantities[id] ?? 1 })),
+      customExtras,
+      calculations: calc,
+      marketplace,
+      settings,
+      pricingMethod,
+    };
     const response = await fetch("/api/quotes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productName: name, customerName: client, status: "DRAFT", baseCost: calc.costWithReserve, finalPrice: calc.price, margin: calc.profit, snapshot, notes }) });
     localStorage.setItem("minima3d-project", JSON.stringify({ name, client, price: calc.price, notes, snapshot }));
-    setSaved(response.ok);
+    if (!response.ok) return null;
+    return (await response.json()) as { id: string };
+  }
+  async function save() {
+    const result = await saveQuote();
+    setSaved(Boolean(result));
     window.setTimeout(() => setSaved(false), 2500);
+  }
+  async function generateReport() {
+    const result = await saveQuote();
+    if (!result) { setSaved(false); return; }
+    window.open(`/quotes/${result.id}/print`, "_blank");
   }
 
   const realMarginPercent = calc.price ? (calc.profit / calc.price) * 100 : 0;
@@ -436,8 +459,8 @@ export default function CalculatorPage() {
               <div><span>LUCRO ESTIMADO</span><strong>+{brl(calc.profit)}</strong><small>{marketplace.name} · Margem Real: {realMarginPercent.toFixed(1)}%</small></div>
               <div><span>PREÇO ATACADO</span><strong>{brl(calc.price * 0.85)}</strong><small>Desconto por volume</small></div>
             </div>
-            <button className="report-button" onClick={() => window.print()}><IconDownload className="nav-icon" /> Gerar Relatório em PDF</button>
-            <button className="whatsapp-button" onClick={() => navigator.clipboard?.writeText(`${name}: ${brl(calc.price)} | Custo: ${brl(calc.costWithReserve)}`)}><IconCopy className="nav-icon" /> Copiar Resumo para WhatsApp</button>
+            <button className="report-button" onClick={generateReport}><IconDownload className="nav-icon" /> Gerar Orçamento em PDF</button>
+            <button className="whatsapp-button" onClick={() => navigator.clipboard?.writeText(`Orçamento: ${name}\nValor: ${brl(calc.price)}\n\nQualquer dúvida, estou à disposição!`)}><IconCopy className="nav-icon" /> Copiar Resumo para WhatsApp</button>
           </aside>
         </div>
       </div>

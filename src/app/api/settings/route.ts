@@ -14,6 +14,12 @@ const settingsSchema = z.object({
   monthlyPieces: z.number().min(1),
   defaultMarkup: z.number().min(0),
   defaultLossRate: z.number().min(0),
+  companyName: z.string().max(120).optional(),
+  companyContact: z.string().max(200).optional(),
+  quoteValidityDays: z.number().min(1).max(90).optional(),
+  quoteDeliveryText: z.string().max(400).optional(),
+  quoteWarrantyText: z.string().max(400).optional(),
+  quotePaymentText: z.string().max(400).optional(),
 });
 
 async function authenticated() { return Boolean(await getCurrentUser()); }

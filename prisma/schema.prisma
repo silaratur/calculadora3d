@@ -45,6 +45,14 @@ model PricingSettings {
   monthlyPieces         Float    @default(60)
   defaultMarkup         Float    @default(40)
   defaultLossRate       Float    @default(5)
+  // Usados no orçamento em PDF enviado ao cliente (src/app/quotes/[id]/print) —
+  // nada aqui é custo interno, só textos institucionais e de política comercial.
+  companyName           String   @default("AC3D")
+  companyContact        String   @default("")
+  quoteValidityDays     Int      @default(7)
+  quoteDeliveryText     String   @default("5 a 10 dias úteis após a confirmação do pagamento, conforme a fila de produção.")
+  quoteWarrantyText     String   @default("30 dias contra defeitos de fabricação a partir da entrega. Não cobre uso inadequado, quedas, exposição a calor excessivo ou desgaste natural da peça.")
+  quotePaymentText      String   @default("50% de sinal para iniciar a produção e 50% na entrega ou retirada.")
   updatedAt             DateTime @updatedAt
 }
 
@@ -169,20 +177,24 @@ model ProductSupply {
 }
 
 model Quote {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   productId    String?
-  product      Product? @relation(fields: [productId], references: [id])
+  product      Product?  @relation(fields: [productId], references: [id])
   productName  String
-  customerName String   @default("")
-  status       String   @default("DRAFT")
+  customerName String    @default("")
+  status       String    @default("DRAFT")
   baseCost     Float
   finalPrice   Float
   margin       Float
   snapshotJson String
-  notes        String   @default("")
+  notes        String    @default("")
+  // ORC-AAAAMMDD-0001, sequencial por dia — orçamentos criados antes desta
+  // coluna existir ficam com code null (não tinham essa identificação).
+  code         String?   @unique
+  validUntil   DateTime?
   order        SalesOrder?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model SalesOrder {

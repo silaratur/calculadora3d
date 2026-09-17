@@ -479,7 +479,7 @@ body {
   gap: 5px;
 }
 
-.preset-form input, .preset-form select {
+.preset-form input, .preset-form select, .preset-form textarea {
   background: #faf3ec;
   border: 1px solid #e8ddd7;
   border-radius: 11px;
@@ -491,7 +491,9 @@ body {
   padding: 8px 11px;
 }
 
-.preset-form input:focus, .preset-form select:focus {
+.preset-form textarea { min-height: 66px; resize: vertical; }
+
+.preset-form input:focus, .preset-form select:focus, .preset-form textarea:focus {
   border-color: var(--admin-copper);
   box-shadow: 0 0 0 2px rgba(189, 107, 66, 0.1);
 }
@@ -771,6 +773,18 @@ a.primary-button {
   gap: 8px;
 }
 
+/* Campos de texto do orçamento em PDF (nome da empresa, contato, prazos) não
+   cabem na coluna estreita de 125px pensada pros campos numéricos acima —
+   ocupam a linha toda, embaixo do rótulo. */
+.settings-group label input[type="text"],
+.settings-group label textarea {
+  align-self: start;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  width: 100%;
+}
+.settings-group label textarea { min-height: 60px; resize: vertical; }
+
 .channel-list {
   display: grid;
   gap: 14px;
@@ -999,4 +1013,56 @@ a.primary-button {
   .project-tools input { width: 100%; }
   .project-card-details { align-items: flex-start; flex-direction: column; gap: 5px; }
   .product-grid { grid-template-columns: 1fr; }
+}
+
+/* Orçamento em PDF (src/app/quotes/[id]/print) — documento pensado para o
+   CLIENTE ler: nada de custo interno, margem ou fornecedor aqui. */
+.quote-print-page { min-height: 100vh; padding: 28px 16px 70px; }
+.quote-print-toolbar { align-items: center; display: flex; justify-content: space-between; margin: 0 auto 18px; max-width: 780px; }
+.quote-print-toolbar a { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 13px; text-decoration: none; }
+.quote-print-toolbar a:hover { color: var(--admin-copper); }
+.quote-print-toolbar button { align-items: center; background: var(--admin-copper); border: 0; border-radius: 10px; color: white; cursor: pointer; display: inline-flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 13px; font-weight: 600; gap: 7px; padding: 10px 16px; }
+.quote-doc-empty { background: var(--admin-paper); border-radius: 16px; margin: 0 auto; max-width: 780px; padding: 40px; text-align: center; }
+
+.quote-doc { background: var(--admin-paper); border-radius: 20px; box-shadow: 0 4px 24px rgba(60, 34, 37, .1); margin: 0 auto; max-width: 780px; padding: 52px 60px; }
+.quote-doc-header { align-items: flex-start; display: flex; justify-content: space-between; gap: 20px; }
+.quote-doc-brand { align-items: center; display: flex; gap: 14px; }
+.quote-doc-logo { border-radius: 14px; flex-shrink: 0; height: 64px; object-fit: cover; width: 64px; }
+.quote-doc-brand strong { display: block; font-size: 17px; letter-spacing: .08em; }
+.quote-doc-brand span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; margin-top: 2px; }
+.quote-doc-meta { text-align: right; }
+.quote-doc-meta strong { color: var(--admin-copper); display: block; font-family: var(--font-mono); font-size: 14px; }
+.quote-doc-meta span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; margin-top: 3px; }
+.quote-doc-hr { border: 0; border-top: 1px solid var(--admin-border); margin: 28px 0; }
+.quote-doc-greeting { font-size: 14px; line-height: 1.6; }
+.quote-doc-greeting strong { color: var(--admin-copper); }
+.quote-doc-section-title { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .12em; margin: 0 0 10px; text-transform: uppercase; }
+.quote-doc-item h2 { font-size: 20px; margin: 0 0 6px; }
+.quote-doc-specs { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 13px; line-height: 1.6; }
+.quote-doc-notes { background: #faf3ec; border-radius: 10px; font-size: 13px; line-height: 1.55; margin-top: 12px; padding: 12px 14px; white-space: pre-wrap; }
+.quote-doc-included { margin: 14px 0 0; padding-left: 18px; }
+.quote-doc-included li { color: var(--admin-ink); font-size: 13px; margin-bottom: 4px; }
+.quote-doc-price { align-items: center; background: #faf3ec; border-radius: 16px; display: flex; justify-content: space-between; margin: 28px 0; padding: 22px 26px; }
+.quote-doc-price span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+.quote-doc-price strong { color: var(--admin-copper); display: block; font-size: 34px; margin-top: 4px; }
+.quote-doc-terms { display: grid; gap: 18px; grid-template-columns: repeat(3, 1fr); }
+.quote-doc-term strong { display: block; font-size: 12px; margin-bottom: 5px; }
+.quote-doc-term p { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; line-height: 1.5; margin: 0; }
+.quote-doc-footer { border-top: 1px solid var(--admin-border); margin-top: 32px; padding-top: 20px; text-align: center; }
+.quote-doc-footer strong { display: block; font-size: 13px; }
+.quote-doc-footer p { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; margin: 4px 0 0; }
+.quote-doc-fineprint { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; margin-top: 14px; opacity: .75; text-align: center; }
+
+@media (max-width: 640px) {
+  .quote-doc { padding: 32px 22px; }
+  .quote-doc-header { flex-direction: column; }
+  .quote-doc-meta { text-align: left; }
+  .quote-doc-terms { grid-template-columns: 1fr; }
+}
+
+@media print {
+  .quote-print-toolbar { display: none !important; }
+  .quote-print-page { background: white !important; padding: 0 !important; }
+  .quote-doc { border-radius: 0; box-shadow: none; max-width: 100%; padding: 0; }
+  @page { margin: 18mm; }
 }
