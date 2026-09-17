@@ -29,7 +29,7 @@ jobs:
         run: npm run build
 
       - name: Empacotar
-        run: tar -czf calculadora3d.tar.gz .next public package.json package-lock.json next.config.ts prisma/schema.prisma prisma/migrations
+        run: tar --exclude='.next/cache' -czf calculadora3d.tar.gz .next public package.json package-lock.json next.config.ts prisma/schema.prisma prisma/migrations
 
       - name: Configurar SSH
         run: |

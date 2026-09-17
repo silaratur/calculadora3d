@@ -64,7 +64,7 @@ Na pasta do projeto, no PC (Git Bash):
 
 ```bash
 npm run build
-tar -czf /tmp/calculadora3d.tar.gz .next public package.json package-lock.json next.config.ts prisma/schema.prisma prisma/migrations
+tar --exclude='.next/cache' --exclude='.next/dev' -czf /tmp/calculadora3d.tar.gz .next public package.json package-lock.json next.config.ts prisma/schema.prisma prisma/migrations
 scp -o IdentitiesOnly=yes -i ~/.ssh/calculadora3d_ci /tmp/calculadora3d.tar.gz root@72.60.7.224:/tmp/
 ssh -o IdentitiesOnly=yes -i ~/.ssh/calculadora3d_ci root@72.60.7.224 "tar -xzf /tmp/calculadora3d.tar.gz -C /opt/calculadora3d && cd /opt/calculadora3d && npm install --omit=dev && npx prisma generate && npx prisma migrate deploy && docker compose restart"
 ```
