@@ -11,6 +11,7 @@ type Supply = { id: string; name: string; category: string; unitCost: number };
 type PricingSettings = { energyRate: number; defaultPowerWatts: number; laborRate: number; monthlyRent: number; monthlySubscriptions: number; monthlyMaintenance: number; monthlyOtherCosts: number; monthlyPieces: number; defaultMarkup: number; defaultLossRate: number };
 type Marketplace = { id: string; name: string; commissionRate: number; fixedFee: number; adsRate: number };
 type CustomExtra = { id: string; name: string; unitCost: number };
+type CustomerLead = { id: string; name: string };
 
 const demoMaterials: Material[] = [{ id: "pla", name: "Filamento PLA Premium F3D 1,75mm, 1kg, Vermelho", type: "PLA", unitPrice: 109, unitWeightGrams: 1000, costPerKg: 109 }, { id: "petg", name: "Filamento PETG 1,75mm 1kg Impressão 3D", type: "PETG", unitPrice: 99.9, unitWeightGrams: 1000, costPerKg: 99.9 }];
 const demoPrinters: Printer[] = [{ id: "a1", model: "Bambu Lab A1 - Combo", purchasePrice: 4607, powerWatts: 220, usefulLifeHours: 6000, maintenancePerHour: 0.77 }];
@@ -41,10 +42,12 @@ export default function CalculatorPage() {
   const [supplies, setSupplies] = useState<Supply[]>(demoSupplies);
   const [settings, setSettings] = useState<PricingSettings>(defaultSettings);
   const [marketplaces, setMarketplaces] = useState<Marketplace[]>([defaultMarketplace]);
-  const [materialId, setMaterialId] = useState("pla");
+  const [materialId, setMaterialId] = useState("");
   const [printerId, setPrinterId] = useState("a1");
   const [name, setName] = useState("Porta Guardanapos Árvore de Natal");
   const [client, setClient] = useState("");
+  const [customers, setCustomers] = useState<CustomerLead[]>([]);
+  const [clientSuggestionsOpen, setClientSuggestionsOpen] = useState(false);
   const [weight, setWeight] = useState("19,9");
   const [hours, setHours] = useState("0");
   const [minutes, setMinutes] = useState("51");
@@ -76,8 +79,8 @@ export default function CalculatorPage() {
       // Mês local, não UTC — perto da meia-noite no Brasil toISOString() já mostraria o mês seguinte.
       const now = new Date();
       const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-      const responses = await Promise.all([fetch("/api/materials"), fetch("/api/printers"), fetch("/api/supplies"), fetch("/api/settings"), fetch("/api/marketplaces"), fetch("/api/costs/fixed")]);
-      if (responses[0].ok) { const data = (await responses[0].json()) as Material[]; if (data.length) { setMaterials(data); setMaterialId(data[0].id); } }
+      const responses = await Promise.all([fetch("/api/materials"), fetch("/api/printers"), fetch("/api/supplies"), fetch("/api/settings"), fetch("/api/marketplaces"), fetch("/api/costs/fixed"), fetch("/api/customers")]);
+      if (responses[0].ok) { const data = (await responses[0].json()) as Material[]; if (data.length) setMaterials(data); }
       if (responses[1].ok) { const data = (await responses[1].json()) as Printer[]; if (data.length) { setPrinters(data); setPrinterId(data[0].id); setMaintenancePerHour(String(data[0].maintenancePerHour).replace(".", ",")); } }
       if (responses[2].ok) { const data = (await responses[2].json()) as Supply[]; if (data.length) setSupplies(data); }
       if (responses[3].ok) { const data = (await responses[3].json()) as PricingSettings; setSettings(data); setLaborRate(String(data.laborRate).replace(".", ",")); setEnergyRate(String(data.energyRate).replace(".", ",")); setMarkup(String(data.defaultMarkup)); setLossRate(String(data.defaultLossRate)); setPower(String(data.defaultPowerWatts)); }
@@ -88,13 +91,19 @@ export default function CalculatorPage() {
         const data = (await responses[5].json()) as { month: string; total: number }[];
         setCurrentMonthFixedCost(data.find((item) => item.month === month)?.total ?? null);
       }
+      if (responses[6].ok) setCustomers((await responses[6].json()) as CustomerLead[]);
     }
     void load();
   }, []);
 
-  const material = materials.find((item) => item.id === materialId) ?? materials[0];
+  const material = materials.find((item) => item.id === materialId);
   const printer = printers.find((item) => item.id === printerId) ?? printers[0];
   const marketplace = marketplaces.find((item) => item.id === marketplaceId) ?? marketplaces[0] ?? defaultMarketplace;
+  const clientSuggestions = useMemo(() => {
+    const query = client.trim().toLowerCase();
+    if (!query) return [];
+    return customers.filter((item) => item.name.toLowerCase().includes(query)).slice(0, 6);
+  }, [client, customers]);
 
   function selectPrinter(id: string) {
     setPrinterId(id);
@@ -200,8 +209,29 @@ export default function CalculatorPage() {
       <AdminHeader active="calculator" />
       <div className="calculator-content">
         <section className="project-header">
-          <label><span>NOME DO PRODUTO / ITEM 3D</span><input value={name} onChange={(event) => setName(event.target.value)} /></label>
-          <label><span>NOME DO CLIENTE (OPCIONAL)</span><input value={client} onChange={(event) => setClient(event.target.value)} placeholder="Ex: João Silva - Orçamento #102" /></label>
+          <label><span>NOME DO ORÇAMENTO (PRODUTO / KIT / VARIAÇÃO)</span><input value={name} onChange={(event) => setName(event.target.value)} /></label>
+          <label className="client-field">
+            <span>NOME DO CLIENTE (OPCIONAL)</span>
+            <input
+              value={client}
+              onChange={(event) => { setClient(event.target.value); setClientSuggestionsOpen(true); }}
+              onFocus={() => setClientSuggestionsOpen(true)}
+              onBlur={() => setClientSuggestionsOpen(false)}
+              placeholder="Ex: João Silva - Orçamento #102"
+              autoComplete="off"
+            />
+            {clientSuggestionsOpen && clientSuggestions.length > 0 ? (
+              <ul className="client-suggestions">
+                {clientSuggestions.map((item) => (
+                  <li key={item.id}>
+                    <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setClient(item.name); setClientSuggestionsOpen(false); }}>
+                      {item.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </label>
           <button className="quiet-button" onClick={() => { setName(""); setClient(""); setWeight(""); setNotes(""); }}>↻ Limpar Campos</button>
         </section>
 
@@ -210,7 +240,7 @@ export default function CalculatorPage() {
             <section className="calc-section">
               <Title text="MATERIAL & FILAMENTO" />
               <div className="field-row library-row">
-                <label>Selecionar da Biblioteca<select value={materialId} onChange={(event) => setMaterialId(event.target.value)}>{materials.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+                <label>Selecionar da Biblioteca<select value={materialId} onChange={(event) => setMaterialId(event.target.value)}><option value="">Selecione um material...</option>{materials.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
                 <a className="bookmark-link" href="/admin" title="Gerenciar presets na Biblioteca"><IconBookmark className="nav-icon" /></a>
               </div>
               <div className="field-grid three">
