@@ -97,7 +97,11 @@ export default function ProductionPage() {
   }
 
   async function registerReceipt(order: Order) {
-    const amount = Number(receiptAmount.replace(",", "."));
+    const pending = order.totalAmount - order.paidAmount;
+    // Campo vazio = usa o valor pendente (o mesmo número mostrado no
+    // placeholder) — sem isso, clicar em "Registrar Recebimento" sem digitar
+    // nada falhava a validação em silêncio e parecia que o botão não fazia nada.
+    const amount = receiptAmount.trim() ? Number(receiptAmount.replace(",", ".")) : pending;
     if (!amount || amount <= 0) { setFeedback("Informe um valor a receber válido."); return; }
     const response = await fetch("/api/payments", {
       method: "POST",
@@ -303,6 +307,7 @@ export default function ProductionPage() {
                           </label>
                           <button className="primary-button" type="button" onClick={() => void registerReceipt(order)}>Registrar Recebimento</button>
                         </div>
+                        {feedback ? <p className="admin-feedback">{feedback}</p> : null}
                       </div>
                     ) : (
                       <div className="project-card-details">

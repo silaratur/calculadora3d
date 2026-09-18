@@ -380,6 +380,29 @@ body {
   text-decoration: none;
 }
 
+/* Menu mobile: escondido no desktop (o toggle nem aparece), .admin-nav-panel
+   com display:contents faz nav+CTA se comportarem como filhos diretos do
+   flex do .admin-topbar — ou seja, em telas largas nada muda visualmente. */
+.mobile-menu-toggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--admin-ink);
+  cursor: pointer;
+  display: none;
+  padding: 6px;
+}
+.admin-nav-panel { display: contents; }
+.mobile-menu-backdrop {
+  background: rgba(61, 34, 37, 0.35);
+  border: 0;
+  cursor: pointer;
+  inset: 0;
+  padding: 0;
+  position: fixed;
+  z-index: 14;
+}
+
 .admin-content {
   margin: 28px auto 72px;
   max-width: 1320px;
@@ -553,6 +576,13 @@ a.primary-button {
 }
 
 .form-actions .primary-button {
+  flex: 1;
+}
+
+/* Catálogo Novo: Salvar/Atualizar virou o botão junto ao preço (.saved-tag,
+   igual à Calculadora) — aqui sobra só o Cancelar, que sem isso ficaria
+   pequeno e desalinhado à esquerda em vez de ocupar a largura da barra. */
+.form-actions .secondary-button:only-child {
   flex: 1;
 }
 
@@ -840,6 +870,19 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .catalog-filters-right { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; }
 .items-per-page { align-items: center; color: var(--admin-muted); display: flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; gap: 6px; }
 
+/* Catálogo Novo reaproveita project-tools/catalog-filters (nascidos no Catálogo
+   antigo, tema "admin", sem font-family/font-size definidos) mas roda dentro do
+   mesmo shell da Calculadora — aqui alinha esses campos à referência de fonte e
+   altura dela (.calc-section input), sem tocar quem ainda usa esses componentes
+   no Catálogo/Projetos/Produção (tema admin, fora de .calculator-content). */
+.calculator-content .project-tools input,
+.calculator-content .catalog-filters input,
+.calculator-content .catalog-filters select {
+  font-family: var(--font-sans), Arial, sans-serif;
+  font-size: 12px;
+  min-height: 36px;
+}
+
 .pagination { align-items: center; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 22px 0 4px; }
 .pagination button { background: var(--admin-paper); border: 1px solid var(--admin-border); border-radius: 8px; color: var(--admin-muted); cursor: pointer; font-family: var(--font-mono); font-size: 12px; min-width: 32px; padding: 7px 9px; }
 .pagination button:hover:not(:disabled) { border-color: var(--admin-copper); color: var(--admin-copper); }
@@ -1011,10 +1054,31 @@ button.new-quote-button { border: 0; cursor: pointer; }
   .operations-layout { grid-template-columns: 1fr; }
   .wide-form .form-grid { grid-template-columns: 1fr 1fr; }
   .cashflow-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .admin-topbar { align-items: flex-start; flex-wrap: wrap; }
-  .admin-nav { order: 3; width: 100%; }
-  .new-order-cta { order: 2; }
-  .admin-account { margin-left: auto; }
+
+  /* Abaixo de 900px os 12 links não cabem numa linha — em vez de quebrar em
+     várias linhas dentro do cabeçalho fixo (o "frame" tomando a tela toda no
+     celular), o menu vira um painel recolhível aberto pelo hamburger. */
+  .mobile-menu-toggle { display: inline-flex; }
+  .admin-nav-panel {
+    background: var(--admin-paper);
+    border-bottom: 1px solid var(--admin-border);
+    box-shadow: 0 12px 24px rgba(61, 34, 37, 0.12);
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    left: 0;
+    max-height: calc(100vh - 70px);
+    overflow-y: auto;
+    padding: 14px 16px 18px;
+    position: fixed;
+    right: 0;
+    top: 70px;
+    z-index: 15;
+  }
+  .admin-nav-panel.open { display: flex; }
+  .admin-nav { flex-direction: column; width: 100%; }
+  .admin-nav a { padding: 13px 14px; width: 100%; }
+  .new-order-cta { justify-content: center; margin-top: 6px; width: 100%; }
   .library-heading { align-items: flex-start; flex-direction: column; gap: 18px; }
   .preset-tabs { width: 100%; }
   .preset-tabs button { flex: 1; }

@@ -20,6 +20,25 @@ type FixedCostMonth = {
   total: number;
 };
 
+type PricingSettings = {
+  energyRate: number;
+  defaultPowerWatts: number;
+  laborRate: number;
+  monthlyRent: number;
+  monthlySubscriptions: number;
+  monthlyMaintenance: number;
+  monthlyOtherCosts: number;
+  monthlyPieces: number;
+  defaultMarkup: number;
+  defaultLossRate: number;
+  companyName?: string;
+  companyContact?: string;
+  quoteValidityDays?: number;
+  quoteDeliveryText?: string;
+  quoteWarrantyText?: string;
+  quotePaymentText?: string;
+};
+
 type VariableCostEntry = {
   id: string;
   date: string;
@@ -74,12 +93,27 @@ const variableFields: { key: keyof typeof emptyVariable; label: string }[] = [
 ];
 const emptyVariable = { date: todayLocal(), description: "", filament: "0", commission: "0", energy: "0", shipping: "0", packaging: "0", waste: "0", salesFee: "0", maintenance: "0" };
 
+// Campos que entram direto no cálculo de energia/mão de obra/rateio fixo em
+// calculatePieceCost + fixedCostPerPiece (src/lib/costing.ts) — vieram do
+// grupo "Produção" de Configurações, que não tem mais essa edição.
+const productionFields: { key: "energyRate" | "defaultPowerWatts" | "laborRate" | "monthlyPieces"; label: string }[] = [
+  { key: "energyRate", label: "Custo do kWh (R$)" },
+  { key: "defaultPowerWatts", label: "Potência padrão (W)" },
+  { key: "laborRate", label: "Custo da hora de trabalho (R$)" },
+  { key: "monthlyPieces", label: "Peças produzidas por mês" },
+];
+
+const emptySettings: PricingSettings = { energyRate: 0.85, defaultPowerWatts: 250, laborRate: 25, monthlyRent: 0, monthlySubscriptions: 50, monthlyMaintenance: 40, monthlyOtherCosts: 0, monthlyPieces: 60, defaultMarkup: 40, defaultLossRate: 5 };
+const settingsToProductionDraft = (item: PricingSettings) => ({ energyRate: String(item.energyRate), defaultPowerWatts: String(item.defaultPowerWatts), laborRate: String(item.laborRate), monthlyPieces: String(item.monthlyPieces) });
+
 export default function CostsPage() {
-  const [tab, setTab] = useState<"fixed" | "variable">("fixed");
+  const [tab, setTab] = useState<"fixed" | "variable" | "production">("fixed");
   const [fixedMonths, setFixedMonths] = useState<FixedCostMonth[]>([]);
   const [variableEntries, setVariableEntries] = useState<VariableCostEntry[]>([]);
   const [fixedDraft, setFixedDraft] = useState(emptyFixed);
   const [variableDraft, setVariableDraft] = useState(emptyVariable);
+  const [settings, setSettings] = useState<PricingSettings>(emptySettings);
+  const [productionDraft, setProductionDraft] = useState(settingsToProductionDraft(emptySettings));
   const [feedback, setFeedback] = useState("");
   const [needsLogin, setNeedsLogin] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
@@ -87,7 +121,7 @@ export default function CostsPage() {
 
   useEffect(() => {
     async function load() {
-      const [fixedRes, variableRes] = await Promise.all([fetch("/api/costs/fixed"), fetch("/api/costs/variable")]);
+      const [fixedRes, variableRes, settingsRes] = await Promise.all([fetch("/api/costs/fixed"), fetch("/api/costs/variable"), fetch("/api/settings")]);
       if (fixedRes.status === 401) { setNeedsLogin(true); return; }
       setNeedsLogin(false);
       if (fixedRes.ok) {
@@ -99,6 +133,11 @@ export default function CostsPage() {
         });
       }
       if (variableRes.ok) setVariableEntries((await variableRes.json()) as VariableCostEntry[]);
+      if (settingsRes.ok) {
+        const data = (await settingsRes.json()) as PricingSettings;
+        setSettings(data);
+        setProductionDraft(settingsToProductionDraft(data));
+      }
     }
     void load();
   }, [reloadToken]);
@@ -131,6 +170,20 @@ export default function CostsPage() {
     if (response.ok) { setVariableDraft({ ...emptyVariable, date: variableDraft.date }); reload(); }
   }
 
+  async function saveProduction(event: FormEvent) {
+    event.preventDefault();
+    const updated: PricingSettings = {
+      ...settings,
+      energyRate: n(productionDraft.energyRate),
+      defaultPowerWatts: n(productionDraft.defaultPowerWatts),
+      laborRate: n(productionDraft.laborRate),
+      monthlyPieces: Math.max(n(productionDraft.monthlyPieces), 1),
+    };
+    const response = await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(updated) });
+    setFeedback(response.ok ? "Custos de produção salvos." : "Não foi possível salvar.");
+    if (response.ok) setSettings(updated);
+  }
+
   async function deleteFixed(id: string) {
     if (!window.confirm("Excluir este mês de custos fixos?")) return;
     await fetch(`/api/costs/fixed?id=${encodeURIComponent(id)}`, { method: "DELETE" });
@@ -155,6 +208,7 @@ export default function CostsPage() {
           <div className="preset-tabs">
             <button className={tab === "fixed" ? "selected" : ""} onClick={() => setTab("fixed")}>◎ Fixos</button>
             <button className={tab === "variable" ? "selected" : ""} onClick={() => setTab("variable")}>◇ Variáveis</button>
+            <button className={tab === "production" ? "selected" : ""} onClick={() => setTab("production")}>⚙ Produção</button>
           </div>
         </section>
 
@@ -198,7 +252,7 @@ export default function CostsPage() {
               {fixedMonths.length === 0 ? <div className="empty-note">Nenhum mês lançado ainda.</div> : null}
             </div>
           </div>
-        ) : (
+        ) : tab === "variable" ? (
           <div className="costs-stack">
             <form className="preset-form wide-form" onSubmit={saveVariable}>
               <h2>Novo custo variável</h2>
@@ -230,6 +284,21 @@ export default function CostsPage() {
               ))}
               {variableEntries.length === 0 ? <div className="empty-note">Nenhum custo variável lançado ainda.</div> : null}
             </div>
+          </div>
+        ) : (
+          <div className="costs-stack">
+            <form className="preset-form wide-form" onSubmit={saveProduction}>
+              <h2>Custos de produção da máquina</h2>
+              <p className="settings-intro">Mesmos valores de Configurações → Produção — entram direto no custo de energia e mão de obra calculado para cada peça.</p>
+              <div className="form-grid">
+                {productionFields.map((field) => (
+                  <label key={field.key}>{field.label}
+                    <input inputMode="decimal" value={productionDraft[field.key]} onChange={(event) => setProductionDraft({ ...productionDraft, [field.key]: event.target.value })} />
+                  </label>
+                ))}
+              </div>
+              <button className="primary-button" type="submit">Salvar custos de produção</button>
+            </form>
           </div>
         )}
       </div>

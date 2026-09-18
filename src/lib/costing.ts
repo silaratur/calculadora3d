@@ -71,7 +71,7 @@ export type PieceCostInput = {
 export type PieceCost = {
   /** Horas de máquina. */
   printTimeHours: number;
-  /** Horas de trabalho humano (impressão + preparo + limpeza). */
+  /** Horas de trabalho humano (preparo + limpeza/pós-processamento — impressão é hora máquina, não mão de obra). */
   laborHours: number;
   filament: number;
   labor: number;
@@ -105,7 +105,10 @@ export function calculateMultiMaterialCost(lines: { grams: number; material: { u
 
 export function calculatePieceCost(input: PieceCostInput): PieceCost {
   const printTimeHours = Math.max(input.printTimeHours, 0);
-  const laborHours = printTimeHours + (input.prepMinutes ?? 0) / 60 + (input.cleanupMinutes ?? 0) / 60;
+  // Impressão é hora máquina (linha `machine`, depreciação+manutenção) — mão
+  // de obra é só o tempo de gente trabalhando: fatiamento/preparo e
+  // limpeza/pós-processamento.
+  const laborHours = (input.prepMinutes ?? 0) / 60 + (input.cleanupMinutes ?? 0) / 60;
 
   const rollWeight = input.materialUnitWeightGrams || 1000;
   const filament = input.filamentCostOverride ?? (input.weightGrams / rollWeight) * input.materialUnitPrice;

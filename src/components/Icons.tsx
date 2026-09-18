@@ -79,3 +79,9 @@ export function IconShieldAlert({ className }: IconProps) {
 export function IconShoppingBag({ className }: IconProps) {
   return <svg className={className} {...base}><path d="M16 10a4 4 0 0 1-8 0" /><path d="M3.103 6.034h17.794" /><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z" /></svg>;
 }
+export function IconMenu({ className }: IconProps) {
+  return <svg className={className} {...base}><path d="M4 12h16" /><path d="M4 6h16" /><path d="M4 18h16" /></svg>;
+}
+export function IconX({ className }: IconProps) {
+  return <svg className={className} {...base}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>;
+}

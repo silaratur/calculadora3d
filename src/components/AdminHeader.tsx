@@ -10,6 +10,7 @@ import {
   IconGrid,
   IconHome,
   IconLogout,
+  IconMenu,
   IconPrinter,
   IconSettings,
   IconSparkles,
@@ -17,6 +18,7 @@ import {
   IconUser,
   IconCoins,
   IconWallet,
+  IconX,
 } from "@/components/Icons";
 
 type Section =
@@ -58,6 +60,10 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
   // da checagem de sessão terminar.
   const [status, setStatus] = useState<"checking" | "authenticated" | "unauthenticated">("checking");
   const [email, setEmail] = useState<string | null>(null);
+  // Em telas estreitas o menu inteiro (12 links) não cabe numa linha — em vez
+  // de quebrar em várias linhas e o cabeçalho (sticky) tomar a tela toda como
+  // um "frame", ele vira um painel recolhível aberto por este botão.
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,22 +98,34 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
       </Link>
       {status === "authenticated" ? (
         <>
-          <nav className="admin-nav" aria-label="Navegação principal">
-            {links.map((link) => {
-              const badge = badges?.[link.id];
-              const Icon = link.icon;
-              return (
-                <Link key={link.id} className={link.id === active ? "active" : undefined} href={link.href}>
-                  <Icon className="nav-icon" />
-                  {link.label}
-                  {badge ? <b>{badge}</b> : null}
-                </Link>
-              );
-            })}
-          </nav>
-          <Link className="new-order-cta" href="/calculator">
-            <IconCirclePlus className="nav-icon" /> Novo Orçamento
-          </Link>
+          <button
+            className="mobile-menu-toggle"
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? <IconX className="nav-icon" /> : <IconMenu className="nav-icon" />}
+          </button>
+          {menuOpen ? <button className="mobile-menu-backdrop" type="button" aria-label="Fechar menu" onClick={() => setMenuOpen(false)} /> : null}
+          <div className={menuOpen ? "admin-nav-panel open" : "admin-nav-panel"}>
+            <nav className="admin-nav" aria-label="Navegação principal">
+              {links.map((link) => {
+                const badge = badges?.[link.id];
+                const Icon = link.icon;
+                return (
+                  <Link key={link.id} className={link.id === active ? "active" : undefined} href={link.href} onClick={() => setMenuOpen(false)}>
+                    <Icon className="nav-icon" />
+                    {link.label}
+                    {badge ? <b>{badge}</b> : null}
+                  </Link>
+                );
+              })}
+            </nav>
+            <Link className="new-order-cta" href="/calculator" onClick={() => setMenuOpen(false)}>
+              <IconCirclePlus className="nav-icon" /> Novo Orçamento
+            </Link>
+          </div>
           <div className="admin-account">
             {email ?? ""}
             <button className="logout-button" onClick={logout} aria-label="Sair" title="Sair"><IconLogout className="nav-icon" /></button>

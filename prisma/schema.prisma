@@ -65,6 +65,7 @@ model MarketplaceChannel {
   notes          String   @default("")
   active         Boolean  @default(true)
   orders         SalesOrder[]
+  products       Product[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -143,6 +144,12 @@ model Product {
   machineCost    Float    @default(0)
   printerId      String?
   printer        Printer? @relation(fields: [printerId], references: [id])
+  // Margem de Lucro & Taxas (Catálogo Novo) — mesmo bloco da Calculadora.
+  lossRatePercent      Float    @default(0)
+  pricingMethod        String   @default("markup")
+  discountPerUnit      Float    @default(0)
+  marketplaceChannelId String?
+  marketplaceChannel   MarketplaceChannel? @relation(fields: [marketplaceChannelId], references: [id])
   materials      ProductMaterial[]
   supplies       ProductSupply[]
   quotes         Quote[]

@@ -31,6 +31,10 @@ const productSchema = z.object({
   energyCost: z.number().min(0).optional(),
   machineCost: z.number().min(0).optional(),
   printerId: z.string().optional().nullable(),
+  lossRatePercent: z.number().min(0).optional(),
+  pricingMethod: z.enum(["markup", "margin"]).optional(),
+  discountPerUnit: z.number().min(0).optional(),
+  marketplaceChannelId: z.string().optional().nullable(),
 });
 
 async function ensureAuthenticated() {
@@ -99,7 +103,7 @@ export async function GET() {
   const products = await prisma.product.findMany({
     where: { active: true },
     orderBy: { createdAt: "desc" },
-    include: { materials: true, printer: true },
+    include: { materials: true, printer: true, marketplaceChannel: true },
   });
   return NextResponse.json(products);
 }
@@ -134,6 +138,10 @@ export async function POST(request: Request) {
     energyCost: data.energyCost ?? 0,
     machineCost: data.machineCost ?? 0,
     printerId: data.printerId ?? null,
+    lossRatePercent: data.lossRatePercent ?? 0,
+    pricingMethod: data.pricingMethod ?? "markup",
+    discountPerUnit: data.discountPerUnit ?? 0,
+    marketplaceChannelId: data.marketplaceChannelId ?? null,
     ...(resolved ? { materials: { create: resolved.lines } } : {}),
   };
 
@@ -144,7 +152,7 @@ export async function POST(request: Request) {
     try {
       const product = await prisma.product.create({
         data: { ...baseData, sku: await nextSkuForCategory(data.category) },
-        include: { materials: true, printer: true },
+        include: { materials: true, printer: true, marketplaceChannel: true },
       });
       return NextResponse.json(product, { status: 201 });
     } catch (error) {
@@ -200,9 +208,13 @@ export async function PUT(request: Request) {
         energyCost: data.energyCost ?? 0,
         machineCost: data.machineCost ?? 0,
         printerId: data.printerId ?? null,
+        lossRatePercent: data.lossRatePercent ?? 0,
+        pricingMethod: data.pricingMethod ?? "markup",
+        discountPerUnit: data.discountPerUnit ?? 0,
+        marketplaceChannelId: data.marketplaceChannelId ?? null,
         ...(resolved ? { materials: { create: resolved.lines } } : {}),
       },
-      include: { materials: true, printer: true },
+      include: { materials: true, printer: true, marketplaceChannel: true },
     });
   });
 
