@@ -9,6 +9,15 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Rede de segurança: se algum elemento (select com texto longo, grid sem
+   min-width:0 etc.) ficar mais largo que a tela, isso vira rolagem horizontal
+   escondida em vez de "zoom out" da página inteira com a cor de fundo do
+   body sobrando do lado — o bug reportado no celular. */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -21,6 +30,16 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+/* Dentro de grid/flex, um <select>/<input> com conteúdo longo (nome de
+   material, de impressora...) por padrão recusa encolher abaixo do próprio
+   conteúdo (min-width:auto) — isso empurra a linha inteira, e com ela a
+   página, pra fora da tela no celular. Mesmo problema em vários lugares do
+   app (não só o Material & Filamento), corrigido aqui de uma vez. */
+input, select, textarea {
+  max-width: 100%;
+  min-width: 0;
 }
 
 .calculator-shell {
@@ -47,6 +66,7 @@ body {
   color: var(--calc-ink);
   font-family: var(--font-sans), Arial, sans-serif;
   min-height: 100vh;
+  width: 100%;
 }
 
 .calculator-content { margin: 32px auto 70px; max-width: 1240px; padding: 0 22px; }
@@ -210,6 +230,7 @@ body {
   background: var(--admin-bg);
   color: var(--admin-ink);
   font-family: var(--font-sans), Arial, sans-serif;
+  width: 100%;
 }
 
 .admin-topbar {
