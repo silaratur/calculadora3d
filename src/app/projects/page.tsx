@@ -56,6 +56,11 @@ export default function ProjectsPage() {
   // "Não Executado" só depois que o motivo é informado no popup.
   const [archiveTarget, setArchiveTarget] = useState<Quote | null>(null);
   const [archiveReason, setArchiveReason] = useState("");
+  // Exclusão definitiva de um "Não Executado" — só admin, com confirmação
+  // separada (é irreversível, diferente de arquivar).
+  const [role, setRole] = useState<string>("");
+  const [deleteTarget, setDeleteTarget] = useState<Quote | null>(null);
+  const [deleting, setDeleting] = useState(false);
   // Mesmo padrão de listagem do Catálogo: ordenação, filtro e paginação.
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState<SortField>("recent");
@@ -65,12 +70,18 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     async function load() {
-      const [quoteResponse, archivedResponse, competitorResponse] = await Promise.all([fetch("/api/quotes"), fetch("/api/quotes?status=ARCHIVED"), fetch("/api/competitors")]);
+      const [quoteResponse, archivedResponse, competitorResponse, sessionResponse] = await Promise.all([
+        fetch("/api/quotes"),
+        fetch("/api/quotes?status=ARCHIVED"),
+        fetch("/api/competitors"),
+        fetch("/api/session"),
+      ]);
       if (quoteResponse.status === 401) { setNeedsLogin(true); return; }
       setNeedsLogin(false);
       if (quoteResponse.ok) setQuotes((await quoteResponse.json()) as Quote[]);
       if (archivedResponse.ok) setArchivedQuotes((await archivedResponse.json()) as Quote[]);
       if (competitorResponse.ok) setCompetitors((await competitorResponse.json()) as Competitor[]);
+      if (sessionResponse.ok) { const session = (await sessionResponse.json()) as { role?: string }; setRole(session.role ?? ""); }
     }
     void load();
   }, [reloadToken]);
@@ -139,6 +150,27 @@ export default function ProjectsPage() {
     });
     setArchiveTarget(null);
     setArchiveReason("");
+    reload();
+  }
+
+  function requestDelete(quote: Quote) {
+    setDeleteTarget(quote);
+  }
+  function cancelDelete() {
+    setDeleteTarget(null);
+  }
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const response = await fetch(`/api/quotes/${deleteTarget.id}`, { method: "DELETE" });
+    setDeleting(false);
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      setFeedback(typeof body?.error === "string" ? body.error : "Não foi possível excluir este orçamento.");
+      setDeleteTarget(null);
+      return;
+    }
+    setDeleteTarget(null);
     reload();
   }
 
@@ -224,6 +256,12 @@ export default function ProjectsPage() {
                           <a className="edit-button" href={`/orcamentos?quoteId=${quote.id}`}>Editar</a>
                           <button type="button" className="delete-button" onClick={() => requestArchive(quote)} aria-label={`Excluir ${quote.productName}`}><IconTrash className="nav-icon" /></button>
                         </span>
+                      ) : role === "ADMIN" ? (
+                        // Excluir de verdade só existe aqui (Não Executados) e só pra admin —
+                        // arquivar (acima) qualquer um pode; apagar definitivo é irreversível.
+                        <span className="product-card-photo-actions">
+                          <button type="button" className="delete-button" onClick={() => requestDelete(quote)} aria-label={`Excluir definitivamente ${quote.productName}`}><IconTrash className="nav-icon" /></button>
+                        </span>
                       ) : null}
                     </div>
                     <span className="material-badge">{quote.code ?? "—"}</span>
@@ -295,6 +333,22 @@ export default function ProjectsPage() {
             <div className="form-actions">
               <button className="secondary-button" type="button" onClick={cancelArchive}>Cancelar</button>
               <button className="primary-button" type="button" disabled={!archiveReason.trim()} onClick={confirmArchive}>Arquivar</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {deleteTarget ? (
+        <div className="modal-backdrop" onClick={cancelDelete}>
+          <div className="modal-card" onClick={(event) => event.stopPropagation()}>
+            <h2>Excluir orçamento definitivamente</h2>
+            <p>
+              <strong>{deleteTarget.productName}</strong> — {deleteTarget.customerName || "Cliente não informado"}
+            </p>
+            <p className="modal-warning">Essa ação não pode ser desfeita. O orçamento será apagado por completo, junto com o motivo de arquivamento.</p>
+            <div className="form-actions">
+              <button className="secondary-button" type="button" onClick={cancelDelete}>Cancelar</button>
+              <button className="primary-button modal-danger" type="button" disabled={deleting} onClick={confirmDelete}>{deleting ? "Excluindo..." : "Excluir definitivamente"}</button>
             </div>
           </div>
         </div>

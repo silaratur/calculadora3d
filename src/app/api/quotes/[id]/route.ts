@@ -44,3 +44,22 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   });
   return NextResponse.json(quote);
 }
+
+/**
+ * Exclusão definitiva — só de orçamentos já arquivados (Não Executados) e só
+ * por administrador. Orçamentos válidos usam o "arquivar" (DELETE em
+ * /api/quotes, que só muda o status); apagar de verdade é irreversível.
+ */
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  if (user.role !== "ADMIN") return NextResponse.json({ error: "Só administradores podem excluir orçamentos definitivamente" }, { status: 403 });
+  const { id } = await params;
+  const existing = await prisma.quote.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: "Orçamento não encontrado" }, { status: 404 });
+  if (existing.status !== "ARCHIVED") {
+    return NextResponse.json({ error: "Só é possível excluir definitivamente orçamentos já arquivados em Não Executados" }, { status: 400 });
+  }
+  await prisma.quote.delete({ where: { id } });
+  return NextResponse.json({ success: true });
+}

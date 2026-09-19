@@ -963,6 +963,11 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .modal-card label { color: var(--admin-muted); display: flex; flex-direction: column; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; gap: 6px; }
 .modal-card textarea { min-height: 84px; resize: vertical; }
 .modal-card .form-actions { margin-top: 18px; }
+/* Aviso de ação irreversível (excluir definitivo) — vermelho de alerta, não
+   o vinho padrão de "ação principal", pra diferenciar de um confirm comum. */
+.modal-warning { background: #fbeae5; border-radius: 8px; color: #a3402a !important; font-size: 12px !important; margin: -8px 0 0 !important; padding: 10px 12px; }
+.modal-danger { background: #a3402a !important; }
+.modal-danger:hover { background: #7e2f1c !important; }
 
 .payment-history { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
 .payment-row { align-items: center; background: #faf3ec; border: 1px solid var(--admin-border); border-radius: 8px; display: flex; font-size: 12px; gap: 10px; padding: 8px 11px; }
