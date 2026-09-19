@@ -89,6 +89,7 @@ input, select, textarea {
 .client-suggestions button:hover { background: #faf3ec; color: var(--calc-copper); }
 .calculator-grid { align-items: start; display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) 380px; }
 .calculator-main { display: grid; gap: 18px; }
+.price-summary-col .report-error { margin: 10px 4px 0; text-align: center; }
 .calc-section { padding: 20px; }
 .section-title { align-items: center; border-bottom: 1px solid #e8ddd7; color: #8a7472; display: flex; font-size: 12px; font-weight: 600; gap: 8px; margin-bottom: 17px; padding-bottom: 12px; }
 .section-title span { background: #777f5d; border-radius: 50%; height: 7px; width: 7px; }

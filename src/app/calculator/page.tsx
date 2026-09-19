@@ -106,6 +106,7 @@ function CalculatorForm() {
   const [customExtraCost, setCustomExtraCost] = useState("");
   const [notes, setNotes] = useState("");
   const [saved, setSaved] = useState(false);
+  const [reportError, setReportError] = useState("");
   // Total de custos fixos do mês corrente, se já lançado em /costs; senão usa
   // a soma dos 4 campos antigos de PricingSettings (fallback abaixo).
   const [currentMonthFixedCost, setCurrentMonthFixedCost] = useState<number | null>(null);
@@ -344,9 +345,26 @@ function CalculatorForm() {
     window.setTimeout(() => setSaved(false), 2500);
   }
   async function generateReport() {
+    if (!name.trim()) {
+      setReportError("Preencha o nome do orçamento antes de gerar o PDF.");
+      window.setTimeout(() => setReportError(""), 3500);
+      return;
+    }
+    setReportError("");
+    // Abre a aba já no clique (síncrono) pra não ser bloqueada como pop-up:
+    // navegadores permitem window.open só durante o gesto do usuário, e o
+    // await do saveQuote() logo abaixo já tira a chamada desse contexto.
+    const win = window.open("", "_blank");
     const result = await saveQuote();
-    if (!result) { setSaved(false); return; }
-    window.open(`/quotes/${result.id}/print`, "_blank");
+    if (!result) {
+      win?.close();
+      setSaved(false);
+      setReportError("Não foi possível salvar o orçamento. Tente novamente.");
+      window.setTimeout(() => setReportError(""), 3500);
+      return;
+    }
+    if (win) win.location.href = `/quotes/${result.id}/print`;
+    else window.open(`/quotes/${result.id}/print`, "_blank");
   }
 
   const realMarginPercent = calc.price ? (calc.profit / calc.price) * 100 : 0;
@@ -365,7 +383,7 @@ function CalculatorForm() {
       <AdminHeader active="calculator" />
       <div className="calculator-content">
         <section className="project-header">
-          <label><span>NOME DO ORÇAMENTO (PRODUTO / KIT / VARIAÇÃO)</span><input value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex: Porta Guardanapos Árvore de Natal" /></label>
+          <label><span>NOME DO ORÇAMENTO (PRODUTO / KIT / VARIAÇÃO) *</span><input required value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex: Porta Guardanapos Árvore de Natal" /></label>
           <label className="client-field">
             <span>NOME DO CLIENTE (OPCIONAL)</span>
             <input
@@ -560,6 +578,7 @@ function CalculatorForm() {
             </section>
           </div>
 
+          <div className="price-summary-col">
           <aside className="price-summary">
             <span className="summary-eyebrow">PREÇO FINAL SUGERIDO</span>
             <h2>{brl(calc.price)}</h2>
@@ -612,6 +631,8 @@ function CalculatorForm() {
             <button className="report-button" onClick={generateReport}><IconDownload className="nav-icon" /> Gerar Orçamento em PDF</button>
             <button className="whatsapp-button" onClick={() => navigator.clipboard?.writeText(`Orçamento: ${name}\nValor: ${brl(calc.price)}\n\nQualquer dúvida, estou à disposição!`)}><IconCopy className="nav-icon" /> Copiar Resumo para WhatsApp</button>
           </aside>
+          {reportError ? <p className="admin-feedback feedback-error report-error">{reportError}</p> : null}
+          </div>
         </div>
       </div>
     </main>
