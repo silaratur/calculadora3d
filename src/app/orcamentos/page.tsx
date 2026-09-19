@@ -341,6 +341,7 @@ function OrcamentosForm() {
                   <div className="material-line material-line-header product-line">
                     <span />
                     <span>Produto (do Catálogo)</span>
+                    <span>Custo · Tempo</span>
                     <span>Qtd.</span>
                     <span />
                   </div>
@@ -358,20 +359,17 @@ function OrcamentosForm() {
                           <span>{product?.name.slice(0, 1).toUpperCase() ?? "?"}</span>
                         )}
                       </div>
-                      <div className="product-line-main">
-                        <select value={line.productId} onChange={(event) => updateProductLine(index, { productId: event.target.value })}>
-                          <option value="">Selecione um produto...</option>
-                          {products
-                            .filter((item) => item.id === line.productId || !productLines.some((other, otherIndex) => otherIndex !== index && other.productId === item.id))
-                            .map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                        </select>
-                        {product ? (
-                          <small className="product-line-info" title={`${fmtHours(product.printTimeHours)} de impressão · ${brl(product.cost)} cada`}>
-                            <IconClock className="nav-icon" /> {fmtHours(product.printTimeHours)} · {brl(product.cost)}
-                            {quantity > 1 ? ` · ${quantity}x = ${brl(product.cost * quantity)}` : ""}
-                          </small>
-                        ) : null}
-                      </div>
+                      <select value={line.productId} onChange={(event) => updateProductLine(index, { productId: event.target.value })}>
+                        <option value="">Selecione um produto...</option>
+                        {products
+                          .filter((item) => item.id === line.productId || !productLines.some((other, otherIndex) => otherIndex !== index && other.productId === item.id))
+                          .map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                      </select>
+                      {product ? (
+                        <small className="product-line-info" title={`${fmtHours(product.printTimeHours)} de impressão · ${brl(product.cost)} cada${quantity > 1 ? ` · ${quantity}x = ${brl(product.cost * quantity)}` : ""}`}>
+                          <IconClock className="nav-icon" /> {fmtHours(product.printTimeHours)} · {brl(product.cost)}
+                        </small>
+                      ) : <span />}
                       <input inputMode="numeric" value={line.quantity} onChange={(event) => updateProductLine(index, { quantity: event.target.value })} placeholder="1" />
                       <button type="button" className="delete-button" onClick={() => removeProductLine(index)} aria-label="Remover produto"><IconTrash className="nav-icon" /></button>
                     </div>

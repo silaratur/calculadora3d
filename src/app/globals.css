@@ -1041,17 +1041,16 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .material-line { align-items: center; display: grid; gap: 8px; grid-template-columns: 1fr 100px auto; }
 .material-line-header span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 /* Linha de produto do orçamento — thumbnail (pra reconhecer visualmente o
-   produto escolhido) + nome/custo/tempo compactos numa coluna própria, sem
-   disputar largura com quantidade e excluir. */
-.product-line { grid-template-columns: 40px 1fr 64px auto; }
+   produto escolhido), nome, custo/tempo e quantidade tudo na mesma linha; o
+   select fica menor pra abrir espaço pra coluna de custo/tempo ao lado. */
+.product-line { grid-template-columns: 40px minmax(0, 1fr) 128px 52px auto; }
 .product-line-thumb { align-items: center; background: #f2e6da; border-radius: 8px; display: flex; height: 40px; justify-content: center; overflow: hidden; width: 40px; }
 .product-line-thumb img { display: block; height: 100%; object-fit: cover; width: 100%; }
 .product-line-thumb span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 15px; font-weight: 700; }
-.product-line-main { display: grid; gap: 2px; min-width: 0; }
-.product-line-main select { font-size: 11px; min-height: 32px; padding: 6px 9px; }
-/* Custo/tempo numa única linha, sem quebrar — se o nome do produto empurrar
-   demais, corta com reticências em vez de virar 2 linhas feias. */
-.product-line-info { align-items: center; color: var(--admin-muted); display: flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; gap: 4px; overflow: hidden; white-space: nowrap; }
+.product-line select { font-size: 11px; min-height: 32px; padding: 6px 9px; }
+/* Custo/tempo na própria coluna, sem quebrar — se não couber, corta com
+   reticências em vez de virar 2 linhas feias ou empurrar quantidade/excluir. */
+.product-line-info { align-items: center; color: var(--admin-muted); display: flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; gap: 4px; min-width: 0; overflow: hidden; white-space: nowrap; }
 .product-line-info .nav-icon { flex-shrink: 0; }
 .product-card-prices { border-top: 1px solid #e8ddd7; display: grid; gap: 10px; grid-template-columns: 1fr 1fr; margin-top: 13px; padding-top: 11px; text-align: center; }
 .product-card-prices span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; }
