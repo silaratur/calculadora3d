@@ -12,12 +12,8 @@ type Order = {
   quantity: number;
   channel: string;
   totalAmount: number;
-  paidAmount: number;
   paymentStatus: string;
-  paymentMethod: string;
   dueDate: string | null;
-  expectedPaymentDate: string | null;
-  notes: string;
   customer?: Customer | null;
 };
 type Job = { id: string; status: string; priority: string; printerName: string; plannedMinutes: number; completedAt: string | null; notes: string; createdAt: string; order: Order };
@@ -40,27 +36,21 @@ const priorities = [
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const hours = (minutes: number) => (minutes >= 60 ? `${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, "0")}` : `${minutes}min`);
 const priorityLabel = (id: string) => priorities.find((item) => item.id === id)?.label ?? id;
-const dateValue = (value: string | null) => (value ? new Date(value).toLocaleDateString("pt-BR") : "sem data");
 
 export default function ProductionPage() {
-  const [tab, setTab] = useState<"production" | "financial">("production");
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
   const [printers, setPrinters] = useState<Printer[]>([]);
   const [feedback, setFeedback] = useState("");
   const [needsLogin, setNeedsLogin] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
-  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
-  const [receiptAmount, setReceiptAmount] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
   const reload = () => setReloadToken((token) => token + 1);
 
   useEffect(() => {
     async function load() {
-      const [jobResponse, printerResponse, orderResponse] = await Promise.all([
+      const [jobResponse, printerResponse] = await Promise.all([
         fetch("/api/production"),
         fetch("/api/printers"),
-        fetch("/api/orders"),
       ]);
       if (jobResponse.status === 401) {
         setNeedsLogin(true);
@@ -69,7 +59,6 @@ export default function ProductionPage() {
       setNeedsLogin(false);
       if (jobResponse.ok) setJobs((await jobResponse.json()) as Job[]);
       if (printerResponse.ok) setPrinters((await printerResponse.json()) as Printer[]);
-      if (orderResponse.ok) setOrders((await orderResponse.json()) as Order[]);
     }
     void load();
   }, [reloadToken]);
@@ -96,25 +85,6 @@ export default function ProductionPage() {
     void update(job, { status: target.id });
   }
 
-  async function registerReceipt(order: Order) {
-    const pending = order.totalAmount - order.paidAmount;
-    // Campo vazio = usa o valor pendente (o mesmo número mostrado no
-    // placeholder) — sem isso, clicar em "Registrar Recebimento" sem digitar
-    // nada falhava a validação em silêncio e parecia que o botão não fazia nada.
-    const amount = receiptAmount.trim() ? Number(receiptAmount.replace(",", ".")) : pending;
-    if (!amount || amount <= 0) { setFeedback("Informe um valor a receber válido."); return; }
-    const response = await fetch("/api/payments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderId: order.id, amount }),
-    });
-    const body = await response.json();
-    if (!response.ok) { setFeedback(body.error ?? "Não foi possível registrar o recebimento."); return; }
-    setFeedback(`Recebimento de ${brl(amount)} registrado em ${order.orderNumber}.`);
-    setReceiptAmount("");
-    reload();
-  }
-
   const visible = useMemo(() => (showCompleted ? jobs : jobs.filter((job) => job.status !== "COMPLETED")), [jobs, showCompleted]);
   const grouped = useMemo(
     () => columns.map((column) => ({ ...column, jobs: visible.filter((job) => job.status === column.id) })),
@@ -124,10 +94,6 @@ export default function ProductionPage() {
   const plannedMinutes = open.reduce((total, job) => total + job.plannedMinutes, 0);
   const urgent = open.filter((job) => job.priority === "URGENT" || job.priority === "HIGH").length;
   const late = open.filter((job) => job.order.dueDate && new Date(job.order.dueDate) < new Date()).length;
-
-  const pendingOrders = useMemo(() => orders.filter((order) => order.paymentStatus !== "PAID"), [orders]);
-  const totalReceivable = pendingOrders.reduce((sum, order) => sum + (order.totalAmount - order.paidAmount), 0);
-  const partiallyPaid = pendingOrders.filter((order) => order.paymentStatus === "PARTIAL").length;
 
   return (
     <main className="admin-shell">
@@ -146,34 +112,28 @@ export default function ProductionPage() {
 
         <section className="library-heading">
           <div>
-            <h1>Pendências</h1>
-            <p>Fila de produção e contas a receber, num só lugar.</p>
-          </div>
-          <div className="preset-tabs">
-            <button className={tab === "production" ? "selected" : ""} onClick={() => setTab("production")}>◈ Produção</button>
-            <button className={tab === "financial" ? "selected" : ""} onClick={() => setTab("financial")}>◆ Financeiro</button>
+            <h1>Fila de Produção</h1>
+            <p>Da fila até a conclusão — recebimentos financeiros ficam em Vendas.</p>
           </div>
         </section>
 
         {feedback ? <p className="admin-feedback">{feedback}</p> : null}
 
-        {tab === "production" ? (
-          <>
-            <section className="production-stats">
-              <div><span>Jobs abertos</span><strong>{open.length}</strong></div>
-              <div><span>Tempo planejado</span><strong>{hours(plannedMinutes)}</strong></div>
-              <div><span>Prioridade alta</span><strong>{urgent}</strong></div>
-              <div><span>Prazo vencido</span><strong>{late}</strong></div>
-            </section>
+        <section className="production-stats">
+          <div><span>Jobs abertos</span><strong>{open.length}</strong></div>
+          <div><span>Tempo planejado</span><strong>{hours(plannedMinutes)}</strong></div>
+          <div><span>Prioridade alta</span><strong>{urgent}</strong></div>
+          <div><span>Prazo vencido</span><strong>{late}</strong></div>
+        </section>
 
-            <div className="project-tools" style={{ marginBottom: 16 }}>
-              <button className={showCompleted ? "selected" : ""} onClick={() => setShowCompleted(!showCompleted)} type="button">
-                {showCompleted ? "Ocultar concluídos" : "Mostrar concluídos"}
-              </button>
-              <a className="new-quote-button" href="/sales">＋ Novo pedido</a>
-            </div>
+        <div className="project-tools" style={{ marginBottom: 16 }}>
+          <button className={showCompleted ? "selected" : ""} onClick={() => setShowCompleted(!showCompleted)} type="button">
+            {showCompleted ? "Ocultar concluídos" : "Mostrar concluídos"}
+          </button>
+          <a className="new-quote-button" href="/sales">＋ Novo pedido</a>
+        </div>
 
-            <div className="production-board">
+        <div className="production-board">
               {grouped.map((column) => (
                 <section className="board-column" key={column.id}>
                   <header className="board-column-head">
@@ -257,72 +217,9 @@ export default function ProductionPage() {
               ))}
             </div>
 
-            {jobs.length === 0 && !needsLogin ? (
-              <div className="empty-note">Nenhum job de produção ainda. Crie um pedido em Vendas para abrir a fila.</div>
-            ) : null}
-          </>
-        ) : (
-          <>
-            <section className="production-stats">
-              <div><span>Total a Receber</span><strong>{brl(totalReceivable)}</strong></div>
-              <div><span>Pedidos Pendentes</span><strong>{pendingOrders.length}</strong></div>
-              <div><span>Parcialmente Recebidos</span><strong>{partiallyPaid}</strong></div>
-            </section>
-
-            <div className="project-list">
-              {pendingOrders.map((order) => {
-                const pending = order.totalAmount - order.paidAmount;
-                const expanded = expandedOrder === order.id;
-                return (
-                  <article className="project-card" key={order.id}>
-                    <div className="project-card-top">
-                      <span className="material-badge">{order.orderNumber}</span>
-                      <div>
-                        <span className="project-status">{order.paymentStatus === "PARTIAL" ? "Parcialmente recebido" : "Falta receber"}</span>
-                        <button className="edit-button" type="button" onClick={() => { setExpandedOrder(expanded ? null : order.id); setReceiptAmount(""); }}>
-                          {expanded ? "Fechar" : "Abrir"}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="project-card-heading">
-                      <div>
-                        <h2>{order.productName}</h2>
-                        <p>{order.customer?.name || "Cliente não informado"}</p>
-                      </div>
-                      <strong>{brl(pending)}</strong>
-                    </div>
-
-                    {expanded ? (
-                      <div className="receivable-detail">
-                        <div className="production-stats" style={{ marginBottom: 12 }}>
-                          <div><span>Valor Total</span><strong>{brl(order.totalAmount)}</strong></div>
-                          <div><span>Já Recebido</span><strong>{brl(order.paidAmount)}</strong></div>
-                          <div><span>Pendente</span><strong>{brl(pending)}</strong></div>
-                          <div><span>Forma Pagto.</span><strong>{order.paymentMethod}</strong></div>
-                        </div>
-                        <p className="card-detail">Data prevista de recebimento: {dateValue(order.expectedPaymentDate)}</p>
-                        <div className="form-grid" style={{ alignItems: "end" }}>
-                          <label>Valor a receber (R$)
-                            <input inputMode="decimal" value={receiptAmount} onChange={(event) => setReceiptAmount(event.target.value)} placeholder={pending.toFixed(2)} />
-                          </label>
-                          <button className="primary-button" type="button" onClick={() => void registerReceipt(order)}>Registrar Recebimento</button>
-                        </div>
-                        {feedback ? <p className="admin-feedback">{feedback}</p> : null}
-                      </div>
-                    ) : (
-                      <div className="project-card-details">
-                        <span>Total: {brl(order.totalAmount)}</span>
-                        <span>Recebido: {brl(order.paidAmount)}</span>
-                        <span>Previsto: {dateValue(order.expectedPaymentDate)}</span>
-                      </div>
-                    )}
-                  </article>
-                );
-              })}
-              {pendingOrders.length === 0 ? <div className="empty-note">Nenhuma pendência financeira. Tudo recebido!</div> : null}
-            </div>
-          </>
-        )}
+        {jobs.length === 0 && !needsLogin ? (
+          <div className="empty-note">Nenhum job de produção ainda. Crie um pedido em Vendas para abrir a fila.</div>
+        ) : null}
       </div>
     </main>
   );

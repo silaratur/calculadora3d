@@ -41,6 +41,10 @@ export async function getCurrentUser() {
       where: { id: payload.userId },
     });
 
+    // Reconsultado do banco (não só decodificado do JWT) pra um usuário
+    // desativado no meio da sessão de 7 dias parar de conseguir usar a API
+    // na mesma hora, mesmo sem fazer logout.
+    if (!user?.active) return null;
     return user;
   } catch {
     return null;

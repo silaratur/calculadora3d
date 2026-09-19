@@ -75,6 +75,8 @@ export default function SalesPage() {
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [needsLogin, setNeedsLogin] = useState(false);
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [receiptAmount, setReceiptAmount] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
   const reload = () => setReloadToken((token) => token + 1);
 
@@ -193,6 +195,25 @@ export default function SalesPage() {
     reload();
   }
 
+  async function registerReceipt(order: Order) {
+    const pending = order.totalAmount - order.paidAmount;
+    // Campo vazio = usa o valor pendente (o mesmo número mostrado no
+    // placeholder) — clicar em "Registrar Recebimento" sem digitar nada
+    // registra o valor total que falta, em vez de falhar em silêncio.
+    const amount = receiptAmount.trim() ? n(receiptAmount) : pending;
+    if (!amount || amount <= 0) { setFeedback("Informe um valor a receber válido."); return; }
+    const response = await fetch("/api/payments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId: order.id, amount }),
+    });
+    const body = await response.json();
+    if (!response.ok) { setFeedback(body.error ?? "Não foi possível registrar o recebimento."); return; }
+    setFeedback(`Recebimento de ${brl(amount)} registrado em ${order.orderNumber}.`);
+    setReceiptAmount("");
+    reload();
+  }
+
   const filtered = useMemo(
     () =>
       orders.filter((order) => {
@@ -288,26 +309,54 @@ export default function SalesPage() {
               </select>
             </div>
 
-            {filtered.map((order) => (
-              <article className="operation-card" key={order.id}>
-                <div className="card-top">
-                  <span className="material-badge">{order.orderNumber}</span>
-                  <span className="card-actions">
-                    <span className="project-status">{statusLabel[order.status] ?? order.status}</span>
-                    <button className="edit-button" onClick={() => edit(order)} disabled={order.paidAmount > 0} title={order.paidAmount > 0 ? "Pedido já recebeu pagamento — não pode ser editado" : undefined}>Editar</button>
-                    <button className="delete-button" onClick={() => archive(order.id)} aria-label={`Excluir ${order.orderNumber}`}><IconTrash className="nav-icon" /></button>
-                  </span>
-                </div>
-                <h2>{order.productName}</h2>
-                <p>{order.customer?.name || "Cliente não informado"} · {order.quantity} unidade(s) · {order.channel} · {order.paymentMethod}</p>
-                <div className="operation-card-bottom">
-                  <strong>{brl(order.totalAmount)}</strong>
-                  <span>{paymentLabel[order.paymentStatus] ?? order.paymentStatus} {order.paidAmount > 0 ? `· ${brl(order.paidAmount)} recebido` : ""}</span>
-                  <span>Entrega: {dateValue(order.dueDate) || "sem prazo"}</span>
-                  <a href="/production">Acompanhar produção</a>
-                </div>
-              </article>
-            ))}
+            {filtered.map((order) => {
+              const pending = order.totalAmount - order.paidAmount;
+              const expanded = expandedOrder === order.id;
+              return (
+                <article className="operation-card" key={order.id}>
+                  <div className="card-top">
+                    <span className="material-badge">{order.orderNumber}</span>
+                    <span className="card-actions">
+                      <span className="project-status">{statusLabel[order.status] ?? order.status}</span>
+                      <button className="edit-button" onClick={() => edit(order)} disabled={order.paidAmount > 0} title={order.paidAmount > 0 ? "Pedido já recebeu pagamento — não pode ser editado" : undefined}>Editar</button>
+                      {order.paymentStatus !== "PAID" ? (
+                        <button className="edit-button" type="button" onClick={() => { setExpandedOrder(expanded ? null : order.id); setReceiptAmount(""); setFeedback(""); }}>
+                          {expanded ? "Fechar" : "Receber"}
+                        </button>
+                      ) : null}
+                      <button className="delete-button" onClick={() => archive(order.id)} aria-label={`Excluir ${order.orderNumber}`}><IconTrash className="nav-icon" /></button>
+                    </span>
+                  </div>
+                  <h2>{order.productName}</h2>
+                  <p>{order.customer?.name || "Cliente não informado"} · {order.quantity} unidade(s) · {order.channel} · {order.paymentMethod}</p>
+                  <div className="operation-card-bottom">
+                    <strong>{brl(order.totalAmount)}</strong>
+                    <span>{paymentLabel[order.paymentStatus] ?? order.paymentStatus} {order.paidAmount > 0 ? `· ${brl(order.paidAmount)} recebido` : ""}</span>
+                    <span>Entrega: {dateValue(order.dueDate) || "sem prazo"}</span>
+                    <a href="/production">Acompanhar produção</a>
+                  </div>
+
+                  {expanded ? (
+                    <div className="receivable-detail">
+                      <div className="production-stats" style={{ marginBottom: 12 }}>
+                        <div><span>Valor Total</span><strong>{brl(order.totalAmount)}</strong></div>
+                        <div><span>Já Recebido</span><strong>{brl(order.paidAmount)}</strong></div>
+                        <div><span>Pendente</span><strong>{brl(pending)}</strong></div>
+                        <div><span>Forma Pagto.</span><strong>{order.paymentMethod}</strong></div>
+                      </div>
+                      <p className="card-detail">Data prevista de recebimento: {dateValue(order.expectedPaymentDate) || "sem previsão"}</p>
+                      <div className="form-grid" style={{ alignItems: "end" }}>
+                        <label>Valor a receber (R$)
+                          <input inputMode="decimal" value={receiptAmount} onChange={(event) => setReceiptAmount(event.target.value)} placeholder={pending.toFixed(2)} />
+                        </label>
+                        <button className="primary-button" type="button" onClick={() => void registerReceipt(order)}>Registrar Recebimento</button>
+                      </div>
+                      {feedback ? <p className="admin-feedback">{feedback}</p> : null}
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
             {filtered.length === 0 ? <div className="empty-note">Nenhum pedido encontrado.</div> : null}
           </section>
         </div>

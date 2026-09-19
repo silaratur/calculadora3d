@@ -13,6 +13,9 @@ export async function POST(request: Request) {
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
     return NextResponse.json({ error: "Credenciais inválidas" }, { status: 401 });
   }
+  if (!user.active) {
+    return NextResponse.json({ error: "Usuário desativado. Fale com um administrador." }, { status: 403 });
+  }
 
   const token = await signToken({
     id: user.id,

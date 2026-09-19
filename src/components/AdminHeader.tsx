@@ -16,10 +16,12 @@ import {
   IconSparkles,
   IconTag,
   IconUser,
+  IconUsers,
   IconCoins,
   IconWallet,
   IconX,
 } from "@/components/Icons";
+import { canAccessPath } from "@/lib/roles";
 
 type Section =
   | "dashboard"
@@ -33,7 +35,8 @@ type Section =
   | "production"
   | "costs"
   | "cashflow"
-  | "settings";
+  | "settings"
+  | "users";
 
 const links: { id: Section; href: string; label: string; icon: (props: { className?: string }) => React.ReactElement }[] = [
   { id: "dashboard", href: "/", label: "Painel", icon: IconHome },
@@ -50,6 +53,7 @@ const links: { id: Section; href: string; label: string; icon: (props: { classNa
   { id: "costs", href: "/costs", label: "Custos", icon: IconCoins },
   { id: "cashflow", href: "/cashflow", label: "Caixa", icon: IconWallet },
   { id: "settings", href: "/settings", label: "Configurações", icon: IconSettings },
+  { id: "users", href: "/users", label: "Usuários", icon: IconUsers },
 ];
 
 export function AdminHeader({ active, badges }: { active: Section; badges?: Partial<Record<Section, number>> }) {
@@ -60,6 +64,7 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
   // da checagem de sessão terminar.
   const [status, setStatus] = useState<"checking" | "authenticated" | "unauthenticated">("checking");
   const [email, setEmail] = useState<string | null>(null);
+  const [role, setRole] = useState<string>("ADMIN");
   // Em telas estreitas o menu inteiro (12 links) não cabe numa linha — em vez
   // de quebrar em várias linhas e o cabeçalho (sticky) tomar a tela toda como
   // um "frame", ele vira um painel recolhível aberto por este botão.
@@ -69,14 +74,20 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
     let cancelled = false;
     fetch("/api/session")
       .then((response) => (response.ok ? response.json() : null))
-      .then((data: { email?: string } | null) => {
+      .then((data: { email?: string; role?: string } | null) => {
         if (cancelled) return;
         setEmail(data?.email ?? null);
+        setRole(data?.role ?? "ADMIN");
         setStatus(data?.email ? "authenticated" : "unauthenticated");
       })
       .catch(() => { if (!cancelled) { setEmail(null); setStatus("unauthenticated"); } });
     return () => { cancelled = true; };
   }, []);
+
+  // Mesma regra do proxy (src/lib/roles.ts) — um perfil restrito não vê no
+  // menu nem o link de uma área que, se clicasse, o proxy mandaria de volta.
+  const visibleLinks = links.filter((link) => canAccessPath(role, link.href));
+  const canUseCalculator = canAccessPath(role, "/calculator");
 
   async function logout() {
     await fetch("/api/logout", { method: "POST" });
@@ -110,7 +121,7 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
           {menuOpen ? <button className="mobile-menu-backdrop" type="button" aria-label="Fechar menu" onClick={() => setMenuOpen(false)} /> : null}
           <div className={menuOpen ? "admin-nav-panel open" : "admin-nav-panel"}>
             <nav className="admin-nav" aria-label="Navegação principal">
-              {links.map((link) => {
+              {visibleLinks.map((link) => {
                 const badge = badges?.[link.id];
                 const Icon = link.icon;
                 return (
@@ -122,9 +133,11 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
                 );
               })}
             </nav>
-            <Link className="new-order-cta" href="/calculator" onClick={() => setMenuOpen(false)}>
-              <IconCirclePlus className="nav-icon" /> Novo Orçamento
-            </Link>
+            {canUseCalculator ? (
+              <Link className="new-order-cta" href="/calculator" onClick={() => setMenuOpen(false)}>
+                <IconCirclePlus className="nav-icon" /> Novo Orçamento
+              </Link>
+            ) : null}
           </div>
           <div className="admin-account">
             {email ?? ""}

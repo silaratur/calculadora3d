@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { canAccessPath } from "@/lib/roles";
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET ?? "dev-secret-change-me");
 
@@ -19,7 +20,15 @@ export async function proxy(request: NextRequest) {
   const token = request.cookies.get("session_token")?.value;
   if (token) {
     try {
-      await jwtVerify(token, secret);
+      const { payload } = await jwtVerify(token, secret);
+      const role = typeof payload.role === "string" ? payload.role : "CALCULATOR";
+      // Perfis restritos (Catálogo/Calculadora) só passam pras páginas
+      // liberadas pro perfil deles — tentar abrir outra redireciona pro
+      // painel em vez de mostrar a tela (o JWT carrega o perfil; se ele mudar
+      // depois de um login já feito, só passa a valer no próximo login).
+      if (!canAccessPath(role, request.nextUrl.pathname)) {
+        return NextResponse.redirect(new URL("/", request.url));
+      }
       return NextResponse.next();
     } catch {
       // token ausente/expirado/inválido — cai no redirect abaixo

@@ -527,7 +527,7 @@ input, select, textarea {
   gap: 5px;
 }
 
-.preset-form input, .preset-form select, .preset-form textarea {
+.preset-form input:not([type="checkbox"]), .preset-form select, .preset-form textarea {
   background: #faf3ec;
   border: 1px solid #e8ddd7;
   border-radius: 11px;
@@ -540,6 +540,12 @@ input, select, textarea {
 }
 
 .preset-form textarea { min-height: 66px; resize: vertical; }
+
+/* Checkbox simples (ex: usuário ativo) — o reset de <input> do form vira um
+   retângulo de 35px de altura se aplicado a um checkbox, então esta é a
+   única combinação form+campo que foge do padrão. */
+.checkbox-field { align-items: center; flex-direction: row !important; gap: 8px !important; }
+.checkbox-field input[type="checkbox"] { accent-color: var(--admin-copper); height: 16px; width: 16px; }
 
 .preset-form input:focus, .preset-form select:focus, .preset-form textarea:focus {
   border-color: var(--admin-copper);

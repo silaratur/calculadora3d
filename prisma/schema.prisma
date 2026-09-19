@@ -16,7 +16,11 @@ model User {
   name         String
   email        String   @unique
   passwordHash String
+  // "ADMIN" (tudo) | "CATALOG" (só Catálogo/Catálogo Novo) | "CALCULATOR" (só
+  // Calculadora) — ver src/lib/roles.ts para a lista completa e o que cada
+  // perfil pode acessar.
   role         String   @default("ADMIN")
+  active       Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
