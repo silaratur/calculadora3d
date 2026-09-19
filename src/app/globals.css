@@ -1261,14 +1261,15 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .quote-doc-notes { background: #faf3ec; border-radius: 10px; font-size: 13px; line-height: 1.55; margin-top: 12px; padding: 12px 14px; white-space: pre-wrap; }
 /* Tabela "O que está incluso" — foto pequena (proporcional, bem menor que a
    exibição no catálogo) pra destacar visualmente qual produto é aquele,
-   sem competir com o texto. */
-.quote-doc-table { border-collapse: collapse; margin: 14px 0 0; width: 100%; }
+   sem competir com o texto. Moldura própria (não só linhas entre itens),
+   pra continuar lendo como tabela mesmo com um único item. */
+.quote-doc-table { border: 1px solid var(--admin-border); border-collapse: collapse; border-radius: 10px; margin: 14px 0 0; overflow: hidden; width: 100%; }
 .quote-doc-table tr + tr td { border-top: 1px solid var(--admin-border); }
-.quote-doc-table td { padding: 9px 0; vertical-align: middle; }
+.quote-doc-table td { padding: 9px 12px; vertical-align: middle; }
 .quote-doc-table-photo { width: 46px; }
 .quote-doc-table-photo img { border-radius: 8px; display: block; height: 42px; object-fit: cover; width: 42px; }
 .quote-doc-table-photo-empty { background: #f2e6da; border-radius: 8px; display: block; height: 42px; width: 42px; }
-.quote-doc-table-name { color: var(--admin-ink); font-size: 13px; padding-left: 14px; }
+.quote-doc-table-name { color: var(--admin-ink); font-size: 13px; }
 .quote-doc-table-qty { color: var(--admin-muted); font-family: var(--font-mono); font-size: 12px; text-align: right; white-space: nowrap; }
 .quote-doc-price { align-items: center; background: #faf3ec; border-radius: 16px; display: flex; justify-content: space-between; margin: 28px 0; padding: 22px 26px; }
 .quote-doc-price span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
