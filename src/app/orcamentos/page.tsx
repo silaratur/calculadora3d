@@ -369,8 +369,8 @@ function OrcamentosForm() {
                           .map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
                       </select>
                       {product ? (
-                        <small className="product-line-info" title={`${fmtHours(product.printTimeHours)} de impressão · ${brl(product.cost)} cada${quantity > 1 ? ` · ${quantity}x = ${brl(product.cost * quantity)}` : ""}`}>
-                          <IconClock className="nav-icon" /> {fmtHours(product.printTimeHours)} · {brl(product.cost)}
+                        <small className="product-line-info" title={`${fmtHours(product.printTimeHours * quantity)} de impressão · ${brl(product.cost * quantity)}${quantity > 1 ? ` (${quantity}x ${brl(product.cost)} cada)` : ""}`}>
+                          <IconClock className="nav-icon" /> {fmtHours(product.printTimeHours * quantity)} · {brl(product.cost * quantity)}
                         </small>
                       ) : <span />}
                       <span className="qty-stepper">

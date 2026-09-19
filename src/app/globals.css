@@ -1043,24 +1043,29 @@ button.new-quote-button { border: 0; cursor: pointer; }
 /* Linha de produto do orçamento — thumbnail (pra reconhecer visualmente o
    produto escolhido), nome, custo/tempo e quantidade tudo na mesma linha; o
    select fica menor pra abrir espaço pra coluna de custo/tempo ao lado. */
-.product-line { grid-template-columns: 40px minmax(0, 1fr) 128px 64px auto; }
+.product-line { grid-template-columns: 40px minmax(0, 1fr) 128px 70px auto; }
 .product-line-thumb { align-items: center; background: #f2e6da; border-radius: 8px; display: flex; height: 40px; justify-content: center; overflow: hidden; width: 40px; }
 .product-line-thumb img { display: block; height: 100%; object-fit: cover; width: 100%; }
 .product-line-thumb span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 15px; font-weight: 700; }
 .product-line select { font-size: 11px; min-height: 32px; padding: 6px 9px; }
-/* Custo/tempo na própria coluna, sem quebrar — se não couber, corta com
-   reticências em vez de virar 2 linhas feias ou empurrar quantidade/excluir. */
-.product-line-info { align-items: center; color: var(--admin-muted); display: flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; gap: 4px; min-width: 0; overflow: hidden; white-space: nowrap; }
+/* Custo/tempo na própria coluna, sem quebrar e centralizado — se não
+   couber, corta com reticências em vez de virar 2 linhas ou empurrar
+   quantidade/excluir. Recalculado a cada mudança de quantidade (mostra o
+   total da linha, não o valor unitário). */
+.product-line-info { align-items: center; color: var(--admin-muted); display: flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; gap: 4px; justify-content: center; min-width: 0; overflow: hidden; text-align: center; white-space: nowrap; }
 .product-line-info .nav-icon { flex-shrink: 0; }
 /* Campo de quantidade com setas de incremento/decremento coladas ao lado,
-   em vez do spinner nativo do navegador (inconsistente entre browsers). */
+   em vez do spinner nativo do navegador (inconsistente entre browsers).
+   Sem overflow:hidden no wrapper — cortava os ícones das setas; o
+   arredondamento vem dos próprios botões extremos. */
 .qty-stepper { align-items: stretch; display: flex; }
-.qty-stepper input { border-bottom-right-radius: 0; border-right: 0; border-top-right-radius: 0; min-height: 32px; padding: 6px 7px; text-align: center; width: 100%; }
-.qty-stepper-arrows { border: 1px solid var(--admin-border); border-radius: 0 9px 9px 0; display: flex; flex-direction: column; overflow: hidden; }
-.qty-stepper-arrows button { align-items: center; background: #faf3ec; border: 0; color: var(--admin-muted); cursor: pointer; display: flex; height: 16px; justify-content: center; padding: 0; width: 18px; }
-.qty-stepper-arrows button:first-child { border-bottom: 1px solid var(--admin-border); }
+.qty-stepper input { border-bottom-right-radius: 0; border-right: 0; border-top-right-radius: 0; min-height: 32px; padding: 6px 4px; text-align: center; width: 100%; }
+.qty-stepper-arrows { border: 1px solid var(--admin-border); display: flex; flex-direction: column; }
+.qty-stepper-arrows button { align-items: center; background: #faf3ec; border: 0; color: var(--admin-muted); cursor: pointer; display: flex; height: 16px; justify-content: center; padding: 0; width: 22px; }
+.qty-stepper-arrows button:first-child { border-bottom: 1px solid var(--admin-border); border-top-right-radius: 8px; }
+.qty-stepper-arrows button:last-child { border-bottom-right-radius: 8px; }
 .qty-stepper-arrows button:hover { background: #f2e6da; color: var(--admin-copper); }
-.qty-stepper-arrows .nav-icon { height: 11px; width: 11px; }
+.qty-stepper-arrows svg.nav-icon { height: 10px; width: 10px; }
 .material-lines-actions { display: flex; justify-content: flex-end; }
 .product-card-prices { border-top: 1px solid #e8ddd7; display: grid; gap: 10px; grid-template-columns: 1fr 1fr; margin-top: 13px; padding-top: 11px; text-align: center; }
 .product-card-prices span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; }
