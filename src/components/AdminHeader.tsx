@@ -6,6 +6,7 @@ import {
   IconBook,
   IconCalculator,
   IconCirclePlus,
+  IconFileText,
   IconFolder,
   IconGrid,
   IconHome,
@@ -25,6 +26,7 @@ import { canAccessPath } from "@/lib/roles";
 type Section =
   | "dashboard"
   | "calculator"
+  | "orcamentos"
   | "library"
   | "catalog"
   | "customers"
@@ -39,6 +41,7 @@ type Section =
 const links: { id: Section; href: string; label: string; icon: (props: { className?: string }) => React.ReactElement }[] = [
   { id: "dashboard", href: "/", label: "Painel", icon: IconHome },
   { id: "calculator", href: "/calculator", label: "Calculadora", icon: IconCalculator },
+  { id: "orcamentos", href: "/orcamentos", label: "Orçamentos", icon: IconFileText },
   { id: "library", href: "/admin", label: "Biblioteca", icon: IconBook },
   { id: "catalog", href: "/catalog", label: "Catálogo", icon: IconGrid },
   { id: "customers", href: "/customers", label: "Clientes", icon: IconUser },

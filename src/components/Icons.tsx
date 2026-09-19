@@ -31,6 +31,9 @@ export function IconFolder({ className }: IconProps) {
 export function IconTag({ className }: IconProps) {
   return <svg className={className} {...base}><path d="M11.4 3.5H6A2.5 2.5 0 0 0 3.5 6v5.4a2 2 0 0 0 .6 1.4l8 8a2 2 0 0 0 2.8 0l5.4-5.4a2 2 0 0 0 0-2.8l-8-8a2 2 0 0 0-1.4-.6Z" /><circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none" /></svg>;
 }
+export function IconFileText({ className }: IconProps) {
+  return <svg className={className} {...base}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="M10 9H8" /><path d="M16 13H8" /><path d="M16 17H8" /></svg>;
+}
 export function IconPrinter({ className }: IconProps) {
   return <svg className={className} {...base}><path d="M7 8V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v4" /><rect x="4" y="8" width="16" height="8" rx="1.5" /><path d="M7 15v5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-5" /><path d="M7.5 11.2h1" /></svg>;
 }

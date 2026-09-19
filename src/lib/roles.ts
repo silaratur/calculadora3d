@@ -9,9 +9,9 @@ export type Role = "ADMIN" | "CATALOG" | "CALCULATOR" | "PRODUCTION" | "SALES" |
 export const ROLE_OPTIONS: { value: Role; label: string; description: string }[] = [
   { value: "ADMIN", label: "Administrador", description: "Acesso completo a todas as áreas, incluindo gestão de usuários." },
   { value: "CATALOG", label: "Gerador de Catálogo", description: "Só acessa o Catálogo." },
-  { value: "CALCULATOR", label: "Gerador de Calculadora", description: "Só acessa a Calculadora." },
+  { value: "CALCULATOR", label: "Gerador de Calculadora", description: "Só acessa a Calculadora e Orçamentos." },
   { value: "PRODUCTION", label: "Operador de Produção", description: "Só acessa a fila de Produção — sem dados financeiros ou de clientes." },
-  { value: "SALES", label: "Vendas/Atendimento", description: "Clientes, Vendas (com recebimentos), Projetos e Calculadora." },
+  { value: "SALES", label: "Vendas/Atendimento", description: "Clientes, Vendas (com recebimentos), Projetos, Calculadora e Orçamentos." },
   { value: "FINANCE", label: "Financeiro", description: "Custos, Caixa e Vendas (a tela de recebimentos fica dentro de Vendas, então também dá pra editar pedido ali)." },
   { value: "VIEWER", label: "Leitura", description: "Só o Painel, sem poder editar nada — pra acompanhar sem risco." },
 ];
@@ -33,9 +33,9 @@ const UNIVERSAL_PATHS = ["/"];
 
 const ROLE_ALLOWED_PREFIXES: Record<Exclude<Role, "ADMIN">, string[]> = {
   CATALOG: ["/catalog"],
-  CALCULATOR: ["/calculator"],
+  CALCULATOR: ["/calculator", "/orcamentos"],
   PRODUCTION: ["/production"],
-  SALES: ["/customers", "/sales", "/projects", "/calculator"],
+  SALES: ["/customers", "/sales", "/projects", "/calculator", "/orcamentos"],
   // Recebimentos viraram uma ação dentro do card do pedido em Vendas (não uma
   // tela própria) — dar Financeiro sem Vendas deixaria sem como registrar um
   // recebimento; a contrapartida é que esse perfil também edita pedidos.
