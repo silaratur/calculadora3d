@@ -440,9 +440,17 @@ input, select, textarea {
   border-radius: 17px;
   box-shadow: 0 2px 4px rgba(80, 58, 40, 0.04);
   display: flex;
+  gap: 16px;
   justify-content: space-between;
   margin-bottom: 24px;
   padding: 22px 25px;
+}
+
+/* Sem isto, uma descrição longa (ex: Usuários) não cede espaço pro botão
+   ao lado — o texto do primeiro bloco (h1+p) é livre pra encolher e quebrar
+   as próprias linhas em vez de empurrar o resto pra fora da linha. */
+.library-heading > div:first-child {
+  min-width: 0;
 }
 
 .library-heading h1 {
@@ -586,6 +594,7 @@ input, select, textarea {
   font-weight: 600;
   min-height: 37px;
   margin-top: 3px;
+  white-space: nowrap;
 }
 
 .primary-button:hover {
@@ -630,6 +639,7 @@ a.primary-button {
   justify-content: center;
   min-height: 37px;
   padding: 0 13px;
+  white-space: nowrap;
 }
 
 /* Catálogo Novo: o Cancelar encostava direto na caixa de Lucro/Preço Atacado
@@ -670,6 +680,7 @@ a.primary-button {
   font-family: var(--font-sans), Arial, sans-serif;
   font-size: 10px;
   padding: 4px 7px;
+  white-space: nowrap;
 }
 
 .edit-button:hover {
@@ -872,9 +883,12 @@ a.primary-button {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.project-tools { align-items: center; display: flex; gap: 8px; }
-.project-tools input { background: #faf3ec; border: 1px solid var(--admin-border); border-radius: 9px; color: var(--admin-ink); min-height: 35px; padding: 8px 11px; width: 255px; }
-.new-quote-button, .load-editor-button { background: var(--admin-copper); border-radius: 9px; color: white; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; padding: 10px 13px; text-decoration: none; }
+/* nowrap de propósito: busca + botão sempre na mesma linha, lado a lado,
+   igual em Clientes/Catálogo/Usuários — quem cede espaço é o campo de busca
+   (encolhe) e o texto ao lado (quebra as próprias linhas), nunca o botão. */
+.project-tools { align-items: center; display: flex; flex-shrink: 0; gap: 8px; }
+.project-tools input { background: #faf3ec; border: 1px solid var(--admin-border); border-radius: 9px; color: var(--admin-ink); flex-shrink: 1; min-height: 35px; min-width: 120px; padding: 8px 11px; width: 255px; }
+.new-quote-button, .load-editor-button { background: var(--admin-copper); border-radius: 9px; color: white; flex-shrink: 0; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; padding: 10px 13px; text-decoration: none; white-space: nowrap; }
 button.new-quote-button { border: 0; cursor: pointer; }
 .catalog-new-formbar { align-items: center; display: flex; gap: 16px; justify-content: space-between; margin-bottom: 18px; }
 .catalog-new-formbar .sku-hint { flex: 1; margin: 0; }

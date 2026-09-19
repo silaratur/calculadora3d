@@ -80,7 +80,7 @@ function CalculatorForm() {
   const [marketplaces, setMarketplaces] = useState<Marketplace[]>([defaultMarketplace]);
   const [materialId, setMaterialId] = useState("");
   const [printerId, setPrinterId] = useState("a1");
-  const [name, setName] = useState("Porta Guardanapos Árvore de Natal");
+  const [name, setName] = useState("");
   const [client, setClient] = useState("");
   const [customers, setCustomers] = useState<CustomerLead[]>([]);
   const [clientSuggestionsOpen, setClientSuggestionsOpen] = useState(false);
@@ -365,7 +365,7 @@ function CalculatorForm() {
       <AdminHeader active="calculator" />
       <div className="calculator-content">
         <section className="project-header">
-          <label><span>NOME DO ORÇAMENTO (PRODUTO / KIT / VARIAÇÃO)</span><input value={name} onChange={(event) => setName(event.target.value)} /></label>
+          <label><span>NOME DO ORÇAMENTO (PRODUTO / KIT / VARIAÇÃO)</span><input value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex: Porta Guardanapos Árvore de Natal" /></label>
           <label className="client-field">
             <span>NOME DO CLIENTE (OPCIONAL)</span>
             <input
