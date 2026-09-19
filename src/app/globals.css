@@ -184,12 +184,6 @@ textarea:focus {
 /* Sem os !important de antes — segue o padrão único de campo de texto do
    site (fundo, borda, raio, fonte e altura), só ajustando largura/alinhamento. */
 .supply-price { flex-shrink: 0; text-align: right; width: 76px; }
-/* Linha de insumo do orçamento — mesmo padrão de "adicionar linha" dos
-   produtos do catálogo, só que com preço editável (o insumo não tem custo
-   fixo como o produto); o preço aqui é item de grid, não de flex, então
-   precisa da própria largura (a de cima é pro layout antigo da Calculadora). */
-.supply-line { grid-template-columns: minmax(0, 1fr) 78px 70px auto; }
-.supply-line .supply-price { width: 100%; }
 /* Preço em destaque igual aos demais valores da tela (custo, quantidade) —
    antes ficava no cinza neutro do texto de apoio, parecendo secundário. */
 .supply-static-price { color: var(--calc-ink); }
@@ -1086,6 +1080,13 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .qty-stepper-arrows button:last-child { border-bottom-right-radius: 8px; }
 .qty-stepper-arrows button:hover { background: #f2e6da; color: var(--admin-copper); }
 .qty-stepper-arrows svg.nav-icon { height: 10px; width: 10px; }
+/* Linha de insumo do orçamento — precisa vir depois de ".material-line"
+   (acima) pra realmente valer: com a mesma especificidade, a regra de cima
+   vencia por ordem no arquivo e cortava a 4ª coluna (lixeira) pra uma linha
+   implícita nova. Campo de quantidade mais estreito que o dos produtos —
+   insumo raramente passa de poucas unidades. */
+.supply-line { grid-template-columns: minmax(0, 1fr) 78px 56px auto; }
+.supply-line .supply-price { width: 100%; }
 .material-lines-actions { display: flex; justify-content: flex-end; }
 .product-card-prices { border-top: 1px solid #e8ddd7; display: grid; gap: 10px; grid-template-columns: 1fr 1fr; margin-top: 13px; padding-top: 11px; text-align: center; }
 .product-card-prices span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; }
@@ -1235,6 +1236,7 @@ button.new-quote-button { border: 0; cursor: pointer; }
   .material-line { grid-template-columns: 1fr auto; }
   .material-line select { grid-column: 1 / -1; }
   .product-line { grid-template-columns: 40px 1fr; }
+  .supply-line { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {
