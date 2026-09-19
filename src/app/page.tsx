@@ -129,7 +129,7 @@ export default function HomePage() {
             </div>
 
             <section className="dashboard-shortcuts">
-              <a className="load-editor-button" href="/calculator">◇ Nova Precificação</a>
+              <a className="load-editor-button" href="/orcamentos">◇ Nova Precificação</a>
               <a className="load-editor-button" href="/sales">▣ Registrar Venda</a>
               <a className="load-editor-button" href="/production">◈ Ver Produção</a>
               <a className="load-editor-button" href="/cashflow">◍ Fluxo de Caixa</a>

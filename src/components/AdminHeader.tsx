@@ -85,7 +85,7 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
   // Mesma regra do proxy (src/lib/roles.ts) — um perfil restrito não vê no
   // menu nem o link de uma área que, se clicasse, o proxy mandaria de volta.
   const visibleLinks = links.filter((link) => canAccessPath(role, link.href));
-  const canUseCalculator = canAccessPath(role, "/calculator");
+  const canUseOrcamentos = canAccessPath(role, "/orcamentos");
 
   async function logout() {
     await fetch("/api/logout", { method: "POST" });
@@ -131,8 +131,8 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
                 );
               })}
             </nav>
-            {canUseCalculator ? (
-              <Link className="new-order-cta" href="/calculator" onClick={() => setMenuOpen(false)}>
+            {canUseOrcamentos ? (
+              <Link className="new-order-cta" href="/orcamentos" onClick={() => setMenuOpen(false)}>
                 <IconCirclePlus className="nav-icon" /> Novo Orçamento
               </Link>
             ) : null}
