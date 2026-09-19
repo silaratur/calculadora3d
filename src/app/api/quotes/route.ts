@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const quoteSchema = z.object({
+export const quoteSchema = z.object({
   productId: z.string().optional().nullable(),
   productName: z.string().min(2),
   customerName: z.string().optional(),

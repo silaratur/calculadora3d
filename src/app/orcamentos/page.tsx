@@ -16,6 +16,7 @@ type CustomExtra = { id: string; name: string; unitCost: number };
 type CustomerLead = { id: string; name: string };
 type ProductLine = { productId: string; quantity: string };
 type SupplyLine = { supplyId: string; quantity: string; unitCost: string };
+type Settings = { companyContact: string; quoteDeliveryText: string; quoteWarrantyText: string; quotePaymentText: string };
 // Formato salvo em Quote.snapshotJson — precisa bater com o que saveQuote()
 // grava, senão "Carregar no Editor" não restaura tudo exatamente como foi
 // criado.
@@ -32,6 +33,7 @@ type QuoteSnapshot = {
 
 const demoSupplies: Supply[] = [{ id: "bag", name: "Embalagem simples", category: "Embalagem & Caixas", unitCost: 0.35 }];
 const defaultMarketplace: Marketplace = { id: "direct", name: "Venda Direta", commissionRate: 0, fixedFee: 0, adsRate: 0 };
+const emptySettings: Settings = { companyContact: "", quoteDeliveryText: "", quoteWarrantyText: "", quotePaymentText: "" };
 const markupPresets = ["10", "25", "50", "65", "100", "150", "200"];
 // Mesma paleta do site de referência para os blocos de custo — usada tanto
 // nos pontos da legenda quanto na barra proporcional.
@@ -59,6 +61,7 @@ function OrcamentosForm() {
   const [products, setProducts] = useState<Product[]>([]);
   const [supplies, setSupplies] = useState<Supply[]>(demoSupplies);
   const [marketplaces, setMarketplaces] = useState<Marketplace[]>([defaultMarketplace]);
+  const [settings, setSettings] = useState<Settings>(emptySettings);
   const [productLines, setProductLines] = useState<ProductLine[]>([]);
   const [supplyLines, setSupplyLines] = useState<SupplyLine[]>([]);
   const [name, setName] = useState("");
@@ -73,8 +76,12 @@ function OrcamentosForm() {
   const [customExtraName, setCustomExtraName] = useState("");
   const [customExtraCost, setCustomExtraCost] = useState("");
   const [notes, setNotes] = useState("");
-  const [saved, setSaved] = useState(false);
   const [reportError, setReportError] = useState("");
+  // Id do orçamento sendo editado nesta sessão da tela — começa com o que
+  // veio na URL (se veio) e passa a valer o id retornado assim que o
+  // primeiro "Salvar" cria o registro, pra próximos saves atualizarem esse
+  // mesmo orçamento em vez de criar um novo a cada clique.
+  const [currentQuoteId, setCurrentQuoteId] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
   // Vindo de "Carregar no Editor" (?quoteId=...): os valores do orçamento
@@ -91,8 +98,9 @@ function OrcamentosForm() {
       if (responses[0].ok) setProducts((await responses[0].json()) as Product[]);
       if (responses[1].ok) { const data = (await responses[1].json()) as Supply[]; if (data.length) setSupplies(data); }
       if (responses[2].ok) {
-        const data = (await responses[2].json()) as { defaultMarkup: number };
+        const data = (await responses[2].json()) as Settings & { defaultMarkup: number };
         if (!quoteId) setMarkup(String(data.defaultMarkup));
+        setSettings({ companyContact: data.companyContact, quoteDeliveryText: data.quoteDeliveryText, quoteWarrantyText: data.quoteWarrantyText, quotePaymentText: data.quotePaymentText });
       }
       // "Venda Direta" (0% de taxas) fica sempre disponível — antes, se você já
       // tivesse canais cadastrados em Configurações, ela desaparecia da lista.
@@ -105,6 +113,7 @@ function OrcamentosForm() {
   useEffect(() => {
     if (!quoteId) return;
     async function loadQuote() {
+      setCurrentQuoteId(quoteId);
       const response = await fetch(`/api/quotes/${quoteId}`);
       if (!response.ok) return;
       const quote = (await response.json()) as { productName: string; customerName: string; notes: string; snapshotJson: string };
@@ -259,15 +268,31 @@ function OrcamentosForm() {
       marketplace,
       pricingMethod,
     };
-    const response = await fetch("/api/quotes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productName: name, customerName: client, status: "DRAFT", baseCost: calc.costWithReserve, finalPrice: calc.price, margin: calc.profit, snapshot, notes }) });
+    // Depois do primeiro save, currentQuoteId já aponta pro registro criado —
+    // os próximos saves atualizam (PUT) esse mesmo orçamento em vez de criar
+    // um novo a cada clique em "Salvar" (o que duplicava linhas em Projetos).
+    const response = await fetch(currentQuoteId ? `/api/quotes/${currentQuoteId}` : "/api/quotes", {
+      method: currentQuoteId ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productName: name, customerName: client, status: "DRAFT", baseCost: calc.costWithReserve, finalPrice: calc.price, margin: calc.profit, snapshot, notes }),
+    });
     localStorage.setItem("minima3d-project", JSON.stringify({ name, client, price: calc.price, notes, snapshot }));
     if (!response.ok) return null;
-    return (await response.json()) as { id: string };
+    const result = (await response.json()) as { id: string };
+    if (!currentQuoteId) setCurrentQuoteId(result.id);
+    return result;
   }
   async function save() {
     const result = await saveQuote();
-    setSaved(Boolean(result));
-    window.setTimeout(() => setSaved(false), 2500);
+    if (!result) {
+      setReportError("Não foi possível salvar o orçamento. Tente novamente.");
+      window.setTimeout(() => setReportError(""), 3500);
+      return;
+    }
+    // Depois de salvar, volta pra lista em Projetos — de lá dá pra ver o
+    // orçamento salvo junto com os demais e reabrir pra editar de novo.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.href = "/projects";
   }
   async function generateReport() {
     if (!name.trim()) {
@@ -283,13 +308,49 @@ function OrcamentosForm() {
     const result = await saveQuote();
     if (!result) {
       win?.close();
-      setSaved(false);
       setReportError("Não foi possível salvar o orçamento. Tente novamente.");
       window.setTimeout(() => setReportError(""), 3500);
       return;
     }
     if (win) win.location.href = `/quotes/${result.id}/print`;
     else window.open(`/quotes/${result.id}/print`, "_blank");
+  }
+
+  /**
+   * Mensagem pronta pra colar no WhatsApp — mesmo conteúdo do orçamento em
+   * PDF (itens inclusos, prazos, pagamento, garantia), formatada com o
+   * negrito (*texto*) que o WhatsApp já entende, sem precisar salvar nada.
+   */
+  function buildWhatsAppMessage() {
+    const items = [
+      ...productLinesWithData.map((entry) => {
+        const quantity = n(entry.line.quantity) || 1;
+        return quantity > 1 ? `${entry.product.name} (x${quantity})` : entry.product.name;
+      }),
+      ...supplyLinesWithData.map((entry) => {
+        const quantity = n(entry.line.quantity) || 1;
+        return quantity > 1 ? `${entry.supply.name} (x${quantity})` : entry.supply.name;
+      }),
+      ...customExtras.map((item) => item.name),
+    ];
+    const lines = [
+      `*Orçamento: ${name.trim() || "Sem título"}*`,
+      client.trim() ? `Cliente: ${client.trim()}` : null,
+      "",
+      items.length ? "📦 *Itens inclusos:*" : null,
+      ...items.map((item) => `• ${item}`),
+      items.length ? "" : null,
+      `💰 *Valor total:* ${brl(calc.price)}`,
+      "",
+      `📅 *Prazo de produção:* ${settings.quoteDeliveryText || "A combinar"}`,
+      `💳 *Forma de pagamento:* ${settings.quotePaymentText || "A combinar"}`,
+      `🛡️ *Garantia:* ${settings.quoteWarrantyText || "A combinar"}`,
+      notes.trim() ? "" : null,
+      notes.trim() ? `📝 *Observações:* ${notes.trim()}` : null,
+      "",
+      "Qualquer dúvida, estou à disposição! 😊",
+    ];
+    return lines.filter((line) => line !== null).join("\n");
   }
 
   const realMarginPercent = calc.price ? (calc.profit / calc.price) * 100 : 0;
@@ -327,7 +388,7 @@ function OrcamentosForm() {
               </ul>
             ) : null}
           </label>
-          <button className="quiet-button" onClick={() => { setName(""); setClient(""); setNotes(""); setProductLines([]); }}>↻ Limpar Campos</button>
+          <button className="quiet-button" onClick={() => { setName(""); setClient(""); setNotes(""); setProductLines([]); setCurrentQuoteId(null); }}>↻ Limpar Campos</button>
         </section>
 
         <div className="calculator-grid">
@@ -508,7 +569,7 @@ function OrcamentosForm() {
           <aside className="price-summary">
             <span className="summary-eyebrow">PREÇO FINAL SUGERIDO</span>
             <h2>{brl(calc.price)}</h2>
-            <button className="saved-tag" onClick={save}><IconSave className="nav-icon" /> {saved ? "Salvo" : "Salvar"}</button>
+            <button className="saved-tag" onClick={save}><IconSave className="nav-icon" /> Salvar</button>
             <hr />
             <div className="summary-title"><span>Composição de Custos</span><strong>Custo Total: {brl(calc.costWithReserve)}</strong></div>
             <div className="cost-bar">
@@ -545,7 +606,7 @@ function OrcamentosForm() {
               <div><span>PREÇO ATACADO</span><strong>{brl(calc.price * 0.85)}</strong><small>Desconto por volume</small></div>
             </div>
             <button className="report-button" onClick={generateReport}><IconDownload className="nav-icon" /> Gerar Orçamento em PDF</button>
-            <button className="whatsapp-button" onClick={() => navigator.clipboard?.writeText(`Orçamento: ${name}\nValor: ${brl(calc.price)}\n\nQualquer dúvida, estou à disposição!`)}><IconCopy className="nav-icon" /> Copiar Resumo para WhatsApp</button>
+            <button className="whatsapp-button" onClick={() => navigator.clipboard?.writeText(buildWhatsAppMessage())}><IconCopy className="nav-icon" /> Copiar Resumo para WhatsApp</button>
           </aside>
           {reportError ? <p className="admin-feedback feedback-error report-error">{reportError}</p> : null}
           </div>

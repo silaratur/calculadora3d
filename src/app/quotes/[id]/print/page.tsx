@@ -70,7 +70,14 @@ export default function QuotePrintPage() {
       const [quoteRes, settingsRes] = await Promise.all([fetch(`/api/quotes/${params.id}`), fetch("/api/settings")]);
       if (quoteRes.status === 401 || settingsRes.status === 401) { setNeedsLogin(true); setLoading(false); return; }
       if (quoteRes.status === 404) { setNotFound(true); setLoading(false); return; }
-      if (quoteRes.ok) setQuote((await quoteRes.json()) as QuoteRecord);
+      if (quoteRes.ok) {
+        const data = (await quoteRes.json()) as QuoteRecord;
+        setQuote(data);
+        // O navegador sugere o document.title como nome do arquivo ao
+        // "Salvar como PDF" na impressão — sem isso, salvava com o título
+        // genérico do site em vez do código do orçamento.
+        if (data.code) document.title = data.code;
+      }
       if (settingsRes.ok) setSettings((await settingsRes.json()) as Settings);
       setLoading(false);
     }
