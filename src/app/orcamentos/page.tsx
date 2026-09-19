@@ -16,7 +16,7 @@ type CustomExtra = { id: string; name: string; unitCost: number };
 type CustomerLead = { id: string; name: string };
 type ProductLine = { productId: string; quantity: string };
 type SupplyLine = { supplyId: string; quantity: string; unitCost: string };
-type Settings = { companyContact: string; quoteDeliveryText: string; quoteWarrantyText: string; quotePaymentText: string };
+type Settings = { companyName: string; companyContact: string; quoteDeliveryText: string; quoteWarrantyText: string; quotePaymentText: string };
 // Formato salvo em Quote.snapshotJson — precisa bater com o que saveQuote()
 // grava, senão "Carregar no Editor" não restaura tudo exatamente como foi
 // criado.
@@ -33,7 +33,7 @@ type QuoteSnapshot = {
 
 const demoSupplies: Supply[] = [{ id: "bag", name: "Embalagem simples", category: "Embalagem & Caixas", unitCost: 0.35 }];
 const defaultMarketplace: Marketplace = { id: "direct", name: "Venda Direta", commissionRate: 0, fixedFee: 0, adsRate: 0 };
-const emptySettings: Settings = { companyContact: "", quoteDeliveryText: "", quoteWarrantyText: "", quotePaymentText: "" };
+const emptySettings: Settings = { companyName: "AC3D", companyContact: "", quoteDeliveryText: "", quoteWarrantyText: "", quotePaymentText: "" };
 const markupPresets = ["10", "25", "50", "65", "100", "150", "200"];
 // Mesma paleta do site de referência para os blocos de custo — usada tanto
 // nos pontos da legenda quanto na barra proporcional.
@@ -100,7 +100,7 @@ function OrcamentosForm() {
       if (responses[2].ok) {
         const data = (await responses[2].json()) as Settings & { defaultMarkup: number };
         if (!quoteId) setMarkup(String(data.defaultMarkup));
-        setSettings({ companyContact: data.companyContact, quoteDeliveryText: data.quoteDeliveryText, quoteWarrantyText: data.quoteWarrantyText, quotePaymentText: data.quotePaymentText });
+        setSettings({ companyName: data.companyName, companyContact: data.companyContact, quoteDeliveryText: data.quoteDeliveryText, quoteWarrantyText: data.quoteWarrantyText, quotePaymentText: data.quotePaymentText });
       }
       // "Venda Direta" (0% de taxas) fica sempre disponível — antes, se você já
       // tivesse canais cadastrados em Configurações, ela desaparecia da lista.
@@ -334,6 +334,8 @@ function OrcamentosForm() {
       ...customExtras.map((item) => item.name),
     ];
     const lines = [
+      `*${settings.companyName || "AC3D"}* — Impressão 3D`,
+      "",
       `*Orçamento: ${name.trim() || "Sem título"}*`,
       client.trim() ? `Cliente: ${client.trim()}` : null,
       "",
@@ -348,6 +350,9 @@ function OrcamentosForm() {
       notes.trim() ? "" : null,
       notes.trim() ? `📝 *Observações:* ${notes.trim()}` : null,
       "",
+      "✅ *Gostou da proposta?* É só responder esta mensagem confirmando o pedido que já colocamos seu produto em produção!",
+      "",
+      settings.companyContact ? settings.companyContact : null,
       "Qualquer dúvida, estou à disposição! 😊",
     ];
     return lines.filter((line) => line !== null).join("\n");
