@@ -21,11 +21,13 @@ type QuoteRecord = {
 type Snapshot = {
   material?: { name?: string; type?: string } | null;
   weightGrams?: number;
-  products?: { id: string; name: string; quantity: number }[];
+  products?: { id: string; name: string; quantity: number; imageUrl?: string }[];
   supplies?: { id: string; name: string; quantity: number }[];
   customExtras?: { id: string; name: string }[];
   calculations?: { printTime?: number };
 };
+
+type IncludedItem = { name: string; quantity: number; imageUrl?: string };
 
 type Settings = {
   companyName: string;
@@ -80,10 +82,10 @@ export default function QuotePrintPage() {
   if (notFound || !quote) return <main className="admin-shell quote-print-page"><div className="quote-doc-empty">Orçamento não encontrado.</div></main>;
 
   const snapshot = parseSnapshot(quote.snapshotJson);
-  const includedItems = [
-    ...(snapshot.products ?? []).filter((item) => item.name).map((item) => (item.quantity > 1 ? `${item.name} (x${item.quantity})` : item.name)),
-    ...(snapshot.supplies ?? []).filter((item) => item.name).map((item) => (item.quantity > 1 ? `${item.name} (x${item.quantity})` : item.name)),
-    ...(snapshot.customExtras ?? []).filter((item) => item.name).map((item) => item.name),
+  const includedItems: IncludedItem[] = [
+    ...(snapshot.products ?? []).filter((item) => item.name).map((item) => ({ name: item.name, quantity: item.quantity, imageUrl: item.imageUrl })),
+    ...(snapshot.supplies ?? []).filter((item) => item.name).map((item) => ({ name: item.name, quantity: item.quantity })),
+    ...(snapshot.customExtras ?? []).filter((item) => item.name).map((item) => ({ name: item.name, quantity: 1 })),
   ];
   const specs = [
     snapshot.material?.name,
@@ -133,9 +135,24 @@ export default function QuotePrintPage() {
           {includedItems.length ? (
             <>
               <p className="quote-doc-section-title" style={{ marginTop: 18 }}>O que está incluso</p>
-              <ul className="quote-doc-included">
-                {includedItems.map((item, index) => <li key={index}>{item}</li>)}
-              </ul>
+              <table className="quote-doc-table">
+                <tbody>
+                  {includedItems.map((item, index) => (
+                    <tr key={index}>
+                      <td className="quote-doc-table-photo">
+                        {item.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- data URI local, próprio para impressão/PDF
+                          <img src={item.imageUrl} alt={item.name} />
+                        ) : (
+                          <span className="quote-doc-table-photo-empty" aria-hidden="true" />
+                        )}
+                      </td>
+                      <td className="quote-doc-table-name">{item.name}</td>
+                      <td className="quote-doc-table-qty">{item.quantity > 1 ? `x${item.quantity}` : ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </>
           ) : null}
         </section>

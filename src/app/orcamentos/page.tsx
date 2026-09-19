@@ -19,7 +19,7 @@ type ProductLine = { productId: string; quantity: string };
 // grava, senão "Carregar no Editor" não restaura tudo exatamente como foi
 // criado.
 type QuoteSnapshot = {
-  products?: { id: string; name: string; quantity: number; unitCost: number; printTimeHours: number }[];
+  products?: { id: string; name: string; quantity: number; unitCost: number; printTimeHours: number; imageUrl?: string }[];
   markup?: string;
   lossRate?: string;
   discount?: string;
@@ -244,6 +244,7 @@ function OrcamentosForm() {
         quantity: n(entry.line.quantity) || 1,
         unitCost: entry.product.cost,
         printTimeHours: entry.product.printTimeHours,
+        imageUrl: entry.product.imageUrl,
       })),
       markup,
       lossRate,
