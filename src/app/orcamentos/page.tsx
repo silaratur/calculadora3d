@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AdminHeader } from "@/components/AdminHeader";
-import { IconBookmark, IconClock, IconCopy, IconDownload, IconSave, IconShieldAlert, IconShoppingBag, IconSparkles, IconTrash } from "@/components/Icons";
+import { IconBookmark, IconChevronDown, IconChevronUp, IconClock, IconCopy, IconDownload, IconSave, IconShieldAlert, IconShoppingBag, IconSparkles, IconTrash } from "@/components/Icons";
 import { calculateSuggestedPrice, type PricingMethod } from "@/lib/costing";
 
 // Produto já cadastrado no Catálogo — custo e tempo de impressão vêm prontos
@@ -162,6 +162,9 @@ function OrcamentosForm() {
   }
   function updateProductLine(index: number, patch: Partial<ProductLine>) {
     setProductLines((current) => current.map((line, i) => (i === index ? { ...line, ...patch } : line)));
+  }
+  function bumpProductQuantity(index: number, delta: number) {
+    setProductLines((current) => current.map((line, i) => (i === index ? { ...line, quantity: String(Math.max(1, (n(line.quantity) || 1) + delta)) } : line)));
   }
   function removeProductLine(index: number) {
     setProductLines((current) => current.filter((_, i) => i !== index));
@@ -341,7 +344,7 @@ function OrcamentosForm() {
                   <div className="material-line material-line-header product-line">
                     <span />
                     <span>Produto (do Catálogo)</span>
-                    <span>Custo · Tempo</span>
+                    <span>Tempo · Custo</span>
                     <span>Qtd.</span>
                     <span />
                   </div>
@@ -370,14 +373,22 @@ function OrcamentosForm() {
                           <IconClock className="nav-icon" /> {fmtHours(product.printTimeHours)} · {brl(product.cost)}
                         </small>
                       ) : <span />}
-                      <input inputMode="numeric" value={line.quantity} onChange={(event) => updateProductLine(index, { quantity: event.target.value })} placeholder="1" />
+                      <span className="qty-stepper">
+                        <input inputMode="numeric" value={line.quantity} onChange={(event) => updateProductLine(index, { quantity: event.target.value })} placeholder="1" />
+                        <span className="qty-stepper-arrows">
+                          <button type="button" onClick={() => bumpProductQuantity(index, 1)} aria-label="Aumentar quantidade"><IconChevronUp className="nav-icon" /></button>
+                          <button type="button" onClick={() => bumpProductQuantity(index, -1)} aria-label="Diminuir quantidade"><IconChevronDown className="nav-icon" /></button>
+                        </span>
+                      </span>
                       <button type="button" className="delete-button" onClick={() => removeProductLine(index)} aria-label="Remover produto"><IconTrash className="nav-icon" /></button>
                     </div>
                   );
                 })}
               </div>
               {products.length === 0 ? <div className="empty-note">Nenhum produto cadastrado no Catálogo ainda.</div> : null}
-              <button type="button" className="secondary-button" onClick={addProductLine} disabled={!products.length || productLines.length >= products.length}>+ Adicionar produto</button>
+              <div className="material-lines-actions">
+                <button type="button" className="secondary-button" onClick={addProductLine} disabled={!products.length || productLines.length >= products.length}>+ Adicionar produto</button>
+              </div>
               {productLines.length ? (
                 <div className="metric-wide">
                   <span><IconClock className="nav-icon" /> Tempo total de impressão</span>
