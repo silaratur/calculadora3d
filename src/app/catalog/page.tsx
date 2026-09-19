@@ -3,7 +3,7 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
-import { IconBookmark, IconClock, IconSave, IconShieldAlert, IconShoppingBag, IconTag, IconTrash, IconX } from "@/components/Icons";
+import { IconClock, IconSave, IconShieldAlert, IconShoppingBag, IconTag, IconTrash, IconX } from "@/components/Icons";
 import { calculateMultiMaterialCost, calculatePieceCost, calculateSuggestedPrice, fixedCostPerPiece, type PricingMethod } from "@/lib/costing";
 import { resizeImage } from "@/lib/image";
 
@@ -71,18 +71,18 @@ type Draft = {
 
 const emptyDraft: Draft = {
   name: "",
-  category: "Decoração",
+  category: "",
   description: "",
   imageUrl: "",
   materialLines: [],
   hours: "0",
   minutes: "0",
-  prep: "5",
-  cleanup: "5",
+  prep: "0",
+  cleanup: "0",
   printerId: "",
   markup: "40",
   pricingMethod: "markup",
-  lossRate: "5",
+  lossRate: "0",
   marketplaceId: "direct",
   discount: "0",
   active: true,
@@ -292,7 +292,10 @@ export default function CatalogPage() {
 
   function newProduct() {
     setEditingId(null);
-    setDraft(emptyDraft);
+    // A1 é a impressora mais usada — poupa um clique em quase todo produto
+    // novo; quem usar outra ainda troca livremente no seletor.
+    const defaultPrinter = printers.find((item) => item.model.toLowerCase().includes("a1"));
+    setDraft({ ...emptyDraft, printerId: defaultPrinter?.id ?? "" });
     setFeedback("");
     setView("form");
   }
@@ -538,7 +541,7 @@ export default function CatalogPage() {
                     <label>Fatiamento / Prep (min)<input inputMode="numeric" value={draft.prep} onChange={(event) => setDraft({ ...draft, prep: event.target.value })} /></label>
                     <label>Limpeza / Pós-proc (min)<input inputMode="numeric" value={draft.cleanup} onChange={(event) => setDraft({ ...draft, cleanup: event.target.value })} /></label>
                     <label className="label-hint-row">
-                      <span><span className="label-icon-text"><IconShieldAlert className="nav-icon" /> Refugo / % Perdas</span><em>Padrão: 5%</em></span>
+                      <span><span className="label-icon-text"><IconShieldAlert className="nav-icon" /> Refugo / % Perdas</span><em>Sugestão: 5%</em></span>
                       <input inputMode="decimal" value={draft.lossRate} onChange={(event) => setDraft({ ...draft, lossRate: event.target.value })} />
                       <small>Reserva para peças com falhas ou testes</small>
                     </label>
@@ -548,10 +551,7 @@ export default function CatalogPage() {
 
                 <section className="calc-section">
                   <Title text="IMPRESSORA" />
-                  <div className="field-row library-row">
-                    <label>Selecionar da Biblioteca<select value={draft.printerId} onChange={(event) => setDraft({ ...draft, printerId: event.target.value })}><option value="">Sem impressora (sem depreciação de máquina)</option>{printers.map((item) => <option key={item.id} value={item.id}>{item.model}</option>)}</select></label>
-                    <a className="bookmark-link" href="/admin" title="Gerenciar presets na Biblioteca"><IconBookmark className="nav-icon" /></a>
-                  </div>
+                  <label>Selecionar da Biblioteca<select value={draft.printerId} onChange={(event) => setDraft({ ...draft, printerId: event.target.value })}><option value="">Sem impressora (sem depreciação de máquina)</option>{printers.map((item) => <option key={item.id} value={item.id}>{item.model}</option>)}</select></label>
                   <small>Depreciação, manutenção e consumo de energia dessa impressora entram automaticamente no custo — não precisa digitar nada.</small>
                 </section>
 
@@ -620,7 +620,18 @@ export default function CatalogPage() {
                   <Cost label="Custos Fixos Rateados" value={cost.fixedCosts} />
                   <Cost label="Reserva para perdas" value={cost.reserve} />
                   <hr />
-                  <Cost label="Custo Base" value={cost.total} bold />
+                  <Cost label="Custo Base" value={cost.total} bold subtotal />
+                </div>
+                <div className="summary-card">
+                  <Info label="Método de Precificação" value={draft.pricingMethod === "markup" ? "Markup" : "Margem Real"} />
+                  <Info label="% Aplicado" value={`${draft.markup}%`} />
+                  <Info label="Canal de Venda" value={marketplace.name} />
+                  <Info label="Comissão do Canal" value={`${(marketplace.commissionRate * 100).toFixed(1)}%`} />
+                  <Info label="Ads do Canal" value={`${(marketplace.adsRate * 100).toFixed(1)}%`} />
+                  <Info label="Taxa Fixa do Canal" value={brl(marketplace.fixedFee)} />
+                  {n(draft.discount) > 0 ? <Info label="Desconto Especial" value={brl(n(draft.discount))} /> : null}
+                  <hr />
+                  <Cost label="Margem de Lucro & Taxas" value={profit} bold subtotal />
                 </div>
                 <div className="profit-grid">
                   <div><span>LUCRO ESTIMADO</span><strong>+{brl(profit)}</strong><small>{marketplace.name} · Margem Real: {realMarginPercent.toFixed(1)}%</small></div>
@@ -640,11 +651,23 @@ export default function CatalogPage() {
 }
 
 function Title({ text }: { text: string }) { return <div className="section-title"><span />{text}</div>; }
-function Cost({ label, value, bold = false, dot }: { label: string; value: number; bold?: boolean; dot?: string }) {
+function Cost({ label, value, bold = false, dot, subtotal = false }: { label: string; value: number; bold?: boolean; dot?: string; subtotal?: boolean }) {
+  const className = ["cost-line", bold && "bold", subtotal && "subtotal"].filter(Boolean).join(" ");
   return (
-    <div className={bold ? "cost-line bold" : "cost-line"}>
+    <div className={className}>
       <span>{dot ? <i className="cost-dot" style={{ background: dot }} /> : null}{label}</span>
       <strong>{brl(value)}</strong>
+    </div>
+  );
+}
+// Linha texto→texto (não-monetária) do mesmo jeito visual do Cost — usada só
+// no detalhamento de Margem & Taxas do resumo (não entra em PDF/WhatsApp,
+// que são gerados à parte, sem ler esse bloco).
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="cost-line">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }

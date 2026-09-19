@@ -185,9 +185,13 @@ input, select, textarea {
 .price-summary { position: sticky; top: 94px; padding: 23px; }
 .summary-eyebrow, .profit-grid span { color: var(--calc-muted); font-size: 10px; letter-spacing: .08em; }
 .price-summary h2 { color: #602f32; font-family: var(--font-sans), Arial, sans-serif; font-size: 30px; margin: 7px 0 0; }
-.saved-tag { align-items: center; background: #f2e6da; border: 0; border-radius: 8px; color: #8a7472; cursor: pointer; display: inline-flex; float: right; gap: 6px; margin-top: -32px; padding: 9px 12px; }
+.saved-tag { align-items: center; background: var(--calc-copper); border: 0; border-radius: 8px; color: white; cursor: pointer; display: inline-flex; float: right; font-weight: 600; gap: 6px; margin-top: -32px; padding: 9px 12px; }
+.saved-tag:hover { background: #4c2528; }
 .price-summary hr, .summary-card hr { border: 0; border-top: 1px solid var(--calc-border); margin: 19px 0; }
-.summary-title { display: flex; font-size: 12px; justify-content: space-between; }
+/* margin-top separa do bloco anterior — sem isso "Margem de Lucro & Taxas"
+   (o 2º summary-title, sem <hr/> antes dele) ficava colado na caixa de cima
+   em vez de ler como legenda da caixa logo abaixo. */
+.summary-title { display: flex; font-size: 12px; justify-content: space-between; margin-top: 22px; }
 .summary-title strong { font-family: var(--font-mono); font-size: 11px; font-weight: 600; }
 .cost-bar { background: #f2e6da; border: 1px solid var(--calc-border); border-radius: 999px; display: flex; height: 12px; margin: 14px 0; overflow: hidden; padding: 2px; }
 .cost-bar i { display: block; height: 100%; }
@@ -199,6 +203,11 @@ input, select, textarea {
 .cost-dot { border-radius: 50%; flex-shrink: 0; height: 7px; width: 7px; }
 .cost-line strong { color: #3d2225; font-family: var(--font-mono); font-weight: 600; }
 .cost-line.bold { color: #3d2225; font-weight: 700; }
+/* Subtotal (ex: Custo Base) — mesma fonte/tamanho do rótulo e valor usados
+   em .profit-grid (PREÇO ATACADO etc.), só que mantendo a cor já usada aqui
+   em vez de trocar pra cor de destaque. */
+.cost-line.subtotal span { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.cost-line.subtotal strong { font-size: 15px; }
 .summary-card { background: #fbf6ef; border: 1px solid var(--calc-border); border-radius: 12px; margin-top: 18px; padding: 13px; }
 .summary-card .cost-line { margin: 0; }
 .profit-grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; margin-top: 16px; }
@@ -568,6 +577,10 @@ input, select, textarea {
   gap: 9px;
   grid-template-columns: 1fr 1fr;
   min-width: 0;
+}
+
+.form-grid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .form-grid > label,

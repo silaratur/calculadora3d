@@ -592,7 +592,18 @@ function CalculatorForm() {
               <Cost label="Custos Fixos Rateados" value={calc.fixedCostsPerPiece} />
               <Cost label="Reserva para perdas" value={calc.reserve} />
               <hr />
-              <Cost label="Custo Base" value={calc.costWithReserve} bold />
+              <Cost label="Custo Base" value={calc.costWithReserve} bold subtotal />
+            </div>
+            <div className="summary-card">
+              <Info label="Método de Precificação" value={pricingMethod === "markup" ? "Markup" : "Margem Real"} />
+              <Info label="% Aplicado" value={`${markup}%`} />
+              <Info label="Canal de Venda" value={marketplace.name} />
+              <Info label="Comissão do Canal" value={`${(marketplace.commissionRate * 100).toFixed(1)}%`} />
+              <Info label="Ads do Canal" value={`${(marketplace.adsRate * 100).toFixed(1)}%`} />
+              <Info label="Taxa Fixa do Canal" value={brl(marketplace.fixedFee)} />
+              {n(discount) > 0 ? <Info label="Desconto Especial" value={brl(n(discount))} /> : null}
+              <hr />
+              <Cost label="Margem de Lucro & Taxas" value={calc.profit} bold subtotal />
             </div>
             <div className="profit-grid">
               <div><span>LUCRO ESTIMADO</span><strong>+{brl(calc.profit)}</strong><small>{marketplace.name} · Margem Real: {realMarginPercent.toFixed(1)}%</small></div>
@@ -618,11 +629,23 @@ function Metric({ title, value, valueLabel, hint }: { title: string; value: numb
     </div>
   );
 }
-function Cost({ label, value, bold = false, dot }: { label: string; value: number; bold?: boolean; dot?: string }) {
+function Cost({ label, value, bold = false, dot, subtotal = false }: { label: string; value: number; bold?: boolean; dot?: string; subtotal?: boolean }) {
+  const className = ["cost-line", bold && "bold", subtotal && "subtotal"].filter(Boolean).join(" ");
   return (
-    <div className={bold ? "cost-line bold" : "cost-line"}>
+    <div className={className}>
       <span>{dot ? <i className="cost-dot" style={{ background: dot }} /> : null}{label}</span>
       <strong>{brl(value)}</strong>
+    </div>
+  );
+}
+// Linha texto→texto (não-monetária) do mesmo jeito visual do Cost — usada só
+// no detalhamento de Margem & Taxas do resumo (o PDF/WhatsApp são gerados à
+// parte, sem ler esse bloco).
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="cost-line">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }

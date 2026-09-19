@@ -17,6 +17,7 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings>(emptySettings);
   const [channel, setChannel] = useState(emptyChannel);
   const [channels, setChannels] = useState<Marketplace[]>([]);
+  const [editingChannelId, setEditingChannelId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
   const [needsLogin, setNeedsLogin] = useState(false);
 
@@ -39,17 +40,122 @@ export default function SettingsPage() {
 
   async function saveChannel(event: FormEvent) {
     event.preventDefault();
-    const response = await fetch("/api/marketplaces", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...channel, commissionRate: numberValue(channel.commissionRate) / 100, fixedFee: numberValue(channel.fixedFee), adsRate: numberValue(channel.adsRate) / 100, active: true }) });
+    const payload = {
+      ...channel,
+      commissionRate: numberValue(channel.commissionRate) / 100,
+      fixedFee: numberValue(channel.fixedFee),
+      adsRate: numberValue(channel.adsRate) / 100,
+      active: true,
+    };
+    const response = await fetch(editingChannelId ? `/api/marketplaces?id=${encodeURIComponent(editingChannelId)}` : "/api/marketplaces", {
+      method: editingChannelId ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
     if (!response.ok) { setFeedback("Confira os dados do canal."); return; }
-    setChannels([...channels, await response.json()]);
+    const saved = (await response.json()) as Marketplace;
+    setChannels(editingChannelId ? channels.map((item) => (item.id === editingChannelId ? saved : item)) : [...channels, saved]);
     setChannel(emptyChannel);
-    setFeedback("Canal salvo.");
+    setEditingChannelId(null);
+    setFeedback(editingChannelId ? "Canal atualizado." : "Canal salvo.");
+  }
+
+  function editChannel(item: Marketplace) {
+    setEditingChannelId(item.id);
+    setChannel({
+      name: item.name,
+      commissionRate: String(item.commissionRate * 100),
+      fixedFee: String(item.fixedFee),
+      adsRate: String(item.adsRate * 100),
+      notes: item.notes,
+    });
+    setFeedback("");
+    document.getElementById("channel-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function cancelEditChannel() {
+    setEditingChannelId(null);
+    setChannel(emptyChannel);
+    setFeedback("");
   }
 
   async function deleteChannel(id: string) {
     await fetch(`/api/marketplaces?id=${encodeURIComponent(id)}`, { method: "DELETE" });
     setChannels(channels.filter((item) => item.id !== id));
+    if (editingChannelId === id) cancelEditChannel();
   }
 
-  return <main className="admin-shell"><AdminHeader active="settings" /><div className="admin-content">{needsLogin ? <AuthBanner message="Entre novamente para ver e salvar as configurações." /> : null}<section className="library-heading"><div><h1>Configurações de Precificação</h1><p>Regras gerais da operação e canais de venda usados nos cálculos.</p></div></section><div className="settings-layout"><form className="preset-form" onSubmit={saveSettings}><h2>Parâmetros da operação</h2><p className="settings-intro">Esses valores alimentam automaticamente a calculadora e o custo fixo rateado por peça. Custo de produção da máquina (kWh, potência, hora de trabalho, peças produzidas por mês) e custos fixos mensais detalhados agora ficam em Custos → Produção e Custos → Fixos.</p><div className="settings-group"><h3>Preço padrão</h3><label>Markup padrão (%)<input value={settings.defaultMarkup} onChange={(event) => setSettings({ ...settings, defaultMarkup: numberValue(event.target.value) })} /></label><label>Perdas/refugo padrão (%)<input value={settings.defaultLossRate} onChange={(event) => setSettings({ ...settings, defaultLossRate: numberValue(event.target.value) })} /></label></div><div className="settings-group"><h3>Orçamento em PDF (o que o cliente vê)</h3><label>Nome da empresa<input type="text" value={settings.companyName} onChange={(event) => setSettings({ ...settings, companyName: event.target.value })} placeholder="AC3D" /></label><label>Contato (telefone, e-mail, @)<input type="text" value={settings.companyContact} onChange={(event) => setSettings({ ...settings, companyContact: event.target.value })} placeholder="WhatsApp (00) 00000-0000 · contato@ac3d.com.br" /></label><label>Validade do orçamento (dias)<input inputMode="numeric" value={settings.quoteValidityDays} onChange={(event) => setSettings({ ...settings, quoteValidityDays: numberValue(event.target.value) })} /></label><label>Prazo de produção/entrega<textarea value={settings.quoteDeliveryText} onChange={(event) => setSettings({ ...settings, quoteDeliveryText: event.target.value })} placeholder="Ex: 5 a 10 dias úteis após a confirmação do pagamento." /></label><label>Forma de pagamento<textarea value={settings.quotePaymentText} onChange={(event) => setSettings({ ...settings, quotePaymentText: event.target.value })} placeholder="Ex: 50% de sinal para iniciar a produção e 50% na entrega." /></label><label>Garantia do produto<textarea value={settings.quoteWarrantyText} onChange={(event) => setSettings({ ...settings, quoteWarrantyText: event.target.value })} placeholder="Ex: 30 dias contra defeitos de fabricação a partir da entrega." /></label></div><button className="primary-button" type="submit">Salvar configurações</button></form><div className="settings-side"><form className="preset-form" onSubmit={saveChannel}><h2>Novo canal de venda</h2><label>Nome do canal<input required value={channel.name} onChange={(event) => setChannel({ ...channel, name: event.target.value })} placeholder="Ex: Shopee" /></label><div className="form-grid"><label>Comissão (%)<input inputMode="decimal" value={channel.commissionRate} onChange={(event) => setChannel({ ...channel, commissionRate: event.target.value })} /></label><label>Taxa fixa (R$)<input inputMode="decimal" value={channel.fixedFee} onChange={(event) => setChannel({ ...channel, fixedFee: event.target.value })} /></label></div><label>Ads / anúncios (%)<input inputMode="decimal" value={channel.adsRate} onChange={(event) => setChannel({ ...channel, adsRate: event.target.value })} /></label><label>Observações<textarea value={channel.notes} onChange={(event) => setChannel({ ...channel, notes: event.target.value })} /></label><button className="primary-button" type="submit">Adicionar canal</button></form><div className="channel-list">{channels.map((item) => <article className="preset-card" key={item.id}><div className="card-top"><span className="material-badge">CANAL</span><button className="delete-button" onClick={() => deleteChannel(item.id)}><IconTrash className="nav-icon" /></button></div><h3>{item.name}</h3><p>Comissão: {(item.commissionRate * 100).toFixed(1)}% · Ads: {(item.adsRate * 100).toFixed(1)}%</p><strong>{money(item.fixedFee)} taxa fixa</strong></article>)}</div></div></div>{feedback ? <p className="admin-feedback">{feedback}</p> : null}</div></main>;
+  return (
+    <main className="admin-shell">
+      <AdminHeader active="settings" />
+      <div className="admin-content">
+        {needsLogin ? <AuthBanner message="Entre novamente para ver e salvar as configurações." /> : null}
+
+        <section className="library-heading">
+          <div>
+            <h1>Configurações de Precificação</h1>
+            <p>Regras gerais da operação e canais de venda usados nos cálculos.</p>
+          </div>
+        </section>
+
+        <div className="settings-layout">
+          <form className="preset-form" onSubmit={saveSettings}>
+            <h2>Parâmetros da operação</h2>
+            <p className="settings-intro">Esses valores alimentam automaticamente a calculadora e o custo fixo rateado por peça. Custo de produção da máquina (kWh, potência, hora de trabalho, peças produzidas por mês) e custos fixos mensais detalhados agora ficam em Custos → Produção e Custos → Fixos.</p>
+            <div className="settings-group">
+              <h3>Preço padrão</h3>
+              <label>Markup padrão (%)<input value={settings.defaultMarkup} onChange={(event) => setSettings({ ...settings, defaultMarkup: numberValue(event.target.value) })} /></label>
+              <label>Perdas/refugo padrão (%)<input value={settings.defaultLossRate} onChange={(event) => setSettings({ ...settings, defaultLossRate: numberValue(event.target.value) })} /></label>
+            </div>
+            <div className="settings-group">
+              <h3>Orçamento em PDF (o que o cliente vê)</h3>
+              <label>Nome da empresa<input type="text" value={settings.companyName} onChange={(event) => setSettings({ ...settings, companyName: event.target.value })} placeholder="AC3D" /></label>
+              <label>Contato (telefone, e-mail, @)<input type="text" value={settings.companyContact} onChange={(event) => setSettings({ ...settings, companyContact: event.target.value })} placeholder="WhatsApp (00) 00000-0000 · contato@ac3d.com.br" /></label>
+              <label>Validade do orçamento (dias)<input inputMode="numeric" value={settings.quoteValidityDays} onChange={(event) => setSettings({ ...settings, quoteValidityDays: numberValue(event.target.value) })} /></label>
+              <label>Prazo de produção/entrega<textarea value={settings.quoteDeliveryText} onChange={(event) => setSettings({ ...settings, quoteDeliveryText: event.target.value })} placeholder="Ex: 5 a 10 dias úteis após a confirmação do pagamento." /></label>
+              <label>Forma de pagamento<textarea value={settings.quotePaymentText} onChange={(event) => setSettings({ ...settings, quotePaymentText: event.target.value })} placeholder="Ex: 50% de sinal para iniciar a produção e 50% na entrega." /></label>
+              <label>Garantia do produto<textarea value={settings.quoteWarrantyText} onChange={(event) => setSettings({ ...settings, quoteWarrantyText: event.target.value })} placeholder="Ex: 30 dias contra defeitos de fabricação a partir da entrega." /></label>
+            </div>
+            <button className="primary-button" type="submit">Salvar configurações</button>
+          </form>
+
+          <div className="settings-side">
+            <form id="channel-form" className="preset-form" onSubmit={saveChannel}>
+              <h2>{editingChannelId ? "Editar canal de venda" : "Novo canal de venda"}</h2>
+              <label>Nome do canal<input required value={channel.name} onChange={(event) => setChannel({ ...channel, name: event.target.value })} placeholder="Ex: Shopee" /></label>
+              <div className="form-grid three">
+                <label>Comissão (%)<input inputMode="decimal" value={channel.commissionRate} onChange={(event) => setChannel({ ...channel, commissionRate: event.target.value })} /></label>
+                <label>Ads / anúncios (%)<input inputMode="decimal" value={channel.adsRate} onChange={(event) => setChannel({ ...channel, adsRate: event.target.value })} /></label>
+                <label>Taxa fixa (R$)<input inputMode="decimal" value={channel.fixedFee} onChange={(event) => setChannel({ ...channel, fixedFee: event.target.value })} /></label>
+              </div>
+              <label>Observações<textarea value={channel.notes} onChange={(event) => setChannel({ ...channel, notes: event.target.value })} /></label>
+              <div className="form-actions">
+                <button className="primary-button" type="submit">{editingChannelId ? "Salvar alterações" : "Adicionar canal"}</button>
+                {editingChannelId ? <button className="secondary-button" type="button" onClick={cancelEditChannel}>Cancelar</button> : null}
+              </div>
+            </form>
+
+            <div className="channel-list">
+              {channels.map((item) => (
+                <article className="preset-card" key={item.id}>
+                  <div className="card-top">
+                    <span className="material-badge">CANAL</span>
+                    <span className="card-actions">
+                      <button className="edit-button" onClick={() => editChannel(item)}>Editar</button>
+                      <button className="delete-button" onClick={() => deleteChannel(item.id)} aria-label={`Excluir ${item.name}`}><IconTrash className="nav-icon" /></button>
+                    </span>
+                  </div>
+                  <h3>{item.name}</h3>
+                  <p>Comissão: {(item.commissionRate * 100).toFixed(1)}% · Ads: {(item.adsRate * 100).toFixed(1)}%</p>
+                  <strong>{money(item.fixedFee)} taxa fixa</strong>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {feedback ? <p className="admin-feedback">{feedback}</p> : null}
+      </div>
+    </main>
+  );
 }
