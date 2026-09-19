@@ -4,30 +4,22 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AdminHeader } from "@/components/AdminHeader";
 import { IconBookmark, IconClock, IconCopy, IconDownload, IconSave, IconShieldAlert, IconShoppingBag, IconSparkles, IconTrash } from "@/components/Icons";
-import { calculatePieceCost, calculateSuggestedPrice, fixedCostPerPiece, type PricingMethod } from "@/lib/costing";
+import { calculateSuggestedPrice, type PricingMethod } from "@/lib/costing";
 
-type Material = { id: string; name: string; type: string; unitPrice?: number; unitWeightGrams?: number; costPerKg: number };
-type Printer = { id: string; model: string; purchasePrice: number; powerWatts: number; usefulLifeHours: number; maintenancePerHour: number };
+// Produto já cadastrado no Catálogo — custo e tempo de impressão vêm prontos
+// de lá (calculados com o motor multi-material do Catálogo), então aqui só
+// usamos os valores finais, sem recalcular nada.
+type Product = { id: string; name: string; sku: string; category: string; cost: number; printTimeHours: number };
 type Supply = { id: string; name: string; category: string; unitCost: number };
-type PricingSettings = { energyRate: number; defaultPowerWatts: number; laborRate: number; monthlyRent: number; monthlySubscriptions: number; monthlyMaintenance: number; monthlyOtherCosts: number; monthlyPieces: number; defaultMarkup: number; defaultLossRate: number };
 type Marketplace = { id: string; name: string; commissionRate: number; fixedFee: number; adsRate: number };
 type CustomExtra = { id: string; name: string; unitCost: number };
 type CustomerLead = { id: string; name: string };
+type ProductLine = { productId: string; quantity: string };
 // Formato salvo em Quote.snapshotJson — precisa bater com o que saveQuote()
 // grava, senão "Carregar no Editor" não restaura tudo exatamente como foi
 // criado.
 type QuoteSnapshot = {
-  material?: Material;
-  printer?: Printer;
-  weightGrams?: number;
-  hours?: string;
-  minutes?: string;
-  prep?: string;
-  cleanup?: string;
-  laborRate?: string;
-  energyRate?: string;
-  power?: string;
-  maintenancePerHour?: string;
+  products?: { id: string; name: string; quantity: number; unitCost: number; printTimeHours: number }[];
   markup?: string;
   lossRate?: string;
   discount?: string;
@@ -35,20 +27,14 @@ type QuoteSnapshot = {
   customExtras?: CustomExtra[];
   calculations?: Record<string, number>;
   marketplace?: Marketplace;
-  settings?: PricingSettings;
   pricingMethod?: PricingMethod;
 };
 
-const demoMaterials: Material[] = [{ id: "pla", name: "Filamento PLA Premium F3D 1,75mm, 1kg, Vermelho", type: "PLA", unitPrice: 109, unitWeightGrams: 1000, costPerKg: 109 }, { id: "petg", name: "Filamento PETG 1,75mm 1kg Impressão 3D", type: "PETG", unitPrice: 99.9, unitWeightGrams: 1000, costPerKg: 99.9 }];
-const demoPrinters: Printer[] = [{ id: "a1", model: "Bambu Lab A1 - Combo", purchasePrice: 4607, powerWatts: 220, usefulLifeHours: 6000, maintenancePerHour: 0.77 }];
 const demoSupplies: Supply[] = [{ id: "bag", name: "Embalagem simples", category: "Embalagem & Caixas", unitCost: 0.35 }];
-const defaultSettings: PricingSettings = { energyRate: 0.85, defaultPowerWatts: 250, laborRate: 25, monthlyRent: 0, monthlySubscriptions: 50, monthlyMaintenance: 40, monthlyOtherCosts: 0, monthlyPieces: 60, defaultMarkup: 40, defaultLossRate: 5 };
 const defaultMarketplace: Marketplace = { id: "direct", name: "Venda Direta", commissionRate: 0, fixedFee: 0, adsRate: 0 };
-const wattPresets = [60, 150, 160, 220];
 const markupPresets = ["10", "25", "50", "65", "100", "150", "200"];
-// Mesma paleta do site de referência para os 6 blocos de custo, na ordem
-// Filamento, Depreciação, Mão de Obra (coluna 1) / Energia, Insumos, Reserva
-// Perdas (coluna 2) — usada tanto nos pontos da legenda quanto na barra.
+// Mesma paleta do site de referência para os blocos de custo — usada tanto
+// nos pontos da legenda quanto na barra proporcional.
 const legendColors = ["#602f32", "#777f5d", "#8a4a4e", "#d1a94a", "#f4bbd3", "#e8ddd7"];
 
 const n = (value: string) => {
@@ -57,9 +43,7 @@ const n = (value: string) => {
   return Number(normalized) || 0;
 };
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const brl3 = (value: number) => `R$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`;
-const currencyInput = (value: string) => (n(value) ? brl(n(value)) : "");
-const editingCurrency = (value: string) => value.replace(/^R\$\s?/, "");
+const fmtHours = (hours: number) => `${Math.floor(hours)}h ${Math.round((hours % 1) * 60)}m`;
 const categoryTag = (category: string) => category.split(/[\s&]/)[0]?.toUpperCase() ?? category.toUpperCase();
 
 export default function OrcamentosPage() {
@@ -73,31 +57,19 @@ export default function OrcamentosPage() {
 // useSearchParams() (para restaurar um orçamento salvo via ?quoteId=) exige
 // um limite de Suspense acima — daí o componente estar separado do default export.
 function OrcamentosForm() {
-  const [materials, setMaterials] = useState<Material[]>(demoMaterials);
-  const [printers, setPrinters] = useState<Printer[]>(demoPrinters);
+  const [products, setProducts] = useState<Product[]>([]);
   const [supplies, setSupplies] = useState<Supply[]>(demoSupplies);
-  const [settings, setSettings] = useState<PricingSettings>(defaultSettings);
   const [marketplaces, setMarketplaces] = useState<Marketplace[]>([defaultMarketplace]);
-  const [materialId, setMaterialId] = useState("");
-  const [printerId, setPrinterId] = useState("a1");
+  const [productLines, setProductLines] = useState<ProductLine[]>([]);
   const [name, setName] = useState("");
   const [client, setClient] = useState("");
   const [customers, setCustomers] = useState<CustomerLead[]>([]);
   const [clientSuggestionsOpen, setClientSuggestionsOpen] = useState(false);
-  const [weight, setWeight] = useState("19,9");
-  const [hours, setHours] = useState("0");
-  const [minutes, setMinutes] = useState("51");
-  const [prep, setPrep] = useState("5");
-  const [cleanup, setCleanup] = useState("5");
-  const [laborRate, setLaborRate] = useState("25");
-  const [energyRate, setEnergyRate] = useState("0,85");
   const [markup, setMarkup] = useState("40");
   const [pricingMethod, setPricingMethod] = useState<PricingMethod>("markup");
   const [lossRate, setLossRate] = useState("5");
   const [marketplaceId, setMarketplaceId] = useState("direct");
   const [discount, setDiscount] = useState("0");
-  const [power, setPower] = useState("220");
-  const [maintenancePerHour, setMaintenancePerHour] = useState("0,77");
   const [selected, setSelected] = useState<string[]>([]);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({});
@@ -107,50 +79,29 @@ function OrcamentosForm() {
   const [notes, setNotes] = useState("");
   const [saved, setSaved] = useState(false);
   const [reportError, setReportError] = useState("");
-  // Total de custos fixos do mês corrente, se já lançado em /costs; senão usa
-  // a soma dos 4 campos antigos de PricingSettings (fallback abaixo).
-  const [currentMonthFixedCost, setCurrentMonthFixedCost] = useState<number | null>(null);
 
   const searchParams = useSearchParams();
-  // Vindo de "Carregar no Editor"/"Abrir na calculadora" (?quoteId=...): os
-  // valores do orçamento salvo têm que prevalecer sobre os padrões globais.
-  // Sem id na URL (ex: clicou em "Calculadora" no menu) a calculadora abre
-  // em branco/com os padrões, como sempre.
+  // Vindo de "Carregar no Editor" (?quoteId=...): os valores do orçamento
+  // salvo têm que prevalecer sobre os padrões globais. Sem id na URL (ex:
+  // clicou em "Orçamentos" no menu) a tela abre em branco/com os padrões.
   const quoteId = searchParams.get("quoteId");
-  // Vindo do Catálogo (?productId=...): produto não passa pela calculadora
-  // pra ser criado (usa outro motor de custo, multi-material, sem
-  // impressora/energia/mão de obra detalhados) — então só dá pra restaurar
-  // nome, peso, tempo e o primeiro material; o resto fica no padrão global.
+  // Vindo do Catálogo (?productId=...): já entra com esse produto adicionado
+  // como primeira linha.
   const productId = searchParams.get("productId");
 
   useEffect(() => {
     async function load() {
-      // Mês local, não UTC — perto da meia-noite no Brasil toISOString() já mostraria o mês seguinte.
-      const now = new Date();
-      const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-      const responses = await Promise.all([fetch("/api/materials"), fetch("/api/printers"), fetch("/api/supplies"), fetch("/api/settings"), fetch("/api/marketplaces"), fetch("/api/costs/fixed"), fetch("/api/customers")]);
-      if (responses[0].ok) { const data = (await responses[0].json()) as Material[]; if (data.length) setMaterials(data); }
-      if (responses[1].ok) {
-        const data = (await responses[1].json()) as Printer[];
-        if (data.length) {
-          setPrinters(data);
-          if (!quoteId) { setPrinterId(data[0].id); setMaintenancePerHour(String(data[0].maintenancePerHour).replace(".", ",")); }
-        }
-      }
-      if (responses[2].ok) { const data = (await responses[2].json()) as Supply[]; if (data.length) setSupplies(data); }
-      if (responses[3].ok) {
-        const data = (await responses[3].json()) as PricingSettings;
-        setSettings(data);
-        if (!quoteId) { setLaborRate(String(data.laborRate).replace(".", ",")); setEnergyRate(String(data.energyRate).replace(".", ",")); setMarkup(String(data.defaultMarkup)); setLossRate(String(data.defaultLossRate)); setPower(String(data.defaultPowerWatts)); }
+      const responses = await Promise.all([fetch("/api/products"), fetch("/api/supplies"), fetch("/api/settings"), fetch("/api/marketplaces"), fetch("/api/customers")]);
+      if (responses[0].ok) setProducts((await responses[0].json()) as Product[]);
+      if (responses[1].ok) { const data = (await responses[1].json()) as Supply[]; if (data.length) setSupplies(data); }
+      if (responses[2].ok) {
+        const data = (await responses[2].json()) as { defaultMarkup: number; defaultLossRate: number };
+        if (!quoteId) { setMarkup(String(data.defaultMarkup)); setLossRate(String(data.defaultLossRate)); }
       }
       // "Venda Direta" (0% de taxas) fica sempre disponível — antes, se você já
       // tivesse canais cadastrados em Configurações, ela desaparecia da lista.
-      if (responses[4].ok) { const data = (await responses[4].json()) as Marketplace[]; setMarketplaces([defaultMarketplace, ...data]); }
-      if (responses[5].ok) {
-        const data = (await responses[5].json()) as { month: string; total: number }[];
-        setCurrentMonthFixedCost(data.find((item) => item.month === month)?.total ?? null);
-      }
-      if (responses[6].ok) setCustomers((await responses[6].json()) as CustomerLead[]);
+      if (responses[3].ok) { const data = (await responses[3].json()) as Marketplace[]; setMarketplaces([defaultMarketplace, ...data]); }
+      if (responses[4].ok) setCustomers((await responses[4].json()) as CustomerLead[]);
     }
     void load();
   }, [quoteId]);
@@ -166,17 +117,7 @@ function OrcamentosForm() {
       setNotes(quote.notes);
       let s: QuoteSnapshot = {};
       try { s = JSON.parse(quote.snapshotJson) as QuoteSnapshot; } catch { s = {}; }
-      if (s.material?.id) setMaterialId(s.material.id);
-      if (s.printer?.id) setPrinterId(s.printer.id);
-      if (typeof s.weightGrams === "number") setWeight(String(s.weightGrams).replace(".", ","));
-      if (s.hours !== undefined) setHours(s.hours);
-      if (s.minutes !== undefined) setMinutes(s.minutes);
-      if (s.prep !== undefined) setPrep(s.prep);
-      if (s.cleanup !== undefined) setCleanup(s.cleanup);
-      if (s.laborRate !== undefined) setLaborRate(s.laborRate);
-      if (s.energyRate !== undefined) setEnergyRate(s.energyRate);
-      if (s.power !== undefined) setPower(s.power);
-      if (s.maintenancePerHour !== undefined) setMaintenancePerHour(s.maintenancePerHour);
+      if (s.products) setProductLines(s.products.map((item) => ({ productId: item.id, quantity: String(item.quantity ?? 1) })));
       if (s.markup !== undefined) setMarkup(s.markup);
       if (s.lossRate !== undefined) setLossRate(s.lossRate);
       if (s.discount !== undefined) setDiscount(s.discount);
@@ -192,26 +133,16 @@ function OrcamentosForm() {
     void loadQuote();
   }, [quoteId]);
 
+  // Só entra depois que a lista de produtos já carregou (senão não tem o que adicionar).
   useEffect(() => {
-    if (!productId) return;
-    async function loadProduct() {
-      const response = await fetch("/api/products");
-      if (!response.ok) return;
-      const products = (await response.json()) as { id: string; name: string; weightGrams: number; printTimeHours: number; materials?: { materialId: string }[] }[];
-      const product = products.find((item) => item.id === productId);
-      if (!product) return;
-      setName(product.name);
-      setWeight(String(product.weightGrams).replace(".", ","));
-      setHours(String(Math.floor(product.printTimeHours)));
-      setMinutes(String(Math.round((product.printTimeHours % 1) * 60)));
-      const firstMaterialId = product.materials?.[0]?.materialId;
-      if (firstMaterialId) setMaterialId(firstMaterialId);
+    if (!productId || !products.length) return;
+    const id = productId;
+    function addFromQuery() {
+      setProductLines((current) => (current.some((line) => line.productId === id) ? current : [...current, { productId: id, quantity: "1" }]));
     }
-    void loadProduct();
-  }, [productId]);
+    addFromQuery();
+  }, [productId, products]);
 
-  const material = materials.find((item) => item.id === materialId);
-  const printer = printers.find((item) => item.id === printerId) ?? printers[0];
   const marketplace = marketplaces.find((item) => item.id === marketplaceId) ?? marketplaces[0] ?? defaultMarketplace;
   const clientSuggestions = useMemo(() => {
     const query = client.trim().toLowerCase();
@@ -219,17 +150,33 @@ function OrcamentosForm() {
     return customers.filter((item) => item.name.toLowerCase().includes(query)).slice(0, 6);
   }, [client, customers]);
 
-  function selectPrinter(id: string) {
-    setPrinterId(id);
-    const item = printers.find((p) => p.id === id);
-    if (item) setMaintenancePerHour(String(item.maintenancePerHour).replace(".", ","));
-  }
-
   function bumpMarkup(delta: number) {
     setMarkup(String(Math.min(200, Math.max(0, n(markup) + delta))));
   }
 
+  function addProductLine() {
+    const usedIds = new Set(productLines.map((line) => line.productId));
+    const next = products.find((item) => !usedIds.has(item.id));
+    if (!next) return;
+    setProductLines((current) => [...current, { productId: next.id, quantity: "1" }]);
+  }
+  function updateProductLine(index: number, patch: Partial<ProductLine>) {
+    setProductLines((current) => current.map((line, i) => (i === index ? { ...line, ...patch } : line)));
+  }
+  function removeProductLine(index: number) {
+    setProductLines((current) => current.filter((_, i) => i !== index));
+  }
+
+  const productLinesWithData = useMemo(
+    () => productLines
+      .map((line) => ({ line, product: products.find((item) => item.id === line.productId) }))
+      .filter((entry): entry is { line: ProductLine; product: Product } => Boolean(entry.product)),
+    [productLines, products],
+  );
+
   const calc = useMemo(() => {
+    const productsCost = productLinesWithData.reduce((sum, entry) => sum + entry.product.cost * (n(entry.line.quantity) || 1), 0);
+    const productsPrintTime = productLinesWithData.reduce((sum, entry) => sum + entry.product.printTimeHours * (n(entry.line.quantity) || 1), 0);
     const presetsCost = selected.reduce((sum, id) => {
       const item = supplies.find((s) => s.id === id);
       if (!item) return sum;
@@ -237,53 +184,33 @@ function OrcamentosForm() {
       return sum + unitCost * (quantities[id] ?? 1);
     }, 0);
     const customCost = customExtras.reduce((sum, item) => sum + item.unitCost, 0);
-    const cost = calculatePieceCost({
-      weightGrams: n(weight),
-      materialUnitPrice: material?.unitPrice || material?.costPerKg || 0,
-      materialUnitWeightGrams: material?.unitWeightGrams || 1000,
-      printTimeHours: n(hours) + n(minutes) / 60,
-      prepMinutes: n(prep),
-      cleanupMinutes: n(cleanup),
-      laborRatePerHour: n(laborRate),
-      energyRatePerKwh: n(energyRate),
-      powerWatts: n(power),
-      printerPurchasePrice: printer?.purchasePrice,
-      printerUsefulLifeHours: printer?.usefulLifeHours,
-      printerMaintenancePerHour: n(maintenancePerHour),
-      suppliesCost: presetsCost + customCost,
-      fixedCostPerPiece: fixedCostPerPiece(settings, currentMonthFixedCost ?? undefined),
-      lossRatePercent: n(lossRate),
-    });
+    const suppliesCost = presetsCost + customCost;
+    // Reserva para perdas aplicada sobre produtos + insumos, já que aqui não
+    // há mais uma peça só sendo fatiada/impressa — cada produto do catálogo
+    // já embute seu próprio risco de falha no custo dele.
+    const subtotal = productsCost + suppliesCost;
+    const reserve = subtotal * (n(lossRate) / 100);
+    const costWithReserve = subtotal + reserve;
     const pricing = calculateSuggestedPrice({
-      unitCost: cost.total,
+      unitCost: costWithReserve,
       markupPercent: n(markup),
       channel: marketplace,
       discountPerUnit: n(discount),
       method: pricingMethod,
     });
     return {
-      printTime: cost.printTimeHours,
-      filament: cost.filament,
-      labor: cost.labor,
-      energy: cost.energy,
-      machine: cost.machine,
-      extras: cost.supplies,
+      printTime: productsPrintTime,
+      productsCost,
+      suppliesCost,
       insumosCount: selected.length + customExtras.length,
-      fixedCostsPerPiece: cost.fixedCosts,
-      reserve: cost.reserve,
-      base: cost.base,
-      costWithReserve: cost.total,
+      reserve,
+      costWithReserve,
       minimumPrice: pricing.minimum,
       price: pricing.final,
-      profit: pricing.final - cost.total,
+      profit: pricing.final - costWithReserve,
     };
-  }, [cleanup, currentMonthFixedCost, customExtras, discount, energyRate, hours, laborRate, lossRate, maintenancePerHour, markup, marketplace, material, minutes, power, prep, pricingMethod, priceOverrides, printer, quantities, selected, settings, supplies, weight]);
+  }, [customExtras, discount, lossRate, markup, marketplace, priceOverrides, pricingMethod, productLinesWithData, quantities, selected, supplies]);
 
-  const filamentUnitCost = material?.unitPrice || material?.costPerKg || 0;
-  const filamentPerGram = filamentUnitCost / (material?.unitWeightGrams || 1000);
-  const depreciationPerHour = printer ? printer.purchasePrice / printer.usefulLifeHours : 0;
-  const machineCostPerHour = depreciationPerHour + n(maintenancePerHour);
-  const energyKwh = (n(power) / 1000) * calc.printTime;
   const quickChannels = marketplaces.slice(0, 4);
 
   function toggle(id: string) {
@@ -308,17 +235,13 @@ function OrcamentosForm() {
     // PDF (src/app/quotes/[id]/print) lista "o que está incluso" sem precisar
     // reconsultar a Biblioteca, que pode ter mudado ou perdido o preset depois.
     const snapshot: QuoteSnapshot = {
-      material,
-      printer,
-      weightGrams: n(weight),
-      hours,
-      minutes,
-      prep,
-      cleanup,
-      laborRate,
-      energyRate,
-      power,
-      maintenancePerHour,
+      products: productLinesWithData.map((entry) => ({
+        id: entry.product.id,
+        name: entry.product.name,
+        quantity: n(entry.line.quantity) || 1,
+        unitCost: entry.product.cost,
+        printTimeHours: entry.product.printTimeHours,
+      })),
       markup,
       lossRate,
       discount,
@@ -331,7 +254,6 @@ function OrcamentosForm() {
       customExtras,
       calculations: calc,
       marketplace,
-      settings,
       pricingMethod,
     };
     const response = await fetch("/api/quotes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productName: name, customerName: client, status: "DRAFT", baseCost: calc.costWithReserve, finalPrice: calc.price, margin: calc.profit, snapshot, notes }) });
@@ -369,11 +291,8 @@ function OrcamentosForm() {
 
   const realMarginPercent = calc.price ? (calc.profit / calc.price) * 100 : 0;
   const costSegments = [
-    { label: "Filamento", value: calc.filament, color: legendColors[0] },
-    { label: "Depreciação", value: calc.machine, color: legendColors[1] },
-    { label: "Mão de Obra", value: calc.labor, color: legendColors[2] },
-    { label: "Energia", value: calc.energy, color: legendColors[3] },
-    { label: "Insumos", value: calc.extras, color: legendColors[4] },
+    { label: "Produtos", value: calc.productsCost, color: legendColors[0] },
+    { label: "Insumos", value: calc.suppliesCost, color: legendColors[4] },
     { label: "Reserva Perdas", value: calc.reserve, color: legendColors[5] },
   ];
   const costSegmentsTotal = costSegments.reduce((sum, segment) => sum + segment.value, 0) || 1;
@@ -406,91 +325,60 @@ function OrcamentosForm() {
               </ul>
             ) : null}
           </label>
-          <button className="quiet-button" onClick={() => { setName(""); setClient(""); setWeight(""); setNotes(""); }}>↻ Limpar Campos</button>
+          <button className="quiet-button" onClick={() => { setName(""); setClient(""); setNotes(""); setProductLines([]); }}>↻ Limpar Campos</button>
         </section>
 
         <div className="calculator-grid">
           <div className="calculator-main">
             <section className="calc-section">
-              <Title text="MATERIAL & FILAMENTO" />
+              <div className="section-heading-row"><Title text="PRODUTOS DO CATÁLOGO" /><span className="section-total">TOTAL PRODUTOS <strong>{brl(calc.productsCost)}</strong></span></div>
               <div className="field-row library-row">
-                <label>Selecionar da Biblioteca<select value={materialId} onChange={(event) => setMaterialId(event.target.value)}><option value="">Selecione um material...</option>{materials.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-                <a className="bookmark-link" href="/admin" title="Gerenciar presets na Biblioteca"><IconBookmark className="nav-icon" /></a>
+                <span className="material-lines-label">Adicione um ou mais produtos já cadastrados no Catálogo para montar este orçamento.</span>
+                <a className="bookmark-link" href="/catalog" title="Gerenciar produtos no Catálogo"><IconBookmark className="nav-icon" /></a>
               </div>
-              <div className="field-grid three">
-                <label>Nome do Filamento / Cor<input readOnly value={material?.name ?? ""} /></label>
-                <label>Tipo de Material<input readOnly value={material?.type ?? "PLA"} /></label>
-                <label>Peso Usado (g)<input value={weight} onChange={(event) => setWeight(event.target.value)} /><small>Peça + suportes</small></label>
+              <div className="material-lines">
+                {productLines.length ? (
+                  <div className="material-line material-line-header">
+                    <span>Produto (do Catálogo)</span>
+                    <span>Qtd.</span>
+                    <span />
+                  </div>
+                ) : null}
+                {productLines.map((line, index) => {
+                  const product = products.find((item) => item.id === line.productId);
+                  const quantity = n(line.quantity) || 1;
+                  return (
+                    <div className="material-line product-line" key={index}>
+                      <select value={line.productId} onChange={(event) => updateProductLine(index, { productId: event.target.value })}>
+                        <option value="">Selecione um produto...</option>
+                        {products
+                          .filter((item) => item.id === line.productId || !productLines.some((other, otherIndex) => otherIndex !== index && other.productId === item.id))
+                          .map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                      </select>
+                      <input inputMode="numeric" value={line.quantity} onChange={(event) => updateProductLine(index, { quantity: event.target.value })} placeholder="1" />
+                      <button type="button" className="delete-button" onClick={() => removeProductLine(index)} aria-label="Remover produto"><IconTrash className="nav-icon" /></button>
+                      {product ? (
+                        <small className="product-line-info">
+                          <IconClock className="nav-icon" /> {fmtHours(product.printTimeHours)} de impressão · Custo unitário {brl(product.cost)}
+                          {quantity > 1 ? ` · ${quantity}x = ${brl(product.cost * quantity)}` : ""}
+                        </small>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
-              <div className="field-grid two-one">
-                <label>Preço do Rolo (1kg/R$)<input readOnly value={brl(material?.unitPrice ?? material?.costPerKg ?? 0)} /></label>
-                <label>Peso Total do Rolo<input readOnly value={material?.unitWeightGrams ?? 1000} /></label>
-                <div className="metric-box metric-split">
-                  <div><span>Custo Calculado do Filamento</span><strong className="metric-split-rate">{brl3(filamentPerGram)}/g</strong></div>
-                  <div className="metric-split-total"><span>TOTAL FILAMENTO</span><strong>{brl(calc.filament)}</strong></div>
-                </div>
-              </div>
-            </section>
-
-            <section className="calc-section">
-              <Title text="TEMPO & MÃO DE OBRA" />
-              <div className="field-grid time-grid">
-                <div className="time-box">
-                  <span><IconClock className="nav-icon" /> Tempo de Impressão 3D</span>
-                  <div className="field-grid two"><label>Horas<input value={hours} onChange={(event) => setHours(event.target.value)} /></label><label>Minutos<input value={minutes} onChange={(event) => setMinutes(event.target.value)} /></label></div>
-                  <small>Total: {Math.floor(calc.printTime)}h {Math.round((calc.printTime % 1) * 60)}m ({calc.printTime.toFixed(2)}h decimal)</small>
-                </div>
-                <label>Fatiamento / Prep (min)<input value={prep} onChange={(event) => setPrep(event.target.value)} /><small>Design, fatiamento no Cura/Bambu Studio</small></label>
-                <label>Limpeza / Pós-proc (min)<input value={cleanup} onChange={(event) => setCleanup(event.target.value)} /><small>Remoção de suporte, lixa, embalagem</small></label>
-              </div>
-              <div className="labor-strip">
-                <div>
-                  <span>Sua Hora de Trabalho (R$/hora)</span>
-                  <small>Remuneração pelo seu tempo investido na preparação e acabamento.</small>
-                </div>
-                <input inputMode="decimal" value={laborRate} onFocus={(event) => setLaborRate(editingCurrency(event.target.value))} onBlur={(event) => setLaborRate(currencyInput(event.target.value))} onChange={(event) => setLaborRate(event.target.value)} />
-                <strong>TOTAL MÃO DE OBRA<br />{brl(calc.labor)}</strong>
-              </div>
-            </section>
-
-            <section className="calc-section">
-              <Title text="ENERGIA ELÉTRICA GASTA" />
-              <div className="field-grid three">
-                <label>
-                  Consumo Médio da Impressora (Watts)
-                  <input value={power} onChange={(event) => setPower(event.target.value)} />
-                  <div className="chip-row">{wattPresets.map((watt) => <button type="button" key={watt} className={n(power) === watt ? "chip selected" : "chip"} onClick={() => setPower(String(watt))}>{watt}W</button>)}</div>
-                </label>
-                <label className="label-hint-row">
-                  <span>Tarifa de Energia (R$/kWh)<em>Média BR: R$0,85</em></span>
-                  <input inputMode="decimal" value={energyRate} onFocus={(event) => setEnergyRate(editingCurrency(event.target.value))} onBlur={(event) => setEnergyRate(currencyInput(event.target.value))} onChange={(event) => setEnergyRate(event.target.value)} />
-                </label>
-                <Metric title={`Consumo Estimado: ${energyKwh.toFixed(2)} kWh`} value={calc.energy} valueLabel="CUSTO ENERGIA" hint={`Fórmula: (${n(power)}W ÷ 1000) × ${calc.printTime.toFixed(2)}h × R$${n(energyRate).toFixed(2)}/kWh`} />
-              </div>
-            </section>
-
-            <section className="calc-section">
-              <Title text="DEPRECIAÇÃO & MANUTENÇÃO DA MÁQUINA" />
-              <div className="field-row">
-                <label>Selecionar Impressora<select value={printerId} onChange={(event) => selectPrinter(event.target.value)}>{printers.map((item) => <option key={item.id} value={item.id}>{item.model}</option>)}</select></label>
-                <a className="bookmark-link" href="/admin" title="Gerenciar presets na Biblioteca"><IconBookmark className="nav-icon" /></a>
-              </div>
-              <div className="field-grid three">
-                <label>Nome do Equipamento<input readOnly value={printer?.model ?? ""} /></label>
-                <label>Valor Pago na Máquina (R$)<input readOnly value={brl(printer?.purchasePrice ?? 0)} /></label>
-                <label>Vida Útil Estimada (Horas)<input readOnly value={printer?.usefulLifeHours ?? 0} /><small>Geralmente 4.000h a 8.000h de trabalho</small></label>
-              </div>
-              <div className="field-grid one-two">
-                <label>Manutenção/Hora (R$/h)<input inputMode="decimal" value={maintenancePerHour} onFocus={(event) => setMaintenancePerHour(editingCurrency(event.target.value))} onBlur={(event) => setMaintenancePerHour(currencyInput(event.target.value))} onChange={(event) => setMaintenancePerHour(event.target.value)} /><small>Bico, fita, PEI, lubrificante, peças</small></label>
+              {products.length === 0 ? <div className="empty-note">Nenhum produto cadastrado no Catálogo ainda.</div> : null}
+              <button type="button" className="secondary-button" onClick={addProductLine} disabled={!products.length || productLines.length >= products.length}>+ Adicionar produto</button>
+              {productLines.length ? (
                 <div className="metric-wide">
-                  <span>Custo por Hora de Funcionamento: <strong>{brl(machineCostPerHour)}/h</strong><br /><small>(Depreciação: {brl(depreciationPerHour)}/h + Manutenção: {brl(n(maintenancePerHour))}/h)</small></span>
-                  <strong>DEPRECIAÇÃO NESTA PEÇA<br />{brl(calc.machine)}</strong>
+                  <span><IconClock className="nav-icon" /> Tempo total de impressão</span>
+                  <strong>{fmtHours(calc.printTime)}</strong>
                 </div>
-              </div>
+              ) : null}
             </section>
 
             <section className="calc-section">
-              <div className="section-heading-row"><Title text="INSUMOS & ACESSÓRIOS ADICIONAIS" /><span className="section-total">TOTAL INSUMOS <strong>{brl(calc.extras)}</strong></span></div>
+              <div className="section-heading-row"><Title text="INSUMOS & ACESSÓRIOS ADICIONAIS" /><span className="section-total">TOTAL INSUMOS <strong>{brl(calc.suppliesCost)}</strong></span></div>
               <span className="supply-list-label"><IconSparkles className="nav-icon" /> Adicionar Insumo Rápido da Lista:</span>
               <div className="supply-list">
                 {supplies.map((item) => {
@@ -592,23 +480,17 @@ function OrcamentosForm() {
             </div>
             <div className="summary-columns">
               <div>
-                <Cost label="Filamento" value={calc.filament} dot={legendColors[0]} />
-                <Cost label="Depreciação" value={calc.machine} dot={legendColors[1]} />
-                <Cost label="Mão de Obra" value={calc.labor} dot={legendColors[2]} />
+                <Cost label="Produtos" value={calc.productsCost} dot={legendColors[0]} />
+                <Cost label="Insumos" value={calc.suppliesCost} dot={legendColors[4]} />
               </div>
               <div>
-                <Cost label="Energia" value={calc.energy} dot={legendColors[3]} />
-                <Cost label="Insumos" value={calc.extras} dot={legendColors[4]} />
                 <Cost label="Reserva Perdas" value={calc.reserve} dot={legendColors[5]} />
               </div>
             </div>
             <div className="summary-card">
-              <Cost label="Filamento" value={calc.filament} />
-              <Cost label="Energia" value={calc.energy} />
-              <Cost label="Depreciação + Manut." value={calc.machine} />
-              <Cost label="Mão de Obra" value={calc.labor} />
-              <Cost label={`Insumos (${calc.insumosCount})`} value={calc.extras} />
-              <Cost label="Custos Fixos Rateados" value={calc.fixedCostsPerPiece} />
+              <Cost label="Produtos do Catálogo" value={calc.productsCost} />
+              <Info label="Tempo Total de Impressão" value={fmtHours(calc.printTime)} />
+              <Cost label={`Insumos (${calc.insumosCount})`} value={calc.suppliesCost} />
               <Cost label="Reserva para perdas" value={calc.reserve} />
               <hr />
               <Cost label="Custo Base" value={calc.costWithReserve} bold subtotal />
@@ -640,16 +522,6 @@ function OrcamentosForm() {
 }
 
 function Title({ text }: { text: string }) { return <div className="section-title"><span />{text}</div>; }
-function Metric({ title, value, valueLabel, hint }: { title: string; value: number; valueLabel?: string; hint?: string }) {
-  return (
-    <div className="metric-box">
-      <span>{title}</span>
-      {valueLabel ? <small className="metric-value-label">{valueLabel}</small> : null}
-      <strong>{brl(value)}</strong>
-      <small>{hint ?? "Custo calculado"}</small>
-    </div>
-  );
-}
 function Cost({ label, value, bold = false, dot, subtotal = false }: { label: string; value: number; bold?: boolean; dot?: string; subtotal?: boolean }) {
   const className = ["cost-line", bold && "bold", subtotal && "subtotal"].filter(Boolean).join(" ");
   return (

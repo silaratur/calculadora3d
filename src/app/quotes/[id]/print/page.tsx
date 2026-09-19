@@ -21,6 +21,7 @@ type QuoteRecord = {
 type Snapshot = {
   material?: { name?: string; type?: string } | null;
   weightGrams?: number;
+  products?: { id: string; name: string; quantity: number }[];
   supplies?: { id: string; name: string; quantity: number }[];
   customExtras?: { id: string; name: string }[];
   calculations?: { printTime?: number };
@@ -80,6 +81,7 @@ export default function QuotePrintPage() {
 
   const snapshot = parseSnapshot(quote.snapshotJson);
   const includedItems = [
+    ...(snapshot.products ?? []).filter((item) => item.name).map((item) => (item.quantity > 1 ? `${item.name} (x${item.quantity})` : item.name)),
     ...(snapshot.supplies ?? []).filter((item) => item.name).map((item) => (item.quantity > 1 ? `${item.name} (x${item.quantity})` : item.name)),
     ...(snapshot.customExtras ?? []).filter((item) => item.name).map((item) => item.name),
   ];
