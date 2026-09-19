@@ -3,9 +3,15 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isRole } from "@/lib/roles";
+import { isRole, parseRoles, rolesAreValid, type Role } from "@/lib/roles";
 
-const roleSchema = z.string().refine(isRole, { message: "Perfil inválido" });
+// Um ou mais perfis separados por vírgula (ex: "CATALOG,SALES") — cada parte
+// precisa ser um Role válido, e a combinação precisa respeitar a exclusividade
+// de ADMIN/VIEWER (ver rolesAreValid em @/lib/roles).
+const roleSchema = z.string().min(1).refine((value) => {
+  const parts = value.split(",").map((item) => item.trim());
+  return parts.every(isRole) && rolesAreValid(parts as Role[]);
+}, { message: "Perfil inválido — Administrador e Leitura não podem ser combinados com outros perfis" });
 
 const createSchema = z.object({
   name: z.string().min(2),
@@ -73,13 +79,17 @@ export async function PUT(request: Request) {
   const target = await prisma.user.findUnique({ where: { id } });
   if (!target) return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
 
+  const newRoles = parseRoles(data.role);
+
   // Rebaixar ou desativar o próprio usuário pelo painel é um jeito fácil de
   // se trancar pra fora sem querer — força fazer isso por outra conta admin.
-  if (target.id === currentUser.id && (data.role !== "ADMIN" || !data.active)) {
+  if (target.id === currentUser.id && (!newRoles.includes("ADMIN") || !data.active)) {
     return NextResponse.json({ error: "Você não pode remover seu próprio acesso de administrador por aqui" }, { status: 400 });
   }
 
-  if (target.role === "ADMIN" && (data.role !== "ADMIN" || !data.active)) {
+  // ADMIN é exclusivo (nunca combina), então o campo de quem já é admin
+  // continua sendo exatamente "ADMIN" — essa comparação direta ainda vale.
+  if (target.role === "ADMIN" && (!newRoles.includes("ADMIN") || !data.active)) {
     const otherActiveAdmins = await prisma.user.count({ where: { role: "ADMIN", active: true, id: { not: id } } });
     if (otherActiveAdmins === 0) {
       return NextResponse.json({ error: "Precisa sobrar pelo menos um administrador ativo" }, { status: 400 });

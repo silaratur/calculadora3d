@@ -4,13 +4,13 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconTrash } from "@/components/Icons";
-import { ROLE_OPTIONS, roleLabel, type Role } from "@/lib/roles";
+import { EXCLUSIVE_ROLES, ROLE_OPTIONS, parseRoles, rolesAreValid, rolesLabel, serializeRoles, type Role } from "@/lib/roles";
 
-type ManagedUser = { id: string; name: string; email: string; role: Role; active: boolean; createdAt: string };
+type ManagedUser = { id: string; name: string; email: string; role: string; active: boolean; createdAt: string };
 
-type Draft = { name: string; email: string; password: string; role: Role; active: boolean };
+type Draft = { name: string; email: string; password: string; roles: Role[]; active: boolean };
 
-const emptyDraft: Draft = { name: "", email: "", password: "", role: "CALCULATOR", active: true };
+const emptyDraft: Draft = { name: "", email: "", password: "", roles: ["CALCULATOR"], active: true };
 
 export default function UsersPage() {
   const [users, setUsers] = useState<ManagedUser[]>([]);
@@ -47,10 +47,22 @@ export default function UsersPage() {
   // salvar, em vez de deixar a pessoa digitar tudo e só descobrir no erro.
   const isEditingSelf = editingId !== null && editingId === currentUserId;
 
+  // Admin e Leitura são exclusivos: marcar um deles substitui a seleção
+  // inteira; marcar um perfil "de área" some com qualquer exclusivo que
+  // estivesse marcado, e os perfis de área se somam livremente entre si.
+  function toggleRole(value: Role) {
+    setDraft((current) => {
+      if (current.roles.includes(value)) return { ...current, roles: current.roles.filter((role) => role !== value) };
+      if (EXCLUSIVE_ROLES.includes(value)) return { ...current, roles: [value] };
+      return { ...current, roles: [...current.roles.filter((role) => !EXCLUSIVE_ROLES.includes(role)), value] };
+    });
+  }
+
   async function save(event: FormEvent) {
     event.preventDefault();
     setFeedback("");
-    const payload: Record<string, unknown> = { name: draft.name, email: draft.email, role: draft.role, active: draft.active };
+    if (!rolesAreValid(draft.roles)) { setFeedbackOk(false); setFeedback("Selecione pelo menos um perfil de acesso."); return; }
+    const payload: Record<string, unknown> = { name: draft.name, email: draft.email, role: serializeRoles(draft.roles), active: draft.active };
     if (draft.password) payload.password = draft.password;
     if (!editingId) payload.password = draft.password;
 
@@ -70,7 +82,7 @@ export default function UsersPage() {
 
   function edit(user: ManagedUser) {
     setEditingId(user.id);
-    setDraft({ name: user.name, email: user.email, password: "", role: user.role, active: user.active });
+    setDraft({ name: user.name, email: user.email, password: "", roles: parseRoles(user.role), active: user.active });
     setFeedback("");
     document.getElementById("user-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -102,7 +114,7 @@ export default function UsersPage() {
         <section className="library-heading">
           <div>
             <h1>Usuários</h1>
-            <p>Quem tem acesso ao sistema, e a quais áreas — Administrador (tudo), Gerador de Catálogo (só Catálogo) ou Gerador de Calculadora (só Calculadora).</p>
+            <p>Quem tem acesso ao sistema, e a quais áreas — um usuário pode ter mais de um perfil ao mesmo tempo (ex: Catálogo + Vendas); Administrador e Leitura não combinam com outros.</p>
           </div>
           <div className="project-tools">
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nome ou e-mail..." />
@@ -122,13 +134,24 @@ export default function UsersPage() {
                 Senha{editingId ? <small> — deixe em branco para manter a atual</small> : null}
                 <input required={!editingId} type="password" minLength={6} value={draft.password} onChange={(event) => setDraft({ ...draft, password: event.target.value })} placeholder={editingId ? "Nova senha (opcional)" : "Mínimo 6 caracteres"} />
               </label>
-              <label>
-                Perfil de acesso
-                <select disabled={isEditingSelf} value={draft.role} onChange={(event) => setDraft({ ...draft, role: event.target.value as Role })}>
-                  {ROLE_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-                </select>
-                <small>{isEditingSelf ? "Você não pode mudar seu próprio perfil ou se desativar — peça a outro administrador." : ROLE_OPTIONS.find((item) => item.value === draft.role)?.description}</small>
-              </label>
+              <div className="role-field">
+                <span>Perfis de acesso <small>(pode marcar mais de um — Administrador e Leitura não combinam com outros)</small></span>
+                <div className="role-checkbox-list">
+                  {ROLE_OPTIONS.map((item) => {
+                    const selected = draft.roles.includes(item.value);
+                    return (
+                      <label key={item.value} className={["role-checkbox", selected ? "selected" : "", isEditingSelf ? "disabled" : ""].filter(Boolean).join(" ")}>
+                        <input type="checkbox" disabled={isEditingSelf} checked={selected} onChange={() => toggleRole(item.value)} />
+                        <span>
+                          <strong>{item.label}</strong>
+                          <small>{item.description}</small>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {isEditingSelf ? <small>Você não pode mudar seu próprio perfil ou se desativar — peça a outro administrador.</small> : null}
+              </div>
               <label className="checkbox-field">
                 <input type="checkbox" disabled={isEditingSelf} checked={draft.active} onChange={(event) => setDraft({ ...draft, active: event.target.checked })} />
                 Usuário ativo (desmarcar bloqueia o login sem excluir)
@@ -147,7 +170,7 @@ export default function UsersPage() {
                   return (
                     <article className="preset-card" key={user.id}>
                       <div className="card-top">
-                        <span className="material-badge">{roleLabel(user.role)}</span>
+                        <span className="material-badge">{rolesLabel(user.role)}</span>
                         <span className="card-actions">
                           <button className="edit-button" onClick={() => edit(user)}>Editar</button>
                           {!isSelf ? <button className="delete-button" onClick={() => remove(user)} aria-label={`Desativar ${user.name}`}><IconTrash className="nav-icon" /></button> : null}

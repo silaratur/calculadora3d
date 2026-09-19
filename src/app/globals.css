@@ -596,6 +596,18 @@ textarea:focus {
    única combinação form+campo que foge do padrão. */
 .checkbox-field { align-items: center; flex-direction: row !important; gap: 8px !important; }
 .checkbox-field input[type="checkbox"] { accent-color: var(--admin-copper); height: 16px; width: 16px; }
+/* Perfis de acesso do usuário — vários podem ficar marcados ao mesmo tempo
+   (ex: Catálogo + Vendas), por isso virou uma lista de checkboxes em vez de
+   um único select. */
+.role-field > span { color: #8a7472; display: flex; flex-direction: column; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; gap: 2px; margin-bottom: 5px; }
+.role-field > span > small { color: var(--admin-muted); font-size: 10px; text-transform: none; letter-spacing: normal; }
+.role-checkbox-list { display: grid; gap: 6px; }
+.role-checkbox { align-items: flex-start; background: #faf3ec; border: 1px solid var(--admin-border); border-radius: 9px; cursor: pointer; display: flex; gap: 9px; padding: 9px 11px; }
+.role-checkbox.selected { background: #f2e6da; border-color: var(--admin-copper); }
+.role-checkbox.disabled { cursor: not-allowed; opacity: .6; }
+.role-checkbox input[type="checkbox"] { accent-color: var(--admin-copper); flex-shrink: 0; height: 15px; margin-top: 2px; width: 15px; }
+.role-checkbox strong { color: var(--admin-ink); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; }
+.role-checkbox small { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; margin-top: 2px; }
 
 .form-grid {
   display: grid;
