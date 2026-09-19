@@ -128,8 +128,9 @@ export default function QuotePrintPage() {
         <hr className="quote-doc-hr" />
 
         <p className="quote-doc-greeting">
-          {greetingName ? <>Olá, <strong>{greetingName}</strong>!</> : "Olá!"} Muito obrigado pelo interesse em nossos produtos — preparamos esta proposta com
-          carinho especialmente para você. Confira os detalhes abaixo.
+          {greetingName ? <>Olá, <strong>{greetingName}</strong>!</> : "Olá!"} Ficamos muito felizes em saber que você tem interesse em adquirir os nossos
+          produtos. Fazemos cada peça com bastante carinho e capricho, e esperamos que você ame o resultado. Abaixo, segue o seu orçamento com todos os
+          detalhes.
         </p>
 
         <hr className="quote-doc-hr" />

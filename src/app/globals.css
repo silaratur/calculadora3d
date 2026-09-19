@@ -1054,6 +1054,15 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .product-card-stats span { align-items: center; display: inline-flex; gap: 4px; }
 .product-card-stats .nav-icon { height: 12px; width: 12px; }
 .price-highlight { color: var(--admin-copper) !important; font-size: 19px !important; }
+/* Card compacto de orçamento (Projetos, mesmo grid do Catálogo) — ações
+   extras (PDF/Converter) abaixo dos indicadores, e o motivo de
+   arquivamento encolhido pra caber num card de 5 por linha. */
+.quote-card-actions { align-items: center; border-top: 1px solid #e8ddd7; display: flex; gap: 8px; justify-content: space-between; margin-top: 8px; padding-top: 8px; }
+.quote-card-actions a { align-items: center; color: var(--admin-copper); display: inline-flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; gap: 4px; text-decoration: none; }
+.quote-card-actions a .nav-icon { height: 12px; width: 12px; }
+.quote-card-actions button { background: var(--admin-olive); border: 0; border-radius: 6px; color: white; cursor: pointer; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; padding: 4px 8px; }
+.quote-card-actions button:disabled { cursor: not-allowed; opacity: .6; }
+.product-card .project-card-archive-reason { font-size: 10px; line-height: 1.4; margin: 8px 0 0; padding: 7px 9px; }
 @media (max-width: 1500px) { .product-grid-compact { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 1100px) { .product-grid-compact { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .product-grid-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

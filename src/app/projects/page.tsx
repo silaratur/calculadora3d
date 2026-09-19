@@ -3,12 +3,43 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
-import { IconTrash } from "@/components/Icons";
+import { IconClock, IconDownload, IconTrash, IconUser } from "@/components/Icons";
 
-type Quote = { id: string; productName: string; customerName: string; status: string; baseCost: number; finalPrice: number; margin: number; notes: string; archiveReason: string; createdAt: string; updatedAt: string };
+type Quote = {
+  id: string;
+  code: string | null;
+  productName: string;
+  customerName: string;
+  status: string;
+  baseCost: number;
+  finalPrice: number;
+  margin: number;
+  notes: string;
+  archiveReason: string;
+  snapshotJson: string;
+  createdAt: string;
+  updatedAt: string;
+};
 type Competitor = { id: string; productName: string; competitor: string; channel: string; price: number; url: string; checkedAt: string };
+type SortField = "recent" | "client" | "value" | "status";
+
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const statusLabel: Record<string, string> = { DRAFT: "Rascunho", CONVERTED: "Convertido em venda", ARCHIVED: "Arquivado" };
+const statusBadgeColor: Record<string, string> = { DRAFT: "#8a4a4e", CONVERTED: "#777f5d", ARCHIVED: "#602f32" };
+// Mesma ideia do Catálogo: qual direção faz sentido como padrão na primeira
+// vez que cada critério é escolhido (recente = mais novo, cliente = A-Z,
+// valor = maior primeiro, status = A-Z).
+const defaultSortDirection: Record<SortField, "asc" | "desc"> = { recent: "desc", client: "asc", value: "desc", status: "asc" };
+
+/** Foto do primeiro produto do Catálogo incluso no orçamento, se tiver — vira a miniatura do card. */
+function firstItemPhoto(snapshotJson: string): string | null {
+  try {
+    const snapshot = JSON.parse(snapshotJson) as { products?: { imageUrl?: string }[] };
+    return snapshot.products?.find((item) => item.imageUrl)?.imageUrl ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export default function ProjectsPage() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -25,6 +56,12 @@ export default function ProjectsPage() {
   // "Não Executado" só depois que o motivo é informado no popup.
   const [archiveTarget, setArchiveTarget] = useState<Quote | null>(null);
   const [archiveReason, setArchiveReason] = useState("");
+  // Mesmo padrão de listagem do Catálogo: ordenação, filtro e paginação.
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<SortField>("recent");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [itemsPerPage, setItemsPerPage] = useState(15);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     async function load() {
@@ -38,9 +75,52 @@ export default function ProjectsPage() {
     void load();
   }, [reloadToken]);
 
-  const filteredQuotes = useMemo(() => quotes.filter((quote) => `${quote.productName} ${quote.customerName}`.toLowerCase().includes(search.toLowerCase())), [quotes, search]);
-  const filteredArchivedQuotes = useMemo(() => archivedQuotes.filter((quote) => `${quote.productName} ${quote.customerName}`.toLowerCase().includes(search.toLowerCase())), [archivedQuotes, search]);
+  function sortQuotes(list: Quote[]) {
+    const sorted = [...list];
+    const sign = sortDirection === "asc" ? 1 : -1;
+    if (sortBy === "recent") sorted.sort((a, b) => sign * (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()));
+    else if (sortBy === "client") sorted.sort((a, b) => sign * ((a.customerName || "").localeCompare(b.customerName || "") || a.productName.localeCompare(b.productName)));
+    else if (sortBy === "value") sorted.sort((a, b) => sign * (a.finalPrice - b.finalPrice));
+    else if (sortBy === "status") sorted.sort((a, b) => sign * ((statusLabel[a.status] ?? a.status).localeCompare(statusLabel[b.status] ?? b.status)));
+    return sorted;
+  }
+
+  const filteredQuotes = useMemo(() => {
+    const items = quotes.filter(
+      (quote) =>
+        `${quote.productName} ${quote.customerName} ${quote.code ?? ""}`.toLowerCase().includes(search.toLowerCase()) &&
+        (statusFilter === "all" || quote.status === statusFilter),
+    );
+    return sortQuotes(items);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quotes, search, statusFilter, sortBy, sortDirection]);
+  const filteredArchivedQuotes = useMemo(() => {
+    const items = archivedQuotes.filter((quote) => `${quote.productName} ${quote.customerName} ${quote.code ?? ""}`.toLowerCase().includes(search.toLowerCase()));
+    return sortQuotes(items);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [archivedQuotes, search, sortBy, sortDirection]);
   const filteredCompetitors = useMemo(() => competitors.filter((item) => `${item.productName} ${item.competitor} ${item.channel}`.toLowerCase().includes(search.toLowerCase())), [competitors, search]);
+
+  const activeQuoteList = tab === "archived" ? filteredArchivedQuotes : filteredQuotes;
+  const totalPages = Math.max(1, Math.ceil(activeQuoteList.length / itemsPerPage));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedQuotes = activeQuoteList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  function selectTab(value: "quotes" | "archived" | "competitors") {
+    setTab(value);
+    setPage(1);
+  }
+  function sortArrow(value: SortField) {
+    if (sortBy !== value) return "";
+    return sortDirection === "asc" ? " ↑" : " ↓";
+  }
+  function selectSort(value: SortField) {
+    // Clicar de novo no mesmo critério já selecionado inverte a direção;
+    // trocar de critério usa o padrão de cada um (igual ao Catálogo).
+    if (value === sortBy) setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+    else { setSortBy(value); setSortDirection(defaultSortDirection[value]); }
+    setPage(1);
+  }
 
   function requestArchive(quote: Quote) {
     setArchiveTarget(quote);
@@ -84,76 +164,96 @@ export default function ProjectsPage() {
             <p>Consulte, compare e arquive os orçamentos gerados em Orçamentos.</p>
           </div>
           <div className="project-tools">
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nome, cliente ou canal..." />
+            <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por nome, cliente, código ou canal..." />
             <a className="new-quote-button" href="/orcamentos">＋ Novo</a>
           </div>
         </section>
 
         <div className="project-tabs">
-          <button className={tab === "quotes" ? "selected" : ""} onClick={() => setTab("quotes")}>Orçamentos ({filteredQuotes.length})</button>
-          <button className={tab === "archived" ? "selected" : ""} onClick={() => setTab("archived")}>Não Executados ({filteredArchivedQuotes.length})</button>
-          <button className={tab === "competitors" ? "selected" : ""} onClick={() => setTab("competitors")}>Concorrência ({filteredCompetitors.length})</button>
+          <button className={tab === "quotes" ? "selected" : ""} onClick={() => selectTab("quotes")}>Orçamentos ({filteredQuotes.length})</button>
+          <button className={tab === "archived" ? "selected" : ""} onClick={() => selectTab("archived")}>Não Executados ({filteredArchivedQuotes.length})</button>
+          <button className={tab === "competitors" ? "selected" : ""} onClick={() => selectTab("competitors")}>Concorrência ({filteredCompetitors.length})</button>
         </div>
 
         {feedback ? <p className="admin-feedback">{feedback}</p> : null}
 
-        {tab === "quotes" ? (
-          <div className="project-list">
-            {filteredQuotes.length ? filteredQuotes.map((quote) => (
-              <article className="project-card" key={quote.id}>
-                <div className="project-card-top">
-                  <span className="material-badge">ORÇAMENTO</span>
-                  <div>
-                    <span className="project-status">{statusLabel[quote.status] ?? quote.status}</span>
-                    <button className="delete-button" onClick={() => requestArchive(quote)} aria-label={`Excluir ${quote.productName}`}><IconTrash className="nav-icon" /></button>
-                  </div>
-                </div>
-                <div className="project-card-heading">
-                  <div>
+        {tab === "quotes" || tab === "archived" ? (
+          <>
+            <div className="catalog-filters">
+              <strong>{activeQuoteList.length} orçamento{activeQuoteList.length === 1 ? "" : "s"}</strong>
+              <div className="catalog-sort">
+                <span>Classificar por</span>
+                <button type="button" className={sortBy === "recent" ? "chip selected" : "chip"} onClick={() => selectSort("recent")}>Mais Recentes{sortArrow("recent")}</button>
+                <button type="button" className={sortBy === "client" ? "chip selected" : "chip"} onClick={() => selectSort("client")}>Cliente{sortArrow("client")}</button>
+                <button type="button" className={sortBy === "value" ? "chip selected" : "chip"} onClick={() => selectSort("value")}>Valor{sortArrow("value")}</button>
+                {tab === "quotes" ? <button type="button" className={sortBy === "status" ? "chip selected" : "chip"} onClick={() => selectSort("status")}>Status{sortArrow("status")}</button> : null}
+              </div>
+              <div className="catalog-filters-right">
+                {tab === "quotes" ? (
+                  <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}>
+                    <option value="all">Todos os status</option>
+                    <option value="DRAFT">Rascunho</option>
+                    <option value="CONVERTED">Convertido em venda</option>
+                  </select>
+                ) : null}
+                <label className="items-per-page">Por página
+                  <select value={itemsPerPage} onChange={(event) => { setItemsPerPage(Number(event.target.value)); setPage(1); }}>
+                    {[5, 10, 15, 20, 25, 30, 35, 40, 45, 50].map((value) => <option key={value} value={value}>{value}</option>)}
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div className="product-grid product-grid-compact">
+              {paginatedQuotes.map((quote) => {
+                const photo = firstItemPhoto(quote.snapshotJson);
+                const archived = quote.status === "ARCHIVED";
+                return (
+                  <article className="product-card" key={quote.id}>
+                    <div className="product-card-photo">
+                      {photo ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- data URI local, next/image não otimiza isso
+                        <img src={photo} alt={quote.productName} />
+                      ) : (
+                        <span className="product-card-photo-placeholder">{quote.productName.slice(0, 1).toUpperCase()}</span>
+                      )}
+                      <span className="product-card-category" style={{ background: statusBadgeColor[quote.status] ?? "#8a4a4e" }}>
+                        {archived ? "Não executado" : statusLabel[quote.status] ?? quote.status}
+                      </span>
+                      {!archived ? (
+                        <span className="product-card-photo-actions">
+                          <a className="edit-button" href={`/orcamentos?quoteId=${quote.id}`}>Editar</a>
+                          <button type="button" className="delete-button" onClick={() => requestArchive(quote)} aria-label={`Excluir ${quote.productName}`}><IconTrash className="nav-icon" /></button>
+                        </span>
+                      ) : null}
+                    </div>
+                    <span className="material-badge">{quote.code ?? "—"}</span>
                     <h2>{quote.productName}</h2>
-                    <p>{quote.customerName || "Cliente não informado"}</p>
-                  </div>
-                  <strong>{brl(quote.finalPrice)}</strong>
-                </div>
-                <div className="project-card-details">
-                  <span>Custo base: {brl(quote.baseCost)}</span>
-                  <span>Lucro: {brl(quote.margin)}</span>
-                  <span>Atualizado em: {new Date(quote.updatedAt).toLocaleDateString("pt-BR")}</span>
-                </div>
-                <div className="project-card-actions">
-                  <a className="load-editor-button" href={`/orcamentos?quoteId=${quote.id}`}>▱ Carregar no Editor</a>
-                  <a className="load-editor-button" href={`/quotes/${quote.id}/print`} target="_blank" rel="noreferrer">🖨 Ver / Baixar PDF</a>
-                  {quote.status !== "CONVERTED" ? (
-                    <button className="primary-button" type="button" disabled={converting === quote.id} onClick={() => convertQuote(quote.id)}>
-                      {converting === quote.id ? "Convertendo..." : "Converter em Venda"}
-                    </button>
-                  ) : null}
-                </div>
-              </article>
-            )) : <div className="empty-note">Nenhum orçamento salvo ainda. Gere um em Orçamentos.</div>}
-          </div>
-        ) : tab === "archived" ? (
-          <div className="project-list">
-            {filteredArchivedQuotes.length ? filteredArchivedQuotes.map((quote) => (
-              <article className="project-card project-card-archived" key={quote.id}>
-                <div className="project-card-top">
-                  <span className="material-badge">NÃO EXECUTADO</span>
-                  <span className="project-status">Arquivado em {new Date(quote.updatedAt).toLocaleDateString("pt-BR")}</span>
-                </div>
-                <div className="project-card-heading">
-                  <div>
-                    <h2>{quote.productName}</h2>
-                    <p>{quote.customerName || "Cliente não informado"}</p>
-                  </div>
-                  <strong>{brl(quote.finalPrice)}</strong>
-                </div>
-                {quote.archiveReason ? <p className="project-card-archive-reason">Motivo: {quote.archiveReason}</p> : null}
-                <div className="project-card-actions">
-                  <a className="load-editor-button" href={`/quotes/${quote.id}/print`} target="_blank" rel="noreferrer">🖨 Ver / Baixar PDF</a>
-                </div>
-              </article>
-            )) : <div className="empty-note">Nenhum orçamento arquivado ainda.</div>}
-          </div>
+                    <div className="product-card-prices">
+                      <div><span>Custo</span><strong>{brl(quote.baseCost)}</strong></div>
+                      <div><span>Preço</span><strong className="price-highlight">{brl(quote.finalPrice)}</strong></div>
+                    </div>
+                    <div className="product-card-stats">
+                      <span><IconUser className="nav-icon" /> {quote.customerName || "Sem cliente"}</span>
+                      <span><IconClock className="nav-icon" /> {new Date(quote.updatedAt).toLocaleDateString("pt-BR")}</span>
+                    </div>
+                    {archived && quote.archiveReason ? <p className="project-card-archive-reason">Motivo: {quote.archiveReason}</p> : null}
+                    <div className="quote-card-actions">
+                      <a href={`/quotes/${quote.id}/print`} target="_blank" rel="noreferrer"><IconDownload className="nav-icon" /> PDF</a>
+                      {!archived && quote.status !== "CONVERTED" ? (
+                        <button type="button" disabled={converting === quote.id} onClick={() => convertQuote(quote.id)}>
+                          {converting === quote.id ? "Convertendo..." : "Converter"}
+                        </button>
+                      ) : null}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+            {activeQuoteList.length === 0 ? (
+              <div className="empty-note">{tab === "archived" ? "Nenhum orçamento arquivado ainda." : "Nenhum orçamento salvo ainda. Gere um em Orçamentos."}</div>
+            ) : null}
+            <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
+          </>
         ) : (
           <div className="project-list">
             {filteredCompetitors.length ? filteredCompetitors.map((item) => (
@@ -200,5 +300,18 @@ export default function ProjectsPage() {
         </div>
       ) : null}
     </main>
+  );
+}
+
+function Pagination({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (page: number) => void }) {
+  if (totalPages <= 1) return null;
+  return (
+    <nav className="pagination" aria-label="Páginas de orçamentos">
+      <button type="button" onClick={() => onChange(page - 1)} disabled={page === 1} aria-label="Página anterior">‹</button>
+      {Array.from({ length: totalPages }, (_, index) => index + 1).map((item) => (
+        <button type="button" key={item} className={item === page ? "selected" : ""} onClick={() => onChange(item)}>{item}</button>
+      ))}
+      <button type="button" onClick={() => onChange(page + 1)} disabled={page === totalPages} aria-label="Próxima página">›</button>
+    </nav>
   );
 }

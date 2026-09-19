@@ -336,6 +336,9 @@ function OrcamentosForm() {
     const lines = [
       `*${settings.companyName || "AC3D"}* — Impressão 3D`,
       "",
+      `Olá${client.trim() ? `, ${client.trim()}` : ""}! 💛`,
+      "Ficamos muito felizes em saber do seu interesse em nossos produtos! Fazemos cada peça com bastante carinho e capricho, e esperamos que você ame o resultado. Segue abaixo o seu orçamento:",
+      "",
       `*Orçamento: ${name.trim() || "Sem título"}*`,
       client.trim() ? `Cliente: ${client.trim()}` : null,
       "",
