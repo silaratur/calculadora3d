@@ -37,9 +37,37 @@ body {
    conteúdo (min-width:auto) — isso empurra a linha inteira, e com ela a
    página, pra fora da tela no celular. Mesmo problema em vários lugares do
    app (não só o Material & Filamento), corrigido aqui de uma vez. */
-input, select, textarea {
+/* Base única de campo de texto/select pra site inteiro — referência: campo
+   "Nome do Cliente" da Calculadora (input) e os selects de filtro do
+   Catálogo (select). Cada página tinha sua própria cópia quase igual
+   (padding, border-radius e min-height levemente diferentes), o que deixava
+   Vendas/Pedidos com campos visivelmente diferentes do resto. checkbox/radio/
+   range ficam de fora porque têm renderização nativa própria. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select,
+textarea {
   max-width: 100%;
   min-width: 0;
+  background: #faf3ec;
+  border: 1px solid var(--admin-border);
+  border-radius: 9px;
+  color: var(--admin-ink);
+  font-family: var(--font-sans), Arial, sans-serif;
+  font-size: 12px;
+  min-height: 36px;
+  outline: none;
+  padding: 8px 11px;
+}
+select {
+  background: var(--admin-paper);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+select:focus,
+textarea:focus {
+  border-color: var(--admin-copper);
+  box-shadow: 0 0 0 2px rgba(189, 107, 66, .1);
 }
 
 .calculator-shell {
@@ -74,7 +102,6 @@ input, select, textarea {
 .project-header { align-items: end; display: grid; gap: 12px; grid-template-columns: 1fr 1fr auto; margin-bottom: 24px; padding: 18px 20px; }
 .project-header label span, .calc-section label, .notes-field { color: var(--calc-muted); display: flex; flex-direction: column; font-size: 11px; gap: 6px; }
 .project-header label span, .section-title { letter-spacing: .08em; }
-.project-header input, .calc-section input, .calc-section select, .calc-section textarea { background: #faf3ec; border: 1px solid var(--calc-border); border-radius: 9px; color: var(--calc-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; min-height: 36px; outline: none; padding: 8px 11px; }
 .project-header input:focus, .calc-section input:focus, .calc-section select:focus, .calc-section textarea:focus { border-color: var(--calc-copper); box-shadow: 0 0 0 2px rgba(189, 107, 66, .1); }
 /* Sem width explícito o <input> usa a largura intrínseca do navegador
    (~20 caracteres) mesmo dentro de uma coluna do grid bem mais larga —
@@ -548,30 +575,13 @@ input, select, textarea {
   gap: 5px;
 }
 
-.preset-form input:not([type="checkbox"]), .preset-form select, .preset-form textarea {
-  background: #faf3ec;
-  border: 1px solid #e8ddd7;
-  border-radius: 11px;
-  color: var(--admin-ink);
-  font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 12px;
-  min-height: 35px;
-  outline: 0;
-  padding: 8px 11px;
-}
-
 .preset-form textarea { min-height: 66px; resize: vertical; }
 
 /* Checkbox simples (ex: usuário ativo) — o reset de <input> do form vira um
-   retângulo de 35px de altura se aplicado a um checkbox, então esta é a
+   retângulo de 36px de altura se aplicado a um checkbox, então esta é a
    única combinação form+campo que foge do padrão. */
 .checkbox-field { align-items: center; flex-direction: row !important; gap: 8px !important; }
 .checkbox-field input[type="checkbox"] { accent-color: var(--admin-copper); height: 16px; width: 16px; }
-
-.preset-form input:focus, .preset-form select:focus, .preset-form textarea:focus {
-  border-color: var(--admin-copper);
-  box-shadow: 0 0 0 2px rgba(189, 107, 66, 0.1);
-}
 
 .form-grid {
   display: grid;
@@ -901,7 +911,7 @@ a.primary-button {
    igual em Clientes/Catálogo/Usuários — quem cede espaço é o campo de busca
    (encolhe) e o texto ao lado (quebra as próprias linhas), nunca o botão. */
 .project-tools { align-items: center; display: flex; flex-shrink: 0; gap: 8px; }
-.project-tools input { background: #faf3ec; border: 1px solid var(--admin-border); border-radius: 9px; color: var(--admin-ink); flex-shrink: 1; min-height: 35px; min-width: 120px; padding: 8px 11px; width: 255px; }
+.project-tools input { flex-shrink: 1; min-width: 120px; width: 255px; }
 .new-quote-button, .load-editor-button { background: var(--admin-copper); border-radius: 9px; color: white; flex-shrink: 0; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; padding: 10px 13px; text-decoration: none; white-space: nowrap; }
 button.new-quote-button { border: 0; cursor: pointer; }
 .catalog-new-formbar { align-items: center; display: flex; gap: 16px; justify-content: space-between; margin-bottom: 18px; }
@@ -950,23 +960,9 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .catalog-sort > span { color: var(--calc-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; margin-right: 2px; }
 .catalog-filters { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; margin-bottom: 14px; }
 .catalog-filters strong { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; }
-.catalog-filters input { background: #faf3ec; border: 1px solid var(--admin-border); border-radius: 8px; color: var(--admin-ink); flex: 1; min-height: 35px; min-width: 200px; padding: 8px 11px; }
-.catalog-filters select { background: var(--admin-paper); border: 1px solid var(--admin-border); border-radius: 8px; color: var(--admin-ink); padding: 8px 10px; }
+.catalog-filters input { flex: 1; min-width: 200px; }
 .catalog-filters-right { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; }
 .items-per-page { align-items: center; color: var(--admin-muted); display: flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; gap: 6px; }
-
-/* Catálogo Novo reaproveita project-tools/catalog-filters (nascidos no Catálogo
-   antigo, tema "admin", sem font-family/font-size definidos) mas roda dentro do
-   mesmo shell da Calculadora — aqui alinha esses campos à referência de fonte e
-   altura dela (.calc-section input), sem tocar quem ainda usa esses componentes
-   no Catálogo/Projetos/Produção (tema admin, fora de .calculator-content). */
-.calculator-content .project-tools input,
-.calculator-content .catalog-filters input,
-.calculator-content .catalog-filters select {
-  font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 12px;
-  min-height: 36px;
-}
 
 .pagination { align-items: center; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 22px 0 4px; }
 .pagination button { background: var(--admin-paper); border: 1px solid var(--admin-border); border-radius: 8px; color: var(--admin-muted); cursor: pointer; font-family: var(--font-mono); font-size: 12px; min-width: 32px; padding: 7px 9px; }
@@ -1077,14 +1073,6 @@ button.new-quote-button { border: 0; cursor: pointer; }
   margin: 4px 0 0;
 }
 
-.admin-auth-banner input {
-  background: #fffdfa;
-  border: 1px solid var(--admin-border);
-  border-radius: 8px;
-  min-height: 35px;
-  padding: 8px 10px;
-}
-
 .admin-auth-banner .primary-button {
   margin: 0;
 }
@@ -1108,6 +1096,11 @@ button.new-quote-button { border: 0; cursor: pointer; }
 
 .project-tools button { background: #faf3ec; border: 1px solid var(--admin-border); border-radius: 9px; color: var(--admin-muted); cursor: pointer; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; min-height: 35px; padding: 8px 13px; }
 .project-tools button.selected { background: var(--admin-olive); border-color: var(--admin-olive); color: white; }
+/* ".new-quote-button" nas outras páginas é sempre um <a>, mas no Catálogo é
+   um <button> — essa regra genérica tem a mesma especificidade de
+   "button.new-quote-button" e vinha depois no arquivo, então vencia e
+   deixava o "+ Novo produto" bege em vez de vinho. */
+.project-tools button.new-quote-button { background: var(--admin-copper); color: white; }
 
 .operations-layout { align-items: start; display: grid; gap: 24px; grid-template-columns: 325px minmax(0, 1fr); }
 .operation-list { display: grid; gap: 14px; min-width: 0; }
@@ -1140,7 +1133,7 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .job-due.late { color: #a95037; }
 .job-fields { display: grid; gap: 9px; margin-top: 12px; }
 .job-fields label, .job-notes { color: var(--admin-muted); display: grid; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; gap: 5px; letter-spacing: .06em; text-transform: uppercase; }
-.job-fields select, .job-fields input, .job-notes textarea { background: #faf3ec; border: 1px solid var(--admin-border); border-radius: 8px; color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; letter-spacing: normal; min-height: 33px; padding: 7px 9px; text-transform: none; width: 100%; }
+.job-fields select, .job-fields input, .job-notes textarea { letter-spacing: normal; text-transform: none; width: 100%; }
 .job-notes { margin-top: 10px; }
 .job-notes textarea { min-height: 54px; resize: vertical; }
 .job-actions { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; margin-top: 12px; }
