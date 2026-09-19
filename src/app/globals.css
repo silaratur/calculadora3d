@@ -174,14 +174,25 @@ textarea:focus {
 .section-total strong { color: var(--calc-copper); font-family: var(--font-mono); font-size: 13px; letter-spacing: normal; margin-left: 6px; text-transform: none; }
 .supply-list-label { color: #8a7472; display: block; font-size: 11px; margin: 12px 0 8px; }
 .supply-list { display: grid; gap: 8px; }
-.supply-row { align-items: center; background: #faf3ec; border: 1px solid var(--calc-border); border-radius: 8px; color: #8a7472; display: flex; gap: 10px; padding: 9px 11px; text-align: left; }
+.custom-extra-row .supply-list { margin-top: 10px; }
+.supply-row { align-items: center; background: #faf3ec; border: 1px solid var(--calc-border); border-radius: 8px; color: var(--calc-muted); display: flex; gap: 10px; padding: 9px 11px; text-align: left; }
 .supply-row.selected { background: #f2e6da; border-color: #e3cfc9; }
 .supply-row strong { font-family: var(--font-mono); font-size: 11px; white-space: nowrap; }
 .supply-name { align-items: center; background: transparent; border: 0; color: inherit; cursor: pointer; display: flex; flex: 1; font: inherit; gap: 8px; min-width: 0; padding: 0; text-align: left; }
 .supply-name-static { cursor: default; }
 .supply-tag { background: #f8dee7; border-radius: 5px; color: var(--calc-copper); flex-shrink: 0; font-family: var(--font-sans), Arial, sans-serif; font-size: 9px; font-weight: 700; padding: 3px 6px; }
-.supply-price { background: var(--calc-paper) !important; border: 1px solid var(--calc-border); border-radius: 6px; flex-shrink: 0; font-family: var(--font-mono) !important; font-size: 11px !important; min-height: 28px !important; padding: 4px 6px !important; text-align: right; width: 62px !important; }
-.supply-static-price { color: #8a7472; }
+/* Sem os !important de antes — segue o padrão único de campo de texto do
+   site (fundo, borda, raio, fonte e altura), só ajustando largura/alinhamento. */
+.supply-price { flex-shrink: 0; text-align: right; width: 76px; }
+/* Linha de insumo do orçamento — mesmo padrão de "adicionar linha" dos
+   produtos do catálogo, só que com preço editável (o insumo não tem custo
+   fixo como o produto); o preço aqui é item de grid, não de flex, então
+   precisa da própria largura (a de cima é pro layout antigo da Calculadora). */
+.supply-line { grid-template-columns: minmax(0, 1fr) 78px 70px auto; }
+.supply-line .supply-price { width: 100%; }
+/* Preço em destaque igual aos demais valores da tela (custo, quantidade) —
+   antes ficava no cinza neutro do texto de apoio, parecendo secundário. */
+.supply-static-price { color: var(--calc-ink); }
 .quantity-control { align-items: center; display: flex; flex-shrink: 0; gap: 7px; }
 .quantity-control button { background: var(--calc-paper); border: 1px solid var(--calc-border); border-radius: 5px; color: var(--calc-muted); cursor: pointer; height: 23px; width: 23px; }
 .quantity-control b { color: var(--calc-ink); font-size: 11px; min-width: 10px; text-align: center; }
@@ -198,11 +209,20 @@ textarea:focus {
 .margin-panel-value { text-align: right; }
 .margin-panel-value strong { font-size: 26px; font-weight: 400; }
 .margin-panel input { accent-color: white; display: block; margin: 14px 0 10px; width: 100%; }
+/* Versão compacta (Orçamentos) — caixa menor; badge do método e % ficam na
+   mesma linha dos presets, depois do -5%/+5%, em vez do valor grande
+   sozinho acima da barra. */
+.margin-panel-compact { padding: 14px 16px; }
+.margin-panel-compact input { margin: 12px 0 8px; }
 .range-presets { align-items: center; display: flex; flex-wrap: wrap; gap: 7px; }
 .range-presets button { background: rgba(255, 255, 255, .14); border: 0; border-radius: 10px; color: white; cursor: pointer; font-size: 10px; padding: 5px 9px; }
 /* +5%/-5% incrementa sem precisar arrastar a barra — separado dos presets
    fixos por uma linha sutil, pra não parecer só mais um valor da lista. */
 .range-stepper { border-left: 1px solid rgba(255, 255, 255, .25); display: inline-flex; gap: 4px; margin-left: 2px; padding-left: 9px; }
+/* Markup/% atual, na mesma linha dos presets — outro separador sutil,
+   igual ao do -5%/+5%, pra não se misturar com os botões clicáveis. */
+.range-current { align-items: center; border-left: 1px solid rgba(255, 255, 255, .25); display: inline-flex; gap: 7px; margin-left: auto; padding-left: 9px; }
+.range-current strong { font-size: 13px; font-weight: 700; }
 .method-toggle { background: #f2e6da; border-radius: 10px; display: flex; gap: 3px; padding: 3px; }
 .method-toggle button { background: transparent; border: 0; border-radius: 8px; color: var(--calc-muted); cursor: pointer; flex: 1; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; padding: 8px; }
 .method-toggle button.selected { background: white; box-shadow: 0 1px 3px rgba(0, 0, 0, .08); color: var(--calc-ink); font-weight: 700; }

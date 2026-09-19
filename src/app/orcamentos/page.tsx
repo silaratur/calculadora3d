@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AdminHeader } from "@/components/AdminHeader";
-import { IconBookmark, IconChevronDown, IconChevronUp, IconClock, IconCopy, IconDownload, IconSave, IconShieldAlert, IconShoppingBag, IconSparkles, IconTrash } from "@/components/Icons";
+import { IconBookmark, IconChevronDown, IconChevronUp, IconClock, IconCopy, IconDownload, IconSave, IconShoppingBag, IconTrash } from "@/components/Icons";
 import { calculateSuggestedPrice, type PricingMethod } from "@/lib/costing";
 
 // Produto já cadastrado no Catálogo — custo e tempo de impressão vêm prontos
@@ -15,13 +15,13 @@ type Marketplace = { id: string; name: string; commissionRate: number; fixedFee:
 type CustomExtra = { id: string; name: string; unitCost: number };
 type CustomerLead = { id: string; name: string };
 type ProductLine = { productId: string; quantity: string };
+type SupplyLine = { supplyId: string; quantity: string; unitCost: string };
 // Formato salvo em Quote.snapshotJson — precisa bater com o que saveQuote()
 // grava, senão "Carregar no Editor" não restaura tudo exatamente como foi
 // criado.
 type QuoteSnapshot = {
   products?: { id: string; name: string; quantity: number; unitCost: number; printTimeHours: number; imageUrl?: string }[];
   markup?: string;
-  lossRate?: string;
   discount?: string;
   supplies?: { id: string; name: string; quantity: number; unitCost: number }[];
   customExtras?: CustomExtra[];
@@ -44,7 +44,6 @@ const n = (value: string) => {
 };
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const fmtHours = (hours: number) => `${Math.floor(hours)}h ${Math.round((hours % 1) * 60)}m`;
-const categoryTag = (category: string) => category.split(/[\s&]/)[0]?.toUpperCase() ?? category.toUpperCase();
 
 export default function OrcamentosPage() {
   return (
@@ -61,18 +60,15 @@ function OrcamentosForm() {
   const [supplies, setSupplies] = useState<Supply[]>(demoSupplies);
   const [marketplaces, setMarketplaces] = useState<Marketplace[]>([defaultMarketplace]);
   const [productLines, setProductLines] = useState<ProductLine[]>([]);
+  const [supplyLines, setSupplyLines] = useState<SupplyLine[]>([]);
   const [name, setName] = useState("");
   const [client, setClient] = useState("");
   const [customers, setCustomers] = useState<CustomerLead[]>([]);
   const [clientSuggestionsOpen, setClientSuggestionsOpen] = useState(false);
   const [markup, setMarkup] = useState("40");
   const [pricingMethod, setPricingMethod] = useState<PricingMethod>("markup");
-  const [lossRate, setLossRate] = useState("5");
   const [marketplaceId, setMarketplaceId] = useState("direct");
   const [discount, setDiscount] = useState("0");
-  const [selected, setSelected] = useState<string[]>([]);
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({});
   const [customExtras, setCustomExtras] = useState<CustomExtra[]>([]);
   const [customExtraName, setCustomExtraName] = useState("");
   const [customExtraCost, setCustomExtraCost] = useState("");
@@ -95,8 +91,8 @@ function OrcamentosForm() {
       if (responses[0].ok) setProducts((await responses[0].json()) as Product[]);
       if (responses[1].ok) { const data = (await responses[1].json()) as Supply[]; if (data.length) setSupplies(data); }
       if (responses[2].ok) {
-        const data = (await responses[2].json()) as { defaultMarkup: number; defaultLossRate: number };
-        if (!quoteId) { setMarkup(String(data.defaultMarkup)); setLossRate(String(data.defaultLossRate)); }
+        const data = (await responses[2].json()) as { defaultMarkup: number };
+        if (!quoteId) setMarkup(String(data.defaultMarkup));
       }
       // "Venda Direta" (0% de taxas) fica sempre disponível — antes, se você já
       // tivesse canais cadastrados em Configurações, ela desaparecia da lista.
@@ -119,14 +115,11 @@ function OrcamentosForm() {
       try { s = JSON.parse(quote.snapshotJson) as QuoteSnapshot; } catch { s = {}; }
       if (s.products) setProductLines(s.products.map((item) => ({ productId: item.id, quantity: String(item.quantity ?? 1) })));
       if (s.markup !== undefined) setMarkup(s.markup);
-      if (s.lossRate !== undefined) setLossRate(s.lossRate);
       if (s.discount !== undefined) setDiscount(s.discount);
       if (s.marketplace?.id) setMarketplaceId(s.marketplace.id);
       if (s.pricingMethod) setPricingMethod(s.pricingMethod);
       if (s.supplies) {
-        setSelected(s.supplies.map((item) => item.id));
-        setQuantities(Object.fromEntries(s.supplies.map((item) => [item.id, item.quantity ?? 1])));
-        setPriceOverrides(Object.fromEntries(s.supplies.map((item) => [item.id, item.unitCost ?? 0])));
+        setSupplyLines(s.supplies.map((item) => ({ supplyId: item.id, quantity: String(item.quantity ?? 1), unitCost: String(item.unitCost ?? 0).replace(".", ",") })));
       }
       if (s.customExtras) setCustomExtras(s.customExtras);
     }
@@ -177,23 +170,38 @@ function OrcamentosForm() {
     [productLines, products],
   );
 
+  function addSupplyLine() {
+    const usedIds = new Set(supplyLines.map((line) => line.supplyId));
+    const next = supplies.find((item) => !usedIds.has(item.id));
+    if (!next) return;
+    setSupplyLines((current) => [...current, { supplyId: next.id, quantity: "1", unitCost: String(next.unitCost).replace(".", ",") }]);
+  }
+  function updateSupplyLine(index: number, patch: Partial<SupplyLine>) {
+    setSupplyLines((current) => current.map((line, i) => (i === index ? { ...line, ...patch } : line)));
+  }
+  function bumpSupplyQuantity(index: number, delta: number) {
+    setSupplyLines((current) => current.map((line, i) => (i === index ? { ...line, quantity: String(Math.max(1, (n(line.quantity) || 1) + delta)) } : line)));
+  }
+  function removeSupplyLine(index: number) {
+    setSupplyLines((current) => current.filter((_, i) => i !== index));
+  }
+
+  const supplyLinesWithData = useMemo(
+    () => supplyLines
+      .map((line) => ({ line, supply: supplies.find((item) => item.id === line.supplyId) }))
+      .filter((entry): entry is { line: SupplyLine; supply: Supply } => Boolean(entry.supply)),
+    [supplyLines, supplies],
+  );
+
   const calc = useMemo(() => {
     const productsCost = productLinesWithData.reduce((sum, entry) => sum + entry.product.cost * (n(entry.line.quantity) || 1), 0);
     const productsPrintTime = productLinesWithData.reduce((sum, entry) => sum + entry.product.printTimeHours * (n(entry.line.quantity) || 1), 0);
-    const presetsCost = selected.reduce((sum, id) => {
-      const item = supplies.find((s) => s.id === id);
-      if (!item) return sum;
-      const unitCost = priceOverrides[id] ?? item.unitCost;
-      return sum + unitCost * (quantities[id] ?? 1);
-    }, 0);
+    const presetsCost = supplyLinesWithData.reduce((sum, entry) => sum + (n(entry.line.unitCost) || entry.supply.unitCost) * (n(entry.line.quantity) || 1), 0);
     const customCost = customExtras.reduce((sum, item) => sum + item.unitCost, 0);
     const suppliesCost = presetsCost + customCost;
-    // Reserva para perdas aplicada sobre produtos + insumos, já que aqui não
-    // há mais uma peça só sendo fatiada/impressa — cada produto do catálogo
-    // já embute seu próprio risco de falha no custo dele.
-    const subtotal = productsCost + suppliesCost;
-    const reserve = subtotal * (n(lossRate) / 100);
-    const costWithReserve = subtotal + reserve;
+    // Sem reserva para perdas aqui — cada produto do catálogo já embute o
+    // próprio risco de falha/refugo no custo dele, calculado lá na origem.
+    const costWithReserve = productsCost + suppliesCost;
     const pricing = calculateSuggestedPrice({
       unitCost: costWithReserve,
       markupPercent: n(markup),
@@ -205,24 +213,16 @@ function OrcamentosForm() {
       printTime: productsPrintTime,
       productsCost,
       suppliesCost,
-      insumosCount: selected.length + customExtras.length,
-      reserve,
+      insumosCount: supplyLinesWithData.length + customExtras.length,
       costWithReserve,
       minimumPrice: pricing.minimum,
       price: pricing.final,
       profit: pricing.final - costWithReserve,
     };
-  }, [customExtras, discount, lossRate, markup, marketplace, priceOverrides, pricingMethod, productLinesWithData, quantities, selected, supplies]);
+  }, [customExtras, discount, markup, marketplace, pricingMethod, productLinesWithData, supplyLinesWithData]);
 
   const quickChannels = marketplaces.slice(0, 4);
 
-  function toggle(id: string) {
-    setSelected((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
-    setQuantities((current) => ({ ...current, [id]: current[id] ?? 1 }));
-  }
-  function updateQuantity(id: string, delta: number) {
-    setQuantities((current) => ({ ...current, [id]: Math.max(1, (current[id] ?? 1) + delta) }));
-  }
   function addCustomExtra() {
     const cost = n(customExtraCost);
     if (!customExtraName.trim() || !cost) return;
@@ -247,13 +247,12 @@ function OrcamentosForm() {
         imageUrl: entry.product.imageUrl,
       })),
       markup,
-      lossRate,
       discount,
-      supplies: selected.map((id) => ({
-        id,
-        name: supplies.find((item) => item.id === id)?.name ?? "",
-        quantity: quantities[id] ?? 1,
-        unitCost: priceOverrides[id] ?? supplies.find((item) => item.id === id)?.unitCost ?? 0,
+      supplies: supplyLinesWithData.map((entry) => ({
+        id: entry.supply.id,
+        name: entry.supply.name,
+        quantity: n(entry.line.quantity) || 1,
+        unitCost: n(entry.line.unitCost) || entry.supply.unitCost,
       })),
       customExtras,
       calculations: calc,
@@ -297,7 +296,6 @@ function OrcamentosForm() {
   const costSegments = [
     { label: "Produtos", value: calc.productsCost, color: legendColors[0] },
     { label: "Insumos", value: calc.suppliesCost, color: legendColors[4] },
-    { label: "Reserva Perdas", value: calc.reserve, color: legendColors[5] },
   ];
   const costSegmentsTotal = costSegments.reduce((sum, segment) => sum + segment.value, 0) || 1;
 
@@ -400,40 +398,50 @@ function OrcamentosForm() {
 
             <section className="calc-section">
               <div className="section-heading-row"><Title text="INSUMOS & ACESSÓRIOS ADICIONAIS" /><span className="section-total">TOTAL INSUMOS <strong>{brl(calc.suppliesCost)}</strong></span></div>
-              <span className="supply-list-label"><IconSparkles className="nav-icon" /> Adicionar Insumo Rápido da Lista:</span>
-              <div className="supply-list">
-                {supplies.map((item) => {
-                  const quantity = quantities[item.id] ?? 1;
-                  const isSelected = selected.includes(item.id);
-                  const unitCost = priceOverrides[item.id] ?? item.unitCost;
-                  return (
-                    <div className={isSelected ? "supply-row selected" : "supply-row"} key={item.id}>
-                      <button type="button" className="supply-name" onClick={() => toggle(item.id)}>
-                        <span className="supply-tag">{categoryTag(item.category)}</span>
-                        {item.name}
-                      </button>
-                      {isSelected ? (
-                        <>
-                          <input className="supply-price" inputMode="decimal" value={unitCost} onChange={(event) => setPriceOverrides((current) => ({ ...current, [item.id]: n(event.target.value) }))} />
-                          <span className="quantity-control"><button type="button" onClick={() => updateQuantity(item.id, -1)}>-</button><b>{quantity}</b><button type="button" onClick={() => updateQuantity(item.id, 1)}>+</button></span>
-                          <strong>{brl(unitCost * quantity)}</strong>
-                          <button type="button" className="row-trash" onClick={() => toggle(item.id)} aria-label={`Remover ${item.name}`}><IconTrash className="nav-icon" /></button>
-                        </>
-                      ) : (
-                        <strong className="supply-static-price">{brl(item.unitCost)}</strong>
-                      )}
-                    </div>
-                  );
-                })}
-                {customExtras.map((item) => (
-                  <div className="supply-row selected" key={item.id}>
-                    <span className="supply-name supply-name-static"><span className="supply-tag">EXTRA</span>{item.name}</span>
-                    <strong>{brl(item.unitCost)}</strong>
-                    <button type="button" className="row-trash" onClick={() => removeCustomExtra(item.id)} aria-label={`Remover ${item.name}`}><IconTrash className="nav-icon" /></button>
+              <div className="field-row library-row">
+                <span className="material-lines-label">Adicione um ou mais insumos já cadastrados na Biblioteca para este orçamento.</span>
+                <a className="bookmark-link" href="/admin" title="Gerenciar insumos na Biblioteca"><IconBookmark className="nav-icon" /></a>
+              </div>
+              <div className="material-lines">
+                {supplyLines.length ? (
+                  <div className="material-line material-line-header supply-line">
+                    <span>Insumo (da Biblioteca)</span>
+                    <span>Preço unit.</span>
+                    <span>Qtd.</span>
+                    <span />
+                  </div>
+                ) : null}
+                {supplyLines.map((line, index) => (
+                  <div className="material-line supply-line" key={index}>
+                    <select
+                      value={line.supplyId}
+                      onChange={(event) => {
+                        const newId = event.target.value;
+                        const found = supplies.find((item) => item.id === newId);
+                        updateSupplyLine(index, { supplyId: newId, unitCost: found ? String(found.unitCost).replace(".", ",") : line.unitCost });
+                      }}
+                    >
+                      <option value="">Selecione um insumo...</option>
+                      {supplies
+                        .filter((item) => item.id === line.supplyId || !supplyLines.some((other, otherIndex) => otherIndex !== index && other.supplyId === item.id))
+                        .map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                    </select>
+                    <input className="supply-price" inputMode="decimal" value={line.unitCost} onChange={(event) => updateSupplyLine(index, { unitCost: event.target.value })} />
+                    <span className="qty-stepper">
+                      <input inputMode="numeric" value={line.quantity} onChange={(event) => updateSupplyLine(index, { quantity: event.target.value })} placeholder="1" />
+                      <span className="qty-stepper-arrows">
+                        <button type="button" onClick={() => bumpSupplyQuantity(index, 1)} aria-label="Aumentar quantidade"><IconChevronUp className="nav-icon" /></button>
+                        <button type="button" onClick={() => bumpSupplyQuantity(index, -1)} aria-label="Diminuir quantidade"><IconChevronDown className="nav-icon" /></button>
+                      </span>
+                    </span>
+                    <button type="button" className="delete-button" onClick={() => removeSupplyLine(index)} aria-label="Remover insumo"><IconTrash className="nav-icon" /></button>
                   </div>
                 ))}
               </div>
-              {supplies.length === 0 && customExtras.length === 0 ? <div className="empty-note">Clique nos itens da biblioteca para adicionar ao projeto.</div> : null}
+              {supplies.length === 0 ? <div className="empty-note">Nenhum insumo cadastrado na Biblioteca ainda.</div> : null}
+              <div className="material-lines-actions">
+                <button type="button" className="secondary-button" onClick={addSupplyLine} disabled={!supplies.length || supplyLines.length >= supplies.length}>+ Adicionar insumos</button>
+              </div>
               <div className="custom-extra-row">
                 <span className="supply-list-label">Adicionar Outro Insumo Personalizado:</span>
                 <div className="custom-extra-fields">
@@ -441,14 +449,24 @@ function OrcamentosForm() {
                   <input inputMode="decimal" value={customExtraCost} onChange={(event) => setCustomExtraCost(event.target.value)} placeholder="R$ 0,00" />
                   <button type="button" className="secondary-button" onClick={addCustomExtra} disabled={!customExtraName.trim() || !n(customExtraCost)}>+ Adicionar</button>
                 </div>
+                {customExtras.length ? (
+                  <div className="supply-list">
+                    {customExtras.map((item) => (
+                      <div className="supply-row selected" key={item.id}>
+                        <span className="supply-name supply-name-static"><span className="supply-tag">EXTRA</span>{item.name}</span>
+                        <strong>{brl(item.unitCost)}</strong>
+                        <button type="button" className="row-trash" onClick={() => removeCustomExtra(item.id)} aria-label={`Remover ${item.name}`}><IconTrash className="nav-icon" /></button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             </section>
 
             <section className="calc-section">
               <Title text="MARGEM DE LUCRO & TAXAS" />
-              <div className="margin-panel">
-                <div className="margin-panel-head"><span>MARGEM DE LUCRO DESEJADA</span><span className="margin-method-badge">{pricingMethod === "markup" ? "Markup" : "Margem Real"}</span></div>
-                <div className="margin-panel-value"><strong>{markup}%</strong></div>
+              <div className="margin-panel margin-panel-compact">
+                <div className="margin-panel-head"><span>MARGEM DE LUCRO DESEJADA</span></div>
                 <input type="range" min="0" max="200" value={markup} onChange={(event) => setMarkup(event.target.value)} />
                 <div className="range-presets">
                   {markupPresets.map((value) => <button type="button" key={value} onClick={() => setMarkup(value)}>{value}%</button>)}
@@ -456,9 +474,13 @@ function OrcamentosForm() {
                     <button type="button" onClick={() => bumpMarkup(-5)} aria-label="Diminuir 5%">−5%</button>
                     <button type="button" onClick={() => bumpMarkup(5)} aria-label="Aumentar 5%">+5%</button>
                   </span>
+                  <span className="range-current">
+                    <span className="margin-method-badge">{pricingMethod === "markup" ? "Markup" : "Margem Real"}</span>
+                    <strong>{markup}%</strong>
+                  </span>
                 </div>
               </div>
-              <div className="field-grid three pricing-options">
+              <div className="field-grid two pricing-options">
                 <label>
                   Método de Precificação
                   <span className="method-toggle">
@@ -466,11 +488,6 @@ function OrcamentosForm() {
                     <button type="button" className={pricingMethod === "margin" ? "selected" : ""} onClick={() => setPricingMethod("margin")}>Margem Real</button>
                   </span>
                   <small>{pricingMethod === "markup" ? "Markup multiplica seu custo total pela %." : "Margem Real garante que o lucro seja essa % do preço final."}</small>
-                </label>
-                <label className="label-hint-row">
-                  <span><span className="label-icon-text"><IconShieldAlert className="nav-icon" /> Margem para Perdas (%)</span><em>Padrão: 5%</em></span>
-                  <input value={lossRate} onChange={(event) => setLossRate(event.target.value)} />
-                  <small>Reserva para peças com falhas ou testes</small>
                 </label>
                 <label>
                   <span className="label-icon-text"><IconShoppingBag className="nav-icon" /> Canal de Venda</span>
@@ -504,15 +521,11 @@ function OrcamentosForm() {
                 <Cost label="Produtos" value={calc.productsCost} dot={legendColors[0]} />
                 <Cost label="Insumos" value={calc.suppliesCost} dot={legendColors[4]} />
               </div>
-              <div>
-                <Cost label="Reserva Perdas" value={calc.reserve} dot={legendColors[5]} />
-              </div>
             </div>
             <div className="summary-card">
               <Cost label="Produtos do Catálogo" value={calc.productsCost} />
               <Info label="Tempo Total de Impressão" value={fmtHours(calc.printTime)} />
               <Cost label={`Insumos (${calc.insumosCount})`} value={calc.suppliesCost} />
-              <Cost label="Reserva para perdas" value={calc.reserve} />
               <hr />
               <Cost label="Custo Base" value={calc.costWithReserve} bold subtotal />
             </div>
