@@ -263,14 +263,18 @@ model SalesOrder {
 // incrementado a cada pagamento (não recalculado pela soma), então pedidos
 // antigos sem histórico de pagamentos continuam corretos.
 model Payment {
-  id        String     @id @default(cuid())
-  orderId   String
-  order     SalesOrder @relation(fields: [orderId], references: [id])
-  date      DateTime   @default(now())
-  amount    Float
-  method    String     @default("PIX")
-  notes     String     @default("")
-  createdAt DateTime   @default(now())
+  id         String     @id @default(cuid())
+  orderId    String
+  order      SalesOrder @relation(fields: [orderId], references: [id])
+  date       DateTime   @default(now())
+  amount     Float
+  method     String     @default("PIX")
+  notes      String     @default("")
+  // Estorno: não apaga o recebimento original (preserva o histórico) — só
+  // marca quando foi revertido. Gera uma entrada de saída correspondente no
+  // fluxo de caixa em vez de apagar a entrada original.
+  reversedAt DateTime?
+  createdAt  DateTime   @default(now())
 }
 
 model ProductionJob {

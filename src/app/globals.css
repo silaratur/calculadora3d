@@ -170,8 +170,11 @@ input, select, textarea {
 .margin-panel-value { text-align: right; }
 .margin-panel-value strong { font-size: 26px; font-weight: 400; }
 .margin-panel input { accent-color: white; display: block; margin: 14px 0 10px; width: 100%; }
-.range-presets { display: flex; flex-wrap: wrap; gap: 7px; }
+.range-presets { align-items: center; display: flex; flex-wrap: wrap; gap: 7px; }
 .range-presets button { background: rgba(255, 255, 255, .14); border: 0; border-radius: 10px; color: white; cursor: pointer; font-size: 10px; padding: 5px 9px; }
+/* +5%/-5% incrementa sem precisar arrastar a barra — separado dos presets
+   fixos por uma linha sutil, pra não parecer só mais um valor da lista. */
+.range-stepper { border-left: 1px solid rgba(255, 255, 255, .25); display: inline-flex; gap: 4px; margin-left: 2px; padding-left: 9px; }
 .method-toggle { background: #f2e6da; border-radius: 10px; display: flex; gap: 3px; padding: 3px; }
 .method-toggle button { background: transparent; border: 0; border-radius: 8px; color: var(--calc-muted); cursor: pointer; flex: 1; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; padding: 8px; }
 .method-toggle button.selected { background: white; box-shadow: 0 1px 3px rgba(0, 0, 0, .08); color: var(--calc-ink); font-weight: 700; }
@@ -614,14 +617,25 @@ a.primary-button {
 }
 
 .secondary-button {
+  align-items: center;
   background: #f2e6da;
   border: 1px solid var(--admin-border);
   border-radius: 11px;
   color: var(--admin-muted);
   cursor: pointer;
+  display: inline-flex;
   font-family: var(--font-sans), Arial, sans-serif;
   font-size: 12px;
+  gap: 6px;
+  justify-content: center;
+  min-height: 37px;
   padding: 0 13px;
+}
+
+/* Catálogo Novo: o Cancelar encostava direto na caixa de Lucro/Preço Atacado
+   acima, sem respiro nenhum entre eles. */
+.price-summary .form-actions {
+  margin-top: 16px;
 }
 
 .preset-grid {
@@ -782,6 +796,12 @@ a.primary-button {
   margin: 16px 0;
 }
 
+/* Sucesso/erro no mesmo cinza-neutro fazia uma falha (ex: bloqueio de
+   segurança ao editar o próprio perfil) parecer que não aconteceu nada —
+   aqui distingue visualmente sem mudar o padrão pros casos neutros. */
+.admin-feedback.feedback-error { color: #a95037; font-weight: 600; }
+.admin-feedback.feedback-ok { color: var(--admin-olive); font-weight: 600; }
+
 .settings-layout {
   align-items: start;
   display: grid;
@@ -877,6 +897,12 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .competitor-card > a { color: var(--admin-copper); text-decoration: none; }
 .receivable-detail { border-top: 1px solid #e8ddd7; margin-top: 14px; padding-top: 14px; }
 
+.payment-history { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.payment-row { align-items: center; background: #faf3ec; border: 1px solid var(--admin-border); border-radius: 8px; display: flex; font-size: 12px; gap: 10px; padding: 8px 11px; }
+.payment-row strong { font-family: var(--font-mono); margin-right: auto; }
+.payment-row.reversed { opacity: .6; }
+.payment-row .secondary-button { min-height: 0; padding: 5px 10px; }
+
 .costs-stack { display: flex; flex-direction: column; gap: 24px; }
 .wide-form .form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
@@ -890,6 +916,10 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .cash-table tr:last-child td { border-bottom: 0; }
 .catalog-layout { align-items: start; display: grid; gap: 24px; grid-template-columns: 325px minmax(0, 1fr); }
 .catalog-results { min-width: 0; }
+/* Mesma linha de "X produtos" (dentro de .catalog-filters) — evita mais uma
+   fileira própria empurrando o resto do layout pra baixo. */
+.catalog-sort { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
+.catalog-sort > span { color: var(--calc-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; margin-right: 2px; }
 .catalog-filters { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; margin-bottom: 14px; }
 .catalog-filters strong { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; }
 .catalog-filters input { background: #faf3ec; border: 1px solid var(--admin-border); border-radius: 8px; color: var(--admin-ink); flex: 1; min-height: 35px; min-width: 200px; padding: 8px 11px; }
@@ -939,21 +969,39 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .product-card > p { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; line-height: 1.4; margin: 4px 0; }
 .product-card > p.card-description { color: var(--admin-ink); font-style: italic; }
 
-.product-card-photo { align-items: center; aspect-ratio: 4 / 3; background: #f2e6da; border-radius: 16px 16px 0 0; display: flex; justify-content: center; margin: -17px -17px 12px; overflow: hidden; }
+.product-card-photo { align-items: center; aspect-ratio: 4 / 3; background: #f2e6da; border-radius: 16px 16px 0 0; display: flex; justify-content: center; margin: -17px -17px 12px; overflow: hidden; position: relative; }
 .product-card-photo img { display: block; height: 100%; object-fit: cover; width: 100%; }
 .product-card-photo-placeholder { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 34px; }
 
 /* Catálogo Novo (src/app/catalog-new) — cards menores, mais por linha, pra
    ficar navegável com muitos produtos; o Catálogo atual não usa esta classe
-   e continua do jeito que estava. */
-.product-grid-compact { gap: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.product-grid-compact .product-card { padding: 12px; }
-.product-grid-compact .product-card-photo { aspect-ratio: 3 / 1; margin: -12px -12px 10px; }
+   e continua do jeito que estava. Foto quadrada e dominante (era 3:1, uma
+   tarja fina que amassava o produto) — a foto é o que mais importa num
+   catálogo de vendas. */
+.product-grid-compact { gap: 11px; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.product-grid-compact .product-card { display: flex; flex-direction: column; gap: 4px; padding: 10px; }
+.product-grid-compact .product-card-photo { aspect-ratio: 1 / 1; margin: -10px -10px 10px; }
 /* contain (não cover) — reduz mantendo a proporção, sem cortar o produto; o
    fundo (#f2e6da, igual ao do container) preenche a sobra dos dois lados. */
 .product-grid-compact .product-card-photo img { height: 100%; object-fit: contain; width: 100%; }
-.product-grid-compact .product-card-photo-placeholder { font-size: 22px; }
-.product-grid-compact .card-description { -webkit-box-orient: vertical; -webkit-line-clamp: 2; display: -webkit-box; overflow: hidden; }
+.product-grid-compact .product-card-photo-placeholder { font-size: 30px; }
+.product-grid-compact .material-badge { align-self: flex-start; }
+.product-grid-compact h2 { margin: 2px 0 4px; }
+/* Cor de fundo vem por inline style (uma por categoria, ver categoryColor em
+   catalog/page.tsx) — aqui só o resto do visual da tarja. */
+.product-card-category { border-radius: 20px; box-shadow: 0 1px 4px rgba(0, 0, 0, .18); color: white; font-family: var(--font-sans), Arial, sans-serif; font-size: 9px; font-weight: 700; left: 8px; letter-spacing: .04em; padding: 4px 9px; position: absolute; text-transform: uppercase; top: 8px; }
+.product-card-photo-actions { display: flex; gap: 4px; position: absolute; right: 8px; top: 8px; }
+/* Editar é a ação principal do card (o que se faz o tempo todo); Excluir é
+   destrutiva e rara — por isso um vira botão cheio, na cor da marca, e o
+   outro continua discreto, só um ícone, pra não convidar clique acidental. */
+.product-card-photo-actions .edit-button { background: var(--admin-copper); border: 0; color: white; font-weight: 700; padding: 5px 10px; }
+.product-card-photo-actions .edit-button:hover { background: #4c2528; }
+.product-card-photo-actions .delete-button { background: rgba(255, 253, 251, .92); border-radius: 7px; }
+.product-card-stats { border-top: 1px solid #e8ddd7; color: var(--admin-muted); display: flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; justify-content: space-between; margin-top: 8px; padding-top: 9px; }
+.product-card-stats span { align-items: center; display: inline-flex; gap: 4px; }
+.product-card-stats .nav-icon { height: 12px; width: 12px; }
+.price-highlight { color: var(--admin-copper) !important; font-size: 19px !important; }
+@media (max-width: 1500px) { .product-grid-compact { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 1100px) { .product-grid-compact { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .product-grid-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 480px) { .product-grid-compact { grid-template-columns: 1fr; } }
@@ -968,7 +1016,7 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .material-lines-label { color: #8a7472; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; }
 .material-line { align-items: center; display: grid; gap: 8px; grid-template-columns: 1fr 100px auto; }
 .material-line-header span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-.product-card-prices { border-top: 1px solid #e8ddd7; display: grid; gap: 10px; grid-template-columns: 1fr 1fr; margin-top: 13px; padding-top: 11px; }
+.product-card-prices { border-top: 1px solid #e8ddd7; display: grid; gap: 10px; grid-template-columns: 1fr 1fr; margin-top: 13px; padding-top: 11px; text-align: center; }
 .product-card-prices span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; }
 .product-card-prices strong { color: var(--admin-copper); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 17px; margin-top: 3px; }
 .catalog-preview { background: #f8ede0; border: 1px solid #e3cfc9; border-radius: 10px; display: grid; grid-template-columns: 1fr auto; margin-top: 4px; padding: 11px; }

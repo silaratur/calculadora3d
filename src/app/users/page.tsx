@@ -18,6 +18,7 @@ export default function UsersPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [feedbackOk, setFeedbackOk] = useState(false);
   const [needsLogin, setNeedsLogin] = useState(false);
   const [forbidden, setForbidden] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -41,6 +42,10 @@ export default function UsersPage() {
     () => users.filter((item) => `${item.name} ${item.email}`.toLowerCase().includes(search.toLowerCase())),
     [users, search],
   );
+  // Editar o próprio perfil de acesso é bloqueado no servidor (pra não se
+  // trancar fora sem querer) — desabilitar aqui mostra isso antes de tentar
+  // salvar, em vez de deixar a pessoa digitar tudo e só descobrir no erro.
+  const isEditingSelf = editingId !== null && editingId === currentUserId;
 
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -55,7 +60,8 @@ export default function UsersPage() {
       body: JSON.stringify(payload),
     });
     const body = await response.json();
-    if (!response.ok) { setFeedback(typeof body.error === "string" ? body.error : "Não foi possível salvar o usuário. Confira os campos."); return; }
+    if (!response.ok) { setFeedbackOk(false); setFeedback(typeof body.error === "string" ? body.error : "Não foi possível salvar o usuário. Confira os campos."); return; }
+    setFeedbackOk(true);
     setFeedback(editingId ? "Usuário atualizado." : "Usuário criado.");
     setDraft(emptyDraft);
     setEditingId(null);
@@ -79,7 +85,9 @@ export default function UsersPage() {
     if (!window.confirm(`Desativar o acesso de ${user.name}? O histórico (produtos, orçamentos, pedidos) criado por ele é preservado.`)) return;
     const response = await fetch(`/api/users?id=${encodeURIComponent(user.id)}`, { method: "DELETE" });
     const body = await response.json();
-    if (!response.ok) { setFeedback(typeof body.error === "string" ? body.error : "Não foi possível desativar."); return; }
+    if (!response.ok) { setFeedbackOk(false); setFeedback(typeof body.error === "string" ? body.error : "Não foi possível desativar."); return; }
+    setFeedbackOk(true);
+    setFeedback(`${user.name} desativado.`);
     if (editingId === user.id) cancelEdit();
     reload();
   }
@@ -89,7 +97,7 @@ export default function UsersPage() {
       <AdminHeader active="users" badges={{ users: users.length }} />
       <div className="admin-content">
         {needsLogin ? <AuthBanner message="Entre novamente para gerenciar usuários." /> : null}
-        {forbidden ? <p className="admin-feedback">Só administradores podem ver esta área.</p> : null}
+        {forbidden ? <p className="admin-feedback feedback-error">Seu perfil de acesso atual não é Administrador, então esta área fica indisponível. Peça a um administrador pra ajustar seu perfil.</p> : null}
 
         <section className="library-heading">
           <div>
@@ -102,7 +110,7 @@ export default function UsersPage() {
           </div>
         </section>
 
-        {feedback ? <p className="admin-feedback">{feedback}</p> : null}
+        {feedback ? <p className={feedbackOk ? "admin-feedback feedback-ok" : "admin-feedback feedback-error"}>{feedback}</p> : null}
 
         {!forbidden ? (
           <div className="library-layout">
@@ -116,13 +124,13 @@ export default function UsersPage() {
               </label>
               <label>
                 Perfil de acesso
-                <select value={draft.role} onChange={(event) => setDraft({ ...draft, role: event.target.value as Role })}>
+                <select disabled={isEditingSelf} value={draft.role} onChange={(event) => setDraft({ ...draft, role: event.target.value as Role })}>
                   {ROLE_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </select>
-                <small>{ROLE_OPTIONS.find((item) => item.value === draft.role)?.description}</small>
+                <small>{isEditingSelf ? "Você não pode mudar seu próprio perfil ou se desativar — peça a outro administrador." : ROLE_OPTIONS.find((item) => item.value === draft.role)?.description}</small>
               </label>
               <label className="checkbox-field">
-                <input type="checkbox" checked={draft.active} onChange={(event) => setDraft({ ...draft, active: event.target.checked })} />
+                <input type="checkbox" disabled={isEditingSelf} checked={draft.active} onChange={(event) => setDraft({ ...draft, active: event.target.checked })} />
                 Usuário ativo (desmarcar bloqueia o login sem excluir)
               </label>
               <div className="form-actions">

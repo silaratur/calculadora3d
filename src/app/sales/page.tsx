@@ -37,6 +37,8 @@ type Order = {
   product?: Product | null;
 };
 
+type Payment = { id: string; orderId: string; date: string; amount: number; method: string; notes: string; reversedAt: string | null };
+
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const n = (value: string) => Number(value.replace(",", ".")) || 0;
 const dateValue = (value: string | null) => (value ? value.slice(0, 10) : "");
@@ -77,8 +79,18 @@ export default function SalesPage() {
   const [needsLogin, setNeedsLogin] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [receiptAmount, setReceiptAmount] = useState("");
+  const [orderPayments, setOrderPayments] = useState<Payment[]>([]);
   const [reloadToken, setReloadToken] = useState(0);
   const reload = () => setReloadToken((token) => token + 1);
+
+  useEffect(() => {
+    if (!expandedOrder) return;
+    let cancelled = false;
+    fetch(`/api/payments?orderId=${encodeURIComponent(expandedOrder)}`)
+      .then((response) => (response.ok ? response.json() : []))
+      .then((data: Payment[]) => { if (!cancelled) setOrderPayments(data); });
+    return () => { cancelled = true; };
+  }, [expandedOrder, reloadToken]);
 
   useEffect(() => {
     async function load() {
@@ -214,6 +226,15 @@ export default function SalesPage() {
     reload();
   }
 
+  async function reversePayment(payment: Payment, order: Order) {
+    if (!window.confirm(`Estornar o recebimento de ${brl(payment.amount)} de ${dateValue(payment.date)}? Isso volta o valor como pendente e lança uma saída no fluxo de caixa.`)) return;
+    const response = await fetch(`/api/payments/${encodeURIComponent(payment.id)}/reverse`, { method: "POST" });
+    const body = await response.json();
+    if (!response.ok) { setFeedback(body.error ?? "Não foi possível estornar o recebimento."); return; }
+    setFeedback(`Recebimento de ${brl(payment.amount)} estornado em ${order.orderNumber}.`);
+    reload();
+  }
+
   const filtered = useMemo(
     () =>
       orders.filter((order) => {
@@ -319,11 +340,9 @@ export default function SalesPage() {
                     <span className="card-actions">
                       <span className="project-status">{statusLabel[order.status] ?? order.status}</span>
                       <button className="edit-button" onClick={() => edit(order)} disabled={order.paidAmount > 0} title={order.paidAmount > 0 ? "Pedido já recebeu pagamento — não pode ser editado" : undefined}>Editar</button>
-                      {order.paymentStatus !== "PAID" ? (
-                        <button className="edit-button" type="button" onClick={() => { setExpandedOrder(expanded ? null : order.id); setReceiptAmount(""); setFeedback(""); }}>
-                          {expanded ? "Fechar" : "Receber"}
-                        </button>
-                      ) : null}
+                      <button className="edit-button" type="button" onClick={() => { setExpandedOrder(expanded ? null : order.id); setReceiptAmount(""); setFeedback(""); if (expanded) setOrderPayments([]); }}>
+                        {expanded ? "Fechar" : order.paidAmount > 0 ? "Recebimentos" : "Receber"}
+                      </button>
                       <button className="delete-button" onClick={() => archive(order.id)} aria-label={`Excluir ${order.orderNumber}`}><IconTrash className="nav-icon" /></button>
                     </span>
                   </div>
@@ -344,13 +363,34 @@ export default function SalesPage() {
                         <div><span>Pendente</span><strong>{brl(pending)}</strong></div>
                         <div><span>Forma Pagto.</span><strong>{order.paymentMethod}</strong></div>
                       </div>
-                      <p className="card-detail">Data prevista de recebimento: {dateValue(order.expectedPaymentDate) || "sem previsão"}</p>
-                      <div className="form-grid" style={{ alignItems: "end" }}>
-                        <label>Valor a receber (R$)
-                          <input inputMode="decimal" value={receiptAmount} onChange={(event) => setReceiptAmount(event.target.value)} placeholder={pending.toFixed(2)} />
-                        </label>
-                        <button className="primary-button" type="button" onClick={() => void registerReceipt(order)}>Registrar Recebimento</button>
-                      </div>
+                      {pending > 0.01 ? (
+                        <>
+                          <p className="card-detail">Data prevista de recebimento: {dateValue(order.expectedPaymentDate) || "sem previsão"}</p>
+                          <div className="form-grid" style={{ alignItems: "end" }}>
+                            <label>Valor a receber (R$)
+                              <input inputMode="decimal" value={receiptAmount} onChange={(event) => setReceiptAmount(event.target.value)} placeholder={pending.toFixed(2)} />
+                            </label>
+                            <button className="primary-button" type="button" onClick={() => void registerReceipt(order)}>Registrar Recebimento</button>
+                          </div>
+                        </>
+                      ) : null}
+
+                      {orderPayments.length > 0 ? (
+                        <div className="payment-history">
+                          <p className="card-detail">Histórico de recebimentos — estorne aqui um valor lançado por engano.</p>
+                          {orderPayments.map((payment) => (
+                            <div className={payment.reversedAt ? "payment-row reversed" : "payment-row"} key={payment.id}>
+                              <span>{dateValue(payment.date)} · {payment.method}</span>
+                              <strong>{brl(payment.amount)}</strong>
+                              {payment.reversedAt ? (
+                                <span className="card-detail">Estornado em {dateValue(payment.reversedAt)}</span>
+                              ) : (
+                                <button className="secondary-button" type="button" onClick={() => void reversePayment(payment, order)}>Estornar</button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
                       {feedback ? <p className="admin-feedback">{feedback}</p> : null}
                     </div>
                   ) : null}

@@ -8,7 +8,7 @@ export type Role = "ADMIN" | "CATALOG" | "CALCULATOR" | "PRODUCTION" | "SALES" |
 
 export const ROLE_OPTIONS: { value: Role; label: string; description: string }[] = [
   { value: "ADMIN", label: "Administrador", description: "Acesso completo a todas as áreas, incluindo gestão de usuários." },
-  { value: "CATALOG", label: "Gerador de Catálogo", description: "Só acessa Catálogo e Catálogo Novo." },
+  { value: "CATALOG", label: "Gerador de Catálogo", description: "Só acessa o Catálogo." },
   { value: "CALCULATOR", label: "Gerador de Calculadora", description: "Só acessa a Calculadora." },
   { value: "PRODUCTION", label: "Operador de Produção", description: "Só acessa a fila de Produção — sem dados financeiros ou de clientes." },
   { value: "SALES", label: "Vendas/Atendimento", description: "Clientes, Vendas (com recebimentos), Projetos e Calculadora." },
@@ -32,7 +32,7 @@ export function roleLabel(role: string): string {
 const UNIVERSAL_PATHS = ["/"];
 
 const ROLE_ALLOWED_PREFIXES: Record<Exclude<Role, "ADMIN">, string[]> = {
-  CATALOG: ["/catalog", "/catalog-new"],
+  CATALOG: ["/catalog"],
   CALCULATOR: ["/calculator"],
   PRODUCTION: ["/production"],
   SALES: ["/customers", "/sales", "/projects", "/calculator"],

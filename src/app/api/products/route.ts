@@ -24,8 +24,8 @@ const productSchema = z.object({
   cost: z.number().min(0),
   price: z.number().min(0),
   active: z.boolean().optional(),
-  // Só preenchidos pelo Catálogo Novo (src/app/catalog-new) — o Catálogo
-  // atual não manda nada disso, e fica tudo no padrão (0/nenhum).
+  // Campos do formulário atual (src/app/catalog) — produtos antigos, criados
+  // antes dele existir, ficam com tudo no padrão (0/nenhum).
   prepMinutes: z.number().min(0).optional(),
   cleanupMinutes: z.number().min(0).optional(),
   energyCost: z.number().min(0).optional(),
@@ -100,12 +100,21 @@ export async function GET() {
   const user = await ensureAuthenticated();
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
-  const products = await prisma.product.findMany({
-    where: { active: true },
-    orderBy: { createdAt: "desc" },
-    include: { materials: true, printer: true, marketplaceChannel: true },
-  });
-  return NextResponse.json(products);
+  const [products, sales] = await Promise.all([
+    prisma.product.findMany({
+      where: { active: true },
+      orderBy: { createdAt: "desc" },
+      include: { materials: true, printer: true, marketplaceChannel: true },
+    }),
+    // Total vendido por produto (soma da quantidade de todos os pedidos, sem
+    // filtrar por status) — pro card do catálogo mostrar tração de vendas.
+    prisma.salesOrder.groupBy({ by: ["productId"], _sum: { quantity: true }, where: { productId: { not: null } } }),
+  ]);
+
+  const salesByProduct = new Map(sales.map((row) => [row.productId, row._sum.quantity ?? 0]));
+  const withSales = products.map((product) => ({ ...product, salesCount: salesByProduct.get(product.id) ?? 0 }));
+
+  return NextResponse.json(withSales);
 }
 
 export async function POST(request: Request) {

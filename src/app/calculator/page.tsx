@@ -45,7 +45,7 @@ const demoSupplies: Supply[] = [{ id: "bag", name: "Embalagem simples", category
 const defaultSettings: PricingSettings = { energyRate: 0.85, defaultPowerWatts: 250, laborRate: 25, monthlyRent: 0, monthlySubscriptions: 50, monthlyMaintenance: 40, monthlyOtherCosts: 0, monthlyPieces: 60, defaultMarkup: 40, defaultLossRate: 5 };
 const defaultMarketplace: Marketplace = { id: "direct", name: "Venda Direta", commissionRate: 0, fixedFee: 0, adsRate: 0 };
 const wattPresets = [60, 150, 160, 220];
-const markupPresets = ["50", "65", "100", "150", "200"];
+const markupPresets = ["10", "25", "50", "65", "100", "150", "200"];
 // Mesma paleta do site de referência para os 6 blocos de custo, na ordem
 // Filamento, Depreciação, Mão de Obra (coluna 1) / Energia, Insumos, Reserva
 // Perdas (coluna 2) — usada tanto nos pontos da legenda quanto na barra.
@@ -222,6 +222,10 @@ function CalculatorForm() {
     setPrinterId(id);
     const item = printers.find((p) => p.id === id);
     if (item) setMaintenancePerHour(String(item.maintenancePerHour).replace(".", ","));
+  }
+
+  function bumpMarkup(delta: number) {
+    setMarkup(String(Math.min(200, Math.max(0, n(markup) + delta))));
   }
 
   const calc = useMemo(() => {
@@ -519,7 +523,13 @@ function CalculatorForm() {
                 <div className="margin-panel-head"><span>MARGEM DE LUCRO DESEJADA</span><span className="margin-method-badge">{pricingMethod === "markup" ? "Markup" : "Margem Real"}</span></div>
                 <div className="margin-panel-value"><strong>{markup}%</strong></div>
                 <input type="range" min="0" max="200" value={markup} onChange={(event) => setMarkup(event.target.value)} />
-                <div className="range-presets">{markupPresets.map((value) => <button type="button" key={value} onClick={() => setMarkup(value)}>{value}%</button>)}</div>
+                <div className="range-presets">
+                  {markupPresets.map((value) => <button type="button" key={value} onClick={() => setMarkup(value)}>{value}%</button>)}
+                  <span className="range-stepper">
+                    <button type="button" onClick={() => bumpMarkup(-5)} aria-label="Diminuir 5%">−5%</button>
+                    <button type="button" onClick={() => bumpMarkup(5)} aria-label="Aumentar 5%">+5%</button>
+                  </span>
+                </div>
               </div>
               <div className="field-grid three pricing-options">
                 <label>

@@ -25,7 +25,28 @@ export async function GET() {
     prisma.salesOrder.findMany({ where: { paymentStatus: { not: "PAID" } }, select: { totalAmount: true, paidAmount: true } }),
   ]);
 
-  return NextResponse.json({ entries, summary: summarizeCash(entries, openOrders) });
+  // Preço Sugerido/Custo são do pedido (recebimento), não do lançamento em
+  // si — orderId não é uma relação do Prisma aqui (é só um id solto), então
+  // busca os pedidos referenciados à parte e junta na mão.
+  const orderIds = Array.from(new Set(entries.filter((entry) => entry.orderId).map((entry) => entry.orderId as string)));
+  const orders = orderIds.length
+    ? await prisma.salesOrder.findMany({
+        where: { id: { in: orderIds } },
+        select: { id: true, quantity: true, unitCostSnapshot: true, product: { select: { price: true } } },
+      })
+    : [];
+  const orderById = new Map(orders.map((order) => [order.id, order]));
+
+  const enriched = entries.map((entry) => {
+    const order = entry.orderId ? orderById.get(entry.orderId) : undefined;
+    return {
+      ...entry,
+      suggestedPrice: order?.product ? order.product.price * order.quantity : null,
+      cost: order ? order.unitCostSnapshot * order.quantity : null,
+    };
+  });
+
+  return NextResponse.json({ entries: enriched, summary: summarizeCash(entries, openOrders) });
 }
 
 // Lançamento manual — entradas automáticas (recebimento, custo fixo/variável)

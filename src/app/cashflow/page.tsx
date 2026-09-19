@@ -14,6 +14,9 @@ type CashEntry = {
   status: "REALIZED" | "PLANNED";
   amount: number;
   sourceType: string | null;
+  sourceId: string | null;
+  suggestedPrice: number | null;
+  cost: number | null;
 };
 
 type Summary = { totalIn: number; totalOut: number; balance: number; receivable: number; projectedBalance: number };
@@ -23,7 +26,7 @@ const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency"
 const todayLocal = () => { const now = new Date(); const pad = (v: number) => String(v).padStart(2, "0"); return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`; };
 const emptyEntry = { date: todayLocal(), category: "Venda", type: "IN" as "IN" | "OUT", description: "", status: "REALIZED" as "REALIZED" | "PLANNED", amount: "" };
 const categories = ["Venda", "Custo Fixo", "Custo Variável", "Investimento", "Outro"];
-const sourceLabel: Record<string, string> = { PAYMENT: "Recebimento", FIXED_COST: "Custo Fixo", VARIABLE_COST: "Custo Variável" };
+const sourceLabel: Record<string, string> = { PAYMENT: "Recebimento", FIXED_COST: "Custo Fixo", VARIABLE_COST: "Custo Variável", PAYMENT_REVERSAL: "Estorno" };
 
 export default function CashflowPage() {
   const [entries, setEntries] = useState<CashEntry[]>([]);
@@ -67,6 +70,15 @@ export default function CashflowPage() {
     reload();
   }
 
+  async function reverse(entry: CashEntry) {
+    if (!entry.sourceId) return;
+    if (!window.confirm(`Estornar este recebimento de ${brl(entry.amount)}? Isso volta o valor como pendente no pedido e lança uma saída aqui no caixa.`)) return;
+    const response = await fetch(`/api/payments/${encodeURIComponent(entry.sourceId)}/reverse`, { method: "POST" });
+    const body = await response.json();
+    setFeedback(response.ok ? `Recebimento de ${brl(entry.amount)} estornado.` : (body.error ?? "Não foi possível estornar."));
+    if (response.ok) reload();
+  }
+
   return (
     <main className="admin-shell">
       <AdminHeader active="cashflow" />
@@ -108,7 +120,7 @@ export default function CashflowPage() {
           <div className="scroll-table">
             <table className="cash-table">
               <thead>
-                <tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Origem</th><th>Status</th><th>Valor</th><th></th></tr>
+                <tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Origem</th><th>Status</th><th>Valor Venda</th><th>Preço Sugerido</th><th>Custo</th><th></th></tr>
               </thead>
               <tbody>
                 {entries.map((entry) => (
@@ -119,10 +131,15 @@ export default function CashflowPage() {
                     <td>{entry.sourceType ? sourceLabel[entry.sourceType] ?? entry.sourceType : "Manual"}</td>
                     <td>{entry.status === "REALIZED" ? "Realizado" : "Previsto"}</td>
                     <td className={entry.type === "IN" ? "cash-in" : "cash-out"}>{entry.type === "IN" ? "+" : "-"}{brl(entry.amount)}</td>
-                    <td>{!entry.sourceType ? <button className="delete-button" onClick={() => void remove(entry)} aria-label="Excluir lançamento"><IconTrash className="nav-icon" /></button> : null}</td>
+                    <td>{entry.suggestedPrice != null ? brl(entry.suggestedPrice) : "—"}</td>
+                    <td>{entry.cost != null ? brl(entry.cost) : "—"}</td>
+                    <td>
+                      {entry.sourceType === "PAYMENT" ? <button className="secondary-button" type="button" onClick={() => void reverse(entry)}>Estornar</button> : null}
+                      {!entry.sourceType ? <button className="delete-button" onClick={() => void remove(entry)} aria-label="Excluir lançamento"><IconTrash className="nav-icon" /></button> : null}
+                    </td>
                   </tr>
                 ))}
-                {entries.length === 0 ? <tr><td colSpan={7} className="empty-note">Nenhum lançamento ainda.</td></tr> : null}
+                {entries.length === 0 ? <tr><td colSpan={9} className="empty-note">Nenhum lançamento ainda.</td></tr> : null}
               </tbody>
             </table>
           </div>
