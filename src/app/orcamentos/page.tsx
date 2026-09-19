@@ -9,7 +9,7 @@ import { calculateSuggestedPrice, type PricingMethod } from "@/lib/costing";
 // Produto já cadastrado no Catálogo — custo e tempo de impressão vêm prontos
 // de lá (calculados com o motor multi-material do Catálogo), então aqui só
 // usamos os valores finais, sem recalcular nada.
-type Product = { id: string; name: string; sku: string; category: string; cost: number; printTimeHours: number };
+type Product = { id: string; name: string; sku: string; category: string; cost: number; printTimeHours: number; imageUrl?: string };
 type Supply = { id: string; name: string; category: string; unitCost: number };
 type Marketplace = { id: string; name: string; commissionRate: number; fixedFee: number; adsRate: number };
 type CustomExtra = { id: string; name: string; unitCost: number };
@@ -338,7 +338,8 @@ function OrcamentosForm() {
               </div>
               <div className="material-lines">
                 {productLines.length ? (
-                  <div className="material-line material-line-header">
+                  <div className="material-line material-line-header product-line">
+                    <span />
                     <span>Produto (do Catálogo)</span>
                     <span>Qtd.</span>
                     <span />
@@ -349,20 +350,30 @@ function OrcamentosForm() {
                   const quantity = n(line.quantity) || 1;
                   return (
                     <div className="material-line product-line" key={index}>
-                      <select value={line.productId} onChange={(event) => updateProductLine(index, { productId: event.target.value })}>
-                        <option value="">Selecione um produto...</option>
-                        {products
-                          .filter((item) => item.id === line.productId || !productLines.some((other, otherIndex) => otherIndex !== index && other.productId === item.id))
-                          .map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                      </select>
+                      <div className="product-line-thumb">
+                        {product?.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- data URI local, next/image não otimiza isso
+                          <img src={product.imageUrl} alt={product.name} />
+                        ) : (
+                          <span>{product?.name.slice(0, 1).toUpperCase() ?? "?"}</span>
+                        )}
+                      </div>
+                      <div className="product-line-main">
+                        <select value={line.productId} onChange={(event) => updateProductLine(index, { productId: event.target.value })}>
+                          <option value="">Selecione um produto...</option>
+                          {products
+                            .filter((item) => item.id === line.productId || !productLines.some((other, otherIndex) => otherIndex !== index && other.productId === item.id))
+                            .map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                        </select>
+                        {product ? (
+                          <small className="product-line-info" title={`${fmtHours(product.printTimeHours)} de impressão · ${brl(product.cost)} cada`}>
+                            <IconClock className="nav-icon" /> {fmtHours(product.printTimeHours)} · {brl(product.cost)}
+                            {quantity > 1 ? ` · ${quantity}x = ${brl(product.cost * quantity)}` : ""}
+                          </small>
+                        ) : null}
+                      </div>
                       <input inputMode="numeric" value={line.quantity} onChange={(event) => updateProductLine(index, { quantity: event.target.value })} placeholder="1" />
                       <button type="button" className="delete-button" onClick={() => removeProductLine(index)} aria-label="Remover produto"><IconTrash className="nav-icon" /></button>
-                      {product ? (
-                        <small className="product-line-info">
-                          <IconClock className="nav-icon" /> {fmtHours(product.printTimeHours)} de impressão · Custo unitário {brl(product.cost)}
-                          {quantity > 1 ? ` · ${quantity}x = ${brl(product.cost * quantity)}` : ""}
-                        </small>
-                      ) : null}
                     </div>
                   );
                 })}
