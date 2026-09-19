@@ -212,6 +212,9 @@ model Quote {
   // coluna existir ficam com code null (não tinham essa identificação).
   code         String?   @unique
   validUntil   DateTime?
+  // Motivo informado ao arquivar (aba "Não Executados" em Projetos) — por
+  // que esse orçamento não virou venda.
+  archiveReason String?  @default("")
   order        SalesOrder?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

@@ -37,9 +37,18 @@ async function nextQuoteCode() {
   return `${prefix}-${String(lastSeq + 1).padStart(4, "0")}`;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!(await authenticated())) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  return NextResponse.json(await prisma.quote.findMany({ orderBy: { updatedAt: "desc" }, take: 100 }));
+  // Por padrão só orçamentos válidos (não arquivados); ?status=ARCHIVED
+  // traz só os arquivados, pra aba "Não Executados" em Projetos.
+  const archived = new URL(request.url).searchParams.get("status") === "ARCHIVED";
+  return NextResponse.json(
+    await prisma.quote.findMany({
+      where: archived ? { status: "ARCHIVED" } : { status: { not: "ARCHIVED" } },
+      orderBy: { updatedAt: "desc" },
+      take: 100,
+    }),
+  );
 }
 
 export async function POST(request: Request) {
@@ -70,6 +79,8 @@ export async function DELETE(request: Request) {
   if (!(await authenticated())) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   const id = new URL(request.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "ID obrigatório" }, { status: 400 });
-  await prisma.quote.update({ where: { id }, data: { status: "ARCHIVED" } });
+  const body = (await request.json().catch(() => ({}))) as { reason?: unknown };
+  const reason = typeof body.reason === "string" ? body.reason.trim() : "";
+  await prisma.quote.update({ where: { id }, data: { status: "ARCHIVED", archiveReason: reason } });
   return NextResponse.json({ success: true });
 }
