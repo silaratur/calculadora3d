@@ -1179,6 +1179,9 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .product-line-thumb img { display: block; height: 100%; object-fit: cover; width: 100%; }
 .product-line-thumb span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 15px; font-weight: 700; }
 .product-line select { font-size: 11px; min-height: 32px; padding: 6px 9px; }
+.product-picker { min-width: 0; }
+.product-picker input { font-size: 11px; min-height: 32px; padding: 6px 9px; }
+.client-suggestions li.no-suggestions { color: var(--calc-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 13px; padding: 9px 11px; }
 /* Custo/tempo na própria coluna, sem quebrar e centralizado — se não
    couber, corta com reticências em vez de virar 2 linhas ou empurrar
    quantidade/excluir. Recalculado a cada mudança de quantidade (mostra o

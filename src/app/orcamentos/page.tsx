@@ -63,6 +63,11 @@ function OrcamentosForm() {
   const [marketplaces, setMarketplaces] = useState<Marketplace[]>([defaultMarketplace]);
   const [settings, setSettings] = useState<Settings>(emptySettings);
   const [productLines, setProductLines] = useState<ProductLine[]>([]);
+  // Busca com autocomplete pra escolher o produto de cada linha — mesmo
+  // padrão do campo de cliente: foco sem digitar abre a lista toda (A-Z),
+  // digitando estreita pelas ocorrências. Só uma linha por vez fica aberta.
+  const [productPickerOpenIndex, setProductPickerOpenIndex] = useState<number | null>(null);
+  const [productPickerQuery, setProductPickerQuery] = useState("");
   const [supplyLines, setSupplyLines] = useState<SupplyLine[]>([]);
   const [name, setName] = useState("");
   const [client, setClient] = useState("");
@@ -179,6 +184,15 @@ function OrcamentosForm() {
 
   function bumpMarkup(delta: number) {
     setMarkup(String(Math.min(200, Math.max(0, n(markup) + delta))));
+  }
+
+  function productSuggestions(index: number, currentProductId: string) {
+    const query = productPickerQuery.trim().toLowerCase();
+    const available = products.filter(
+      (item) => item.id === currentProductId || !productLines.some((other, otherIndex) => otherIndex !== index && other.productId === item.id),
+    );
+    const matches = query ? available.filter((item) => item.name.toLowerCase().includes(query)) : available;
+    return [...matches].sort((a, b) => a.name.localeCompare(b.name));
   }
 
   function addProductLine() {
@@ -495,7 +509,13 @@ function OrcamentosForm() {
                     <button
                       type="button"
                       onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => { setClient(item.name); setClientPhone(item.phone); setClientEmail(item.email); setClientSuggestionsOpen(false); }}
+                      onClick={() => {
+                        setClient(item.name);
+                        setClientPhone(item.phone);
+                        setClientEmail(item.email);
+                        setClientSuggestionsOpen(false);
+                        (document.activeElement as HTMLElement | null)?.blur();
+                      }}
                     >
                       {item.name}
                     </button>
@@ -548,12 +568,43 @@ function OrcamentosForm() {
                           <span>{product?.name.slice(0, 1).toUpperCase() ?? "?"}</span>
                         )}
                       </div>
-                      <select value={line.productId} onChange={(event) => updateProductLine(index, { productId: event.target.value })}>
-                        <option value="">Selecione um produto...</option>
-                        {products
-                          .filter((item) => item.id === line.productId || !productLines.some((other, otherIndex) => otherIndex !== index && other.productId === item.id))
-                          .map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                      </select>
+                      <div className="client-name-wrap product-picker">
+                        <input
+                          value={productPickerOpenIndex === index ? productPickerQuery : (product?.name ?? "")}
+                          onChange={(event) => setProductPickerQuery(event.target.value)}
+                          onFocus={() => { setProductPickerOpenIndex(index); setProductPickerQuery(product?.name ?? ""); }}
+                          onBlur={() => setProductPickerOpenIndex(null)}
+                          placeholder="Selecione um produto..."
+                          autoComplete="off"
+                        />
+                        {productPickerOpenIndex === index ? (
+                          <ul className="client-suggestions">
+                            {productSuggestions(index, line.productId).map((item) => (
+                              <li key={item.id}>
+                                <button
+                                  type="button"
+                                  onMouseDown={(event) => event.preventDefault()}
+                                  onClick={() => {
+                                    updateProductLine(index, { productId: item.id });
+                                    setProductPickerOpenIndex(null);
+                                    // O mousedown acima evita blur antes do clique registrar, mas
+                                    // isso deixa o foco preso no campo — sem isto, um clique nele de
+                                    // novo não reabre a lista (não é um "novo" foco pro navegador) e
+                                    // digitar pra buscar de novo fica sem efeito (o valor volta a
+                                    // mostrar o nome do produto a cada render).
+                                    (document.activeElement as HTMLElement | null)?.blur();
+                                  }}
+                                >
+                                  {item.name}
+                                </button>
+                              </li>
+                            ))}
+                            {productSuggestions(index, line.productId).length === 0 ? (
+                              <li className="no-suggestions">Nenhum produto encontrado.</li>
+                            ) : null}
+                          </ul>
+                        ) : null}
+                      </div>
                       {product ? (
                         <small className="product-line-info" title={`${fmtHours(product.printTimeHours * quantity)} de impressão · ${brl(product.price * quantity)}${quantity > 1 ? ` (${quantity}x ${brl(product.price)} cada)` : ""}`}>
                           <IconClock className="nav-icon" /> {fmtHours(product.printTimeHours * quantity)} · {brl(product.price * quantity)}

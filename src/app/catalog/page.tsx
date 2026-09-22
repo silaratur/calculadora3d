@@ -94,7 +94,8 @@ const n = (value: string) => Number(value.replace(",", ".")) || 0;
 // Direção que cada critério assume ao ser selecionado pela primeira vez —
 // o que faz sentido como "padrão" varia (recente = mais novo primeiro,
 // categoria = A-Z, vendas/preço = mais vendido/mais barato primeiro).
-const defaultSortDirection: Record<"recent" | "category" | "sales" | "price", "asc" | "desc"> = {
+const defaultSortDirection: Record<"name" | "recent" | "category" | "sales" | "price", "asc" | "desc"> = {
+  name: "asc",
   recent: "desc",
   category: "asc",
   sales: "desc",
@@ -129,9 +130,10 @@ export default function CatalogPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [view, setView] = useState<"list" | "form">("list");
   const [search, setSearch] = useState("");
+  const [searchSuggestionsOpen, setSearchSuggestionsOpen] = useState(false);
   const [category, setCategory] = useState("all");
-  const [sortBy, setSortBy] = useState<"recent" | "category" | "sales" | "price">("recent");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [sortBy, setSortBy] = useState<"name" | "recent" | "category" | "sales" | "price">("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [itemsPerPage, setItemsPerPage] = useState(15);
   const [page, setPage] = useState(1);
   const [feedback, setFeedback] = useState("");
@@ -198,12 +200,21 @@ export default function CatalogPage() {
     );
     const sorted = [...items];
     const sign = sortDirection === "asc" ? 1 : -1;
-    if (sortBy === "recent") sorted.sort((a, b) => sign * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
+    if (sortBy === "name") sorted.sort((a, b) => sign * a.name.localeCompare(b.name));
+    else if (sortBy === "recent") sorted.sort((a, b) => sign * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
     else if (sortBy === "category") sorted.sort((a, b) => sign * (a.category.localeCompare(b.category) || a.name.localeCompare(b.name)));
     else if (sortBy === "sales") sorted.sort((a, b) => sign * (a.salesCount - b.salesCount));
     else if (sortBy === "price") sorted.sort((a, b) => sign * (a.price - b.price));
     return sorted;
   }, [category, sortDirection, products, search, sortBy]);
+  // Sugestões abaixo do campo de busca: com o campo vazio mostra os produtos
+  // (lista aberta), digitando estreita pelas ocorrências no SKU/nome — mesmo
+  // padrão do autocomplete de cliente em Orçamentos.
+  const searchSuggestions = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const matches = products.filter((product) => `${product.sku} ${product.name}`.toLowerCase().includes(query));
+    return [...matches].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 8);
+  }, [products, search]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
   const currentPage = Math.min(page, totalPages);
   const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -311,15 +322,15 @@ export default function CatalogPage() {
     }
   }
 
-  function sortArrow(value: "recent" | "category" | "sales" | "price") {
+  function sortArrow(value: "name" | "recent" | "category" | "sales" | "price") {
     if (sortBy !== value) return "";
     return sortDirection === "asc" ? " ↑" : " ↓";
   }
 
-  function selectSort(value: "recent" | "category" | "sales" | "price") {
+  function selectSort(value: "name" | "recent" | "category" | "sales" | "price") {
     // Clicar de novo no mesmo filtro já selecionado inverte a direção
     // (crescente ↔ decrescente); trocar de filtro usa o padrão de cada um
-    // (mais recente primeiro, A-Z, mais vendido primeiro, mais barato primeiro).
+    // (A-Z, mais recente primeiro, A-Z, mais vendido primeiro, mais barato primeiro).
     if (value === sortBy) { setSortDirection((current) => (current === "asc" ? "desc" : "asc")); }
     else { setSortBy(value); setSortDirection(defaultSortDirection[value]); }
     setPage(1);
@@ -419,7 +430,36 @@ export default function CatalogPage() {
                 <p>Cadastro, precificação e fotos dos seus produtos.</p>
               </div>
               <div className="project-tools">
-                <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar SKU ou produto..." />
+                <div className="client-name-wrap">
+                  <input
+                    value={search}
+                    onChange={(event) => { setSearch(event.target.value); setPage(1); }}
+                    onFocus={() => setSearchSuggestionsOpen(true)}
+                    onBlur={() => setSearchSuggestionsOpen(false)}
+                    placeholder="Buscar SKU ou produto..."
+                    autoComplete="off"
+                  />
+                  {searchSuggestionsOpen && searchSuggestions.length > 0 ? (
+                    <ul className="client-suggestions">
+                      {searchSuggestions.map((product) => (
+                        <li key={product.id}>
+                          <button
+                            type="button"
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => {
+                              setSearch(product.name);
+                              setSearchSuggestionsOpen(false);
+                              setPage(1);
+                              (document.activeElement as HTMLElement | null)?.blur();
+                            }}
+                          >
+                            {product.sku} · {product.name}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
                 <button type="button" className="new-quote-button" onClick={newProduct}>＋ Novo produto</button>
               </div>
             </section>
@@ -428,6 +468,7 @@ export default function CatalogPage() {
               <strong>{filtered.length} produtos</strong>
               <div className="catalog-sort">
                 <span>Classificar por</span>
+                <button type="button" className={sortBy === "name" ? "chip selected" : "chip"} onClick={() => selectSort("name")}>Nome{sortArrow("name")}</button>
                 <button type="button" className={sortBy === "recent" ? "chip selected" : "chip"} onClick={() => selectSort("recent")}>Mais Recentes{sortArrow("recent")}</button>
                 <button type="button" className={sortBy === "category" ? "chip selected" : "chip"} onClick={() => selectSort("category")}>Categoria{sortArrow("category")}</button>
                 <button type="button" className={sortBy === "sales" ? "chip selected" : "chip"} onClick={() => selectSort("sales")}>Mais Vendas{sortArrow("sales")}</button>
