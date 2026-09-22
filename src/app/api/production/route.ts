@@ -21,7 +21,12 @@ const jobToOrderStatus: Record<string, string> = {
 export async function GET() {
   if (!(await authenticated())) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   return NextResponse.json(
-    await prisma.productionJob.findMany({ include: { order: { include: { customer: true } } }, orderBy: [{ priority: "desc" }, { createdAt: "asc" }] }),
+    await prisma.productionJob.findMany({
+      // quote: só id+code — pra linkar direto pro orçamento que gerou o
+      // pedido (nem todo pedido vem de um orçamento convertido, daí opcional).
+      include: { order: { include: { customer: true, quote: { select: { id: true, code: true } } } } },
+      orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
+    }),
   );
 }
 

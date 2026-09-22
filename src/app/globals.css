@@ -714,6 +714,11 @@ a.primary-button {
   display: flex;
   justify-content: space-between;
 }
+/* Agrupa o nº do pedido com o link pro orçamento de origem (Produção) — os
+   dois ficam do lado esquerdo do card-top, sem brigar com o status à direita. */
+.job-card-badges { align-items: center; display: flex; gap: 6px; }
+.job-quote-link { align-items: center; background: transparent; border: 1px solid var(--admin-copper); border-radius: 6px; color: var(--admin-copper); display: inline-flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 9px; font-weight: 700; padding: 3px 6px; text-decoration: none; white-space: nowrap; }
+.job-quote-link:hover { background: var(--admin-copper); color: white; }
 
 .card-actions {
   align-items: center;

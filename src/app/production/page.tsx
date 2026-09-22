@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 
 type Customer = { id: string; name: string };
+type OrderQuote = { id: string; code: string | null };
 type Order = {
   id: string;
   orderNumber: string;
@@ -15,6 +16,7 @@ type Order = {
   paymentStatus: string;
   dueDate: string | null;
   customer?: Customer | null;
+  quote?: OrderQuote | null;
 };
 type Job = { id: string; status: string; priority: string; printerName: string; plannedMinutes: number; completedAt: string | null; notes: string; createdAt: string; order: Order };
 type Printer = { id: string; model: string };
@@ -150,7 +152,14 @@ export default function ProductionPage() {
                     return (
                       <article className={`job-card priority-${job.priority.toLowerCase()}`} key={job.id}>
                         <div className="card-top">
-                          <span className="material-badge">{job.order.orderNumber}</span>
+                          <span className="job-card-badges">
+                            <span className="material-badge">{job.order.orderNumber}</span>
+                            {job.order.quote?.id ? (
+                              <a className="job-quote-link" href={`/quotes/${job.order.quote.id}/print`} target="_blank" rel="noreferrer" title="Abrir o orçamento original">
+                                {job.order.quote.code ?? "Orçamento"}
+                              </a>
+                            ) : null}
+                          </span>
                           <span className="project-status">{priorityLabel(job.priority)}</span>
                         </div>
 
