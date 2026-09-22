@@ -145,11 +145,15 @@ export default function CatalogPage() {
     async function load() {
       const now = new Date();
       const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      // no-store: editar um produto tem que carregar o custo/lossRatePercent
+      // atuais dele, não uma cópia em memória de quando a página abriu — foi
+      // exatamente essa mesma causa que deixava o preço desatualizado em
+      // Orçamentos.
       const [productRes, materialRes, printerRes, settingsRes, marketplaceRes, fixedRes] = await Promise.all([
-        fetch("/api/products"),
-        fetch("/api/materials"),
-        fetch("/api/printers"),
-        fetch("/api/settings"),
+        fetch("/api/products", { cache: "no-store" }),
+        fetch("/api/materials", { cache: "no-store" }),
+        fetch("/api/printers", { cache: "no-store" }),
+        fetch("/api/settings", { cache: "no-store" }),
         fetch("/api/marketplaces"),
         fetch("/api/costs/fixed"),
       ]);
@@ -167,6 +171,16 @@ export default function CatalogPage() {
       }
     }
     void load();
+
+    function onFocus() {
+      if (document.visibilityState === "visible") void load();
+    }
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
   }, [reloadToken]);
 
   const categories = useMemo(() => ["all", ...Array.from(new Set(products.map((product) => product.category)))], [products]);

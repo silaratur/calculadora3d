@@ -73,7 +73,10 @@ export default function SalesPage() {
   const [form, setForm] = useState(emptyForm);
   const [feedback, setFeedback] = useState("");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  // Ao carregar a tela, esconde os já produzidos por padrão — só quem ainda
+  // está na fila (falta produzir/em produção) precisa de atenção aqui. O
+  // usuário pode trocar pra "Produzido" ou "Todos" no filtro quando quiser.
+  const [statusFilter, setStatusFilter] = useState("active");
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [needsLogin, setNeedsLogin] = useState(false);
@@ -240,7 +243,8 @@ export default function SalesPage() {
       orders.filter((order) => {
         const text = `${order.orderNumber} ${order.productName} ${order.customer?.name ?? ""}`.toLowerCase();
         if (!text.includes(search.toLowerCase())) return false;
-        if (statusFilter !== "all" && order.status !== statusFilter) return false;
+        if (statusFilter === "active" && order.status === "COMPLETED") return false;
+        if (statusFilter !== "all" && statusFilter !== "active" && order.status !== statusFilter) return false;
         if (paymentFilter !== "all" && order.paymentStatus !== paymentFilter) return false;
         return true;
       }),
@@ -321,6 +325,7 @@ export default function SalesPage() {
             <div className="catalog-filters">
               <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por código, produto ou cliente..." />
               <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                <option value="active">Em produção e a produzir</option>
                 <option value="all">Todos status de produção</option>
                 {productionStatuses.map((item) => <option key={item} value={item}>{statusLabel[item]}</option>)}
               </select>

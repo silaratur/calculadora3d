@@ -31,7 +31,7 @@ type QuoteSnapshot = {
   markup?: string;
   lossRate?: string;
   discount?: string;
-  supplies?: { id: string; name: string; quantity: number; unitCost: number }[];
+  supplies?: { id: string; name: string; category?: string; quantity: number; unitCost: number }[];
   customExtras?: CustomExtra[];
   calculations?: Record<string, number>;
   marketplace?: Marketplace;
@@ -325,6 +325,7 @@ function CalculatorForm() {
       supplies: selected.map((id) => ({
         id,
         name: supplies.find((item) => item.id === id)?.name ?? "",
+        category: supplies.find((item) => item.id === id)?.category,
         quantity: quantities[id] ?? 1,
         unitCost: priceOverrides[id] ?? supplies.find((item) => item.id === id)?.unitCost ?? 0,
       })),

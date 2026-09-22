@@ -24,7 +24,7 @@ type QuoteSnapshot = {
   products?: { id: string; name: string; quantity: number; unitCost: number; printTimeHours: number; imageUrl?: string }[];
   markup?: string;
   discount?: string;
-  supplies?: { id: string; name: string; quantity: number; unitCost: number }[];
+  supplies?: { id: string; name: string; category?: string; quantity: number; unitCost: number }[];
   customExtras?: CustomExtra[];
   calculations?: Record<string, number>;
   marketplace?: Marketplace;
@@ -281,6 +281,7 @@ function OrcamentosForm() {
       supplies: supplyLinesWithData.map((entry) => ({
         id: entry.supply.id,
         name: entry.supply.name,
+        category: entry.supply.category,
         quantity: n(entry.line.quantity) || 1,
         unitCost: n(entry.line.unitCost) || entry.supply.unitCost,
       })),
@@ -348,10 +349,14 @@ function OrcamentosForm() {
         const quantity = n(entry.line.quantity) || 1;
         return quantity > 1 ? `${entry.product.name} (x${quantity})` : entry.product.name;
       }),
-      ...supplyLinesWithData.map((entry) => {
-        const quantity = n(entry.line.quantity) || 1;
-        return quantity > 1 ? `${entry.supply.name} (x${quantity})` : entry.supply.name;
-      }),
+      // Embalagem/caixa é custo interno, não um item que o cliente escolheu —
+      // valor continua embutido no total, só não aparece na lista de itens.
+      ...supplyLinesWithData
+        .filter((entry) => entry.supply.category !== "Embalagem & Caixas")
+        .map((entry) => {
+          const quantity = n(entry.line.quantity) || 1;
+          return quantity > 1 ? `${entry.supply.name} (x${quantity})` : entry.supply.name;
+        }),
       ...customExtras.map((item) => item.name),
     ];
     const lines = [

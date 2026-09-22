@@ -22,7 +22,7 @@ type Snapshot = {
   material?: { name?: string; type?: string } | null;
   weightGrams?: number;
   products?: { id: string; name: string; quantity: number; imageUrl?: string }[];
-  supplies?: { id: string; name: string; quantity: number }[];
+  supplies?: { id: string; name: string; category?: string; quantity: number }[];
   customExtras?: { id: string; name: string }[];
   calculations?: { printTime?: number };
 };
@@ -91,7 +91,11 @@ export default function QuotePrintPage() {
   const snapshot = parseSnapshot(quote.snapshotJson);
   const includedItems: IncludedItem[] = [
     ...(snapshot.products ?? []).filter((item) => item.name).map((item) => ({ name: item.name, quantity: item.quantity, imageUrl: item.imageUrl })),
-    ...(snapshot.supplies ?? []).filter((item) => item.name).map((item) => ({ name: item.name, quantity: item.quantity })),
+    // Embalagem/caixa é custo interno, não um item que o cliente escolheu —
+    // valor continua embutido no total, só não aparece na lista de itens.
+    ...(snapshot.supplies ?? [])
+      .filter((item) => item.name && item.category !== "Embalagem & Caixas")
+      .map((item) => ({ name: item.name, quantity: item.quantity })),
     ...(snapshot.customExtras ?? []).filter((item) => item.name).map((item) => ({ name: item.name, quantity: 1 })),
   ];
   const specs = [
