@@ -18,8 +18,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 /**
  * Atualiza um orçamento já existente (ex: reabriu via "Carregar no Editor" e
  * salvou de novo) — sem isso, cada "Salvar" criava uma linha nova em vez de
- * atualizar a mesma, duplicando registros em Projetos. Mantém o code e o
- * validUntil originais: é o mesmo orçamento, não um reemitido.
+ * atualizar a mesma, duplicando registros em Projetos. Mantém o code, o
+ * validUntil e o status originais: é o mesmo orçamento, não um reemitido —
+ * editar o conteúdo não pode reverter um orçamento já "Convertido em venda"
+ * de volta pra rascunho (o formulário de Orçamentos sempre manda "DRAFT" aqui,
+ * então usar o valor enviado sobrescrevia o status e deixava o pedido já
+ * criado órfão, batendo no @unique de SalesOrder.quoteId numa nova conversão).
  */
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await authenticated())) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
@@ -34,7 +38,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       productId: parsed.data.productId ?? null,
       productName: parsed.data.productName,
       customerName: parsed.data.customerName ?? "",
-      status: parsed.data.status,
+      customerPhone: parsed.data.customerPhone ?? "",
+      customerEmail: parsed.data.customerEmail ?? "",
       baseCost: parsed.data.baseCost,
       finalPrice: parsed.data.finalPrice,
       margin: parsed.data.margin,

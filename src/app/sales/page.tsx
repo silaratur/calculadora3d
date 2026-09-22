@@ -81,6 +81,12 @@ export default function SalesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [needsLogin, setNeedsLogin] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  // Veio de Produção com "?highlight=<id>" (link "Ver em Vendas") — abre já
+  // apontando pro pedido certo, mesmo que os filtros padrão o escondessem.
+  // Lazy initializer (não efeito) porque só depende da URL no primeiro render.
+  const [highlightId, setHighlightId] = useState<string | null>(() =>
+    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("highlight"),
+  );
   const [receiptAmount, setReceiptAmount] = useState("");
   const [orderPayments, setOrderPayments] = useState<Payment[]>([]);
   const [reloadToken, setReloadToken] = useState(0);
@@ -115,6 +121,13 @@ export default function SalesPage() {
     void load();
   }, [reloadToken]);
 
+  useEffect(() => {
+    if (!highlightId || !orders.some((order) => order.id === highlightId)) return;
+    document.getElementById(`order-${highlightId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const timeout = setTimeout(() => setHighlightId(null), 4000);
+    return () => clearTimeout(timeout);
+  }, [highlightId, orders]);
+
   const product = products.find((item) => item.id === form.productId);
   const channel = channels.find((item) => item.id === form.channelId);
   const quantity = n(form.quantity);
@@ -141,11 +154,13 @@ export default function SalesPage() {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    // Só existe edição aqui — pedido novo nasce sempre de um orçamento
+    // convertido (Projetos → Converter em Venda), nunca deste formulário.
+    if (!editingId) return;
     if (!form.productId && !form.productName) { setFeedback("Selecione um produto do catálogo ou informe o nome."); return; }
     if (!form.productId && !n(form.unitPrice)) { setFeedback("Informe o preço unitário da venda avulsa."); return; }
-    const url = editingId ? `/api/orders?id=${encodeURIComponent(editingId)}` : "/api/orders";
-    const response = await fetch(url, {
-      method: editingId ? "PUT" : "POST",
+    const response = await fetch(`/api/orders?id=${encodeURIComponent(editingId)}`, {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         productId: form.productId || null,
@@ -168,10 +183,10 @@ export default function SalesPage() {
     });
     if (!response.ok) {
       const body = await response.json().catch(() => null);
-      setFeedback(typeof body?.error === "string" ? body.error : `Não foi possível ${editingId ? "atualizar" : "criar"} o pedido.`);
+      setFeedback(typeof body?.error === "string" ? body.error : "Não foi possível atualizar o pedido.");
       return;
     }
-    setFeedback(editingId ? "Pedido atualizado." : "Pedido criado e enviado para produção.");
+    setFeedback("Pedido atualizado.");
     setForm(emptyForm);
     setEditingId(null);
     reload();
@@ -241,6 +256,9 @@ export default function SalesPage() {
   const filtered = useMemo(
     () =>
       orders.filter((order) => {
+        // Pedido veio destacado de Produção ("Ver em Vendas") — aparece mesmo
+        // que os filtros de status/pagamento/busca o escondessem.
+        if (order.id === highlightId) return true;
         const text = `${order.orderNumber} ${order.productName} ${order.customer?.name ?? ""}`.toLowerCase();
         if (!text.includes(search.toLowerCase())) return false;
         if (statusFilter === "active" && order.status === "COMPLETED") return false;
@@ -248,7 +266,7 @@ export default function SalesPage() {
         if (paymentFilter !== "all" && order.paymentStatus !== paymentFilter) return false;
         return true;
       }),
-    [orders, search, statusFilter, paymentFilter],
+    [orders, search, statusFilter, paymentFilter, highlightId],
   );
 
   return (
@@ -264,9 +282,12 @@ export default function SalesPage() {
           <span className="material-badge">{orders.length} pedidos</span>
         </section>
 
-        <div className="operations-layout">
+        {feedback && !editingId ? <p className="admin-feedback">{feedback}</p> : null}
+
+        <div className={editingId ? "operations-layout" : "operations-layout list-only"}>
+          {editingId ? (
           <form id="order-form" className="preset-form" onSubmit={submit}>
-            <h2>{editingId ? "Editar pedido" : "Novo pedido"}</h2>
+            <h2>Editar pedido</h2>
             <label>
               Produto do catálogo
               <select value={form.productId} onChange={(event) => setForm({ ...form, productId: event.target.value, productName: "" })}>
@@ -315,11 +336,12 @@ export default function SalesPage() {
             ) : null}
 
             <div className="form-actions">
-              <button className="primary-button" type="submit">{editingId ? "Salvar alterações" : "Criar pedido"}</button>
-              {editingId ? <button className="secondary-button" type="button" onClick={cancelEdit}>Cancelar</button> : null}
+              <button className="primary-button" type="submit">Salvar alterações</button>
+              <button className="secondary-button" type="button" onClick={cancelEdit}>Cancelar</button>
             </div>
             {feedback ? <p className="admin-feedback">{feedback}</p> : null}
           </form>
+          ) : null}
 
           <section className="operation-list">
             <div className="catalog-filters">
@@ -339,7 +361,7 @@ export default function SalesPage() {
               const pending = order.totalAmount - order.paidAmount;
               const expanded = expandedOrder === order.id;
               return (
-                <article className="operation-card" key={order.id}>
+                <article className={`operation-card${order.id === highlightId ? " highlight" : ""}`} id={`order-${order.id}`} key={order.id}>
                   <div className="card-top">
                     <span className="material-badge">{order.orderNumber}</span>
                     <span className="card-actions">

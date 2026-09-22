@@ -10,6 +10,8 @@ type Quote = {
   code: string | null;
   productName: string;
   customerName: string;
+  customerPhone: string;
+  customerEmail: string;
   status: string;
   baseCost: number;
   finalPrice: number;
@@ -22,10 +24,29 @@ type Quote = {
 };
 type Competitor = { id: string; productName: string; competitor: string; channel: string; price: number; url: string; checkedAt: string };
 type SortField = "recent" | "client" | "value" | "status";
+type QuoteItem = { name: string; quantity: number };
+type ConvertForm = { shippingPaid: boolean; shippingCost: string; paymentMethod: string; plannedProductionDate: string; expectedPaymentDate: string };
 
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const n = (value: string) => Number(value.replace(",", ".")) || 0;
+const paymentMethods = ["PIX", "Cartão de Crédito", "Cartão de Débito", "Dinheiro", "Boleto"];
+const emptyConvertForm: ConvertForm = { shippingPaid: false, shippingCost: "0", paymentMethod: "PIX", plannedProductionDate: "", expectedPaymentDate: "" };
 const statusLabel: Record<string, string> = { DRAFT: "Rascunho", CONVERTED: "Convertido em venda", ARCHIVED: "Arquivado" };
 const statusBadgeColor: Record<string, string> = { DRAFT: "#8a4a4e", CONVERTED: "#777f5d", ARCHIVED: "#602f32" };
+
+/** Itens, canal e desconto do orçamento — mostrados como leitura no popup de conversão, nenhum deles editável ali. */
+function convertPreview(snapshotJson: string): { items: QuoteItem[]; marketplaceName: string; discount: number } {
+  try {
+    const snapshot = JSON.parse(snapshotJson) as { products?: { name: string; quantity?: number }[]; marketplace?: { name?: string }; discount?: string };
+    return {
+      items: snapshot.products?.map((item) => ({ name: item.name, quantity: item.quantity || 1 })) ?? [],
+      marketplaceName: snapshot.marketplace?.name || "Venda Direta",
+      discount: Number(snapshot.discount) || 0,
+    };
+  } catch {
+    return { items: [], marketplaceName: "Venda Direta", discount: 0 };
+  }
+}
 // Mesma ideia do Catálogo: qual direção faz sentido como padrão na primeira
 // vez que cada critério é escolhido (recente = mais novo, cliente = A-Z,
 // valor = maior primeiro, status = A-Z).
@@ -49,7 +70,12 @@ export default function ProjectsPage() {
   const [tab, setTab] = useState<"quotes" | "archived" | "competitors">("quotes");
   const [needsLogin, setNeedsLogin] = useState(false);
   const [feedback, setFeedback] = useState("");
-  const [converting, setConverting] = useState<string | null>(null);
+  // Orçamento em processo de virar pedido — abre o popup de conversão, que já
+  // traz itens/cliente/canal/desconto do orçamento (só leitura) e pede os
+  // dados que são da venda em si (frete, pagamento, datas).
+  const [convertTarget, setConvertTarget] = useState<Quote | null>(null);
+  const [convertForm, setConvertForm] = useState<ConvertForm>(emptyConvertForm);
+  const [converting, setConverting] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
   const reload = () => setReloadToken((token) => token + 1);
   // Orçamento aguardando confirmação do motivo antes de arquivar — vira
@@ -174,15 +200,35 @@ export default function ProjectsPage() {
     reload();
   }
 
-  async function convertQuote(id: string) {
-    setConverting(id);
+  function openConvert(quote: Quote) {
+    setConvertTarget(quote);
+    setConvertForm(emptyConvertForm);
     setFeedback("");
-    const response = await fetch(`/api/quotes/${id}/convert`, { method: "POST" });
+  }
+  function cancelConvert() {
+    setConvertTarget(null);
+  }
+  async function confirmConvert() {
+    if (!convertTarget) return;
+    setConverting(true);
+    const response = await fetch(`/api/quotes/${convertTarget.id}/convert`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        shippingCost: convertForm.shippingPaid ? n(convertForm.shippingCost) : 0,
+        paymentMethod: convertForm.paymentMethod,
+        plannedProductionDate: convertForm.plannedProductionDate || null,
+        expectedPaymentDate: convertForm.expectedPaymentDate || null,
+      }),
+    });
     const body = await response.json().catch(() => null);
-    setConverting(null);
+    setConverting(false);
     if (!response.ok) { setFeedback(typeof body?.error === "string" ? body.error : "Não foi possível converter este orçamento."); return; }
-    setFeedback(`Orçamento convertido — pedido ${body.order.orderNumber} criado em Vendas.`);
-    reload();
+    // Rastreabilidade: o pedido já nasce ligado ao orçamento (quoteId) — a
+    // volta pro orçamento fica no botão "Editar" do card. Ao confirmar, leva
+    // direto pra Vendas já com o pedido novo em destaque.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.href = `/sales?highlight=${body.order.id}`;
   }
 
   return (
@@ -278,9 +324,7 @@ export default function ProjectsPage() {
                     <div className="quote-card-actions">
                       <a href={`/quotes/${quote.id}/print`} target="_blank" rel="noreferrer"><IconDownload className="nav-icon" /> PDF</a>
                       {!archived && quote.status !== "CONVERTED" ? (
-                        <button type="button" disabled={converting === quote.id} onClick={() => convertQuote(quote.id)}>
-                          {converting === quote.id ? "Convertendo..." : "Converter"}
-                        </button>
+                        <button type="button" onClick={() => openConvert(quote)}>Converter</button>
                       ) : null}
                     </div>
                   </article>
@@ -349,6 +393,84 @@ export default function ProjectsPage() {
             <div className="form-actions">
               <button className="secondary-button" type="button" onClick={cancelDelete}>Cancelar</button>
               <button className="primary-button modal-danger" type="button" disabled={deleting} onClick={confirmDelete}>{deleting ? "Excluindo..." : "Excluir definitivamente"}</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {convertTarget ? (
+        <div className="modal-backdrop" onClick={cancelConvert}>
+          <div className="modal-card modal-card-wide" onClick={(event) => event.stopPropagation()}>
+            <h2>Converter em Venda</h2>
+            <p>
+              <strong>{convertTarget.code ?? convertTarget.productName}</strong> — {convertTarget.productName}
+            </p>
+
+            {(() => {
+              const preview = convertPreview(convertTarget.snapshotJson);
+              return (
+                <div className="convert-summary">
+                  {preview.items.length ? (
+                    <div className="convert-summary-block">
+                      <span>Itens do orçamento</span>
+                      <ul>
+                        {preview.items.map((item, index) => (
+                          <li key={index}>{item.name}{item.quantity > 1 ? ` × ${item.quantity}` : ""}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  <div className="convert-summary-row">
+                    <span>Cliente</span>
+                    <div className="convert-summary-value">
+                      <strong>{convertTarget.customerName || "Cliente não informado"}</strong>
+                      {convertTarget.customerPhone || convertTarget.customerEmail ? (
+                        <small>{[convertTarget.customerPhone, convertTarget.customerEmail].filter(Boolean).join(" · ")}</small>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="convert-summary-row"><span>Canal de vendas</span><strong>{preview.marketplaceName}</strong></div>
+                  <div className="convert-summary-row"><span>Desconto no pedido</span><strong>{brl(preview.discount)}</strong></div>
+                  <div className="convert-summary-row total"><span>Valor do orçamento</span><strong>{brl(convertTarget.finalPrice)}</strong></div>
+                </div>
+              );
+            })()}
+
+            <a className="edit-button convert-edit-link" href={`/orcamentos?quoteId=${convertTarget.id}`}>Não é isso? Editar orçamento</a>
+
+            <label className="checkbox-field">
+              <input
+                type="checkbox"
+                checked={convertForm.shippingPaid}
+                onChange={(event) => setConvertForm({ ...convertForm, shippingPaid: event.target.checked })}
+              />
+              Frete pago pela empresa
+            </label>
+            {convertForm.shippingPaid ? (
+              <label>Valor do frete (R$)
+                <input inputMode="decimal" value={convertForm.shippingCost} onChange={(event) => setConvertForm({ ...convertForm, shippingCost: event.target.value })} placeholder="0,00" autoFocus />
+              </label>
+            ) : null}
+
+            <label>Forma de pagamento
+              <select value={convertForm.paymentMethod} onChange={(event) => setConvertForm({ ...convertForm, paymentMethod: event.target.value })}>
+                {paymentMethods.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+            </label>
+
+            <div className="form-grid">
+              <label>Data prevista de produção
+                <input type="date" value={convertForm.plannedProductionDate} onChange={(event) => setConvertForm({ ...convertForm, plannedProductionDate: event.target.value })} />
+              </label>
+              <label>Data prevista de recebimento
+                <input type="date" value={convertForm.expectedPaymentDate} onChange={(event) => setConvertForm({ ...convertForm, expectedPaymentDate: event.target.value })} />
+              </label>
+            </div>
+
+            {feedback ? <p className="admin-feedback">{feedback}</p> : null}
+            <div className="form-actions">
+              <button className="secondary-button" type="button" onClick={cancelConvert}>Cancelar</button>
+              <button className="primary-button" type="button" disabled={converting} onClick={confirmConvert}>{converting ? "Convertendo..." : "Confirmar e criar pedido"}</button>
             </div>
           </div>
         </div>

@@ -13,7 +13,7 @@ type Product = { id: string; name: string; sku: string; category: string; cost: 
 type Supply = { id: string; name: string; category: string; unitCost: number };
 type Marketplace = { id: string; name: string; commissionRate: number; fixedFee: number; adsRate: number };
 type CustomExtra = { id: string; name: string; unitCost: number };
-type CustomerLead = { id: string; name: string };
+type CustomerLead = { id: string; name: string; phone: string; email: string };
 type ProductLine = { productId: string; quantity: string };
 type SupplyLine = { supplyId: string; quantity: string; unitCost: string };
 type Settings = { companyName: string; companyContact: string; quoteDeliveryText: string; quoteWarrantyText: string; quotePaymentText: string };
@@ -66,6 +66,8 @@ function OrcamentosForm() {
   const [supplyLines, setSupplyLines] = useState<SupplyLine[]>([]);
   const [name, setName] = useState("");
   const [client, setClient] = useState("");
+  const [clientPhone, setClientPhone] = useState("");
+  const [clientEmail, setClientEmail] = useState("");
   const [customers, setCustomers] = useState<CustomerLead[]>([]);
   const [clientSuggestionsOpen, setClientSuggestionsOpen] = useState(false);
   const [markup, setMarkup] = useState("40");
@@ -137,9 +139,11 @@ function OrcamentosForm() {
       setCurrentQuoteId(quoteId);
       const response = await fetch(`/api/quotes/${quoteId}`);
       if (!response.ok) return;
-      const quote = (await response.json()) as { productName: string; customerName: string; notes: string; snapshotJson: string };
+      const quote = (await response.json()) as { productName: string; customerName: string; customerPhone: string; customerEmail: string; notes: string; snapshotJson: string };
       setName(quote.productName);
       setClient(quote.customerName);
+      setClientPhone(quote.customerPhone);
+      setClientEmail(quote.customerEmail);
       setNotes(quote.notes);
       let s: QuoteSnapshot = {};
       try { s = JSON.parse(quote.snapshotJson) as QuoteSnapshot; } catch { s = {}; }
@@ -268,7 +272,48 @@ function OrcamentosForm() {
   function removeCustomExtra(id: string) {
     setCustomExtras((current) => current.filter((item) => item.id !== id));
   }
+
+  /** Nome, telefone e e-mail do cliente agora são obrigatórios pra salvar. */
+  function clientFieldsValid(): boolean {
+    const message = !client.trim()
+      ? "Informe o nome do cliente."
+      : !clientPhone.trim()
+        ? "Informe o telefone do cliente."
+        : !clientEmail.trim()
+          ? "Informe o e-mail do cliente."
+          : "";
+    if (!message) return true;
+    setReportError(message);
+    window.setTimeout(() => setReportError(""), 3500);
+    return false;
+  }
+
+  /**
+   * Cliente já cadastrado (mesmo nome) não duplica; cliente novo é cadastrado
+   * na hora em Clientes, com o telefone e e-mail informados aqui — sem isso,
+   * o orçamento tinha um nome digitado que não virava um cliente de verdade.
+   * Best-effort: se o cadastro falhar, não trava o salvar do orçamento.
+   */
+  async function ensureCustomerRegistered() {
+    const trimmedName = client.trim();
+    if (customers.some((item) => item.name.trim().toLowerCase() === trimmedName.toLowerCase())) return;
+    try {
+      const response = await fetch("/api/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmedName, phone: clientPhone.trim(), email: clientEmail.trim() }),
+      });
+      if (response.ok) {
+        const created = (await response.json()) as CustomerLead;
+        setCustomers((current) => [...current, created]);
+      }
+    } catch {
+      // Best-effort — orçamento continua sendo salvo mesmo se isto falhar.
+    }
+  }
+
   async function saveQuote(): Promise<{ id: string } | null> {
+    await ensureCustomerRegistered();
     // Nome dos insumos vai junto no snapshot (não só o id) — o orçamento em
     // PDF (src/app/quotes/[id]/print) lista "o que está incluso" sem precisar
     // reconsultar a Biblioteca, que pode ter mudado ou perdido o preset depois.
@@ -301,7 +346,7 @@ function OrcamentosForm() {
     const response = await fetch(currentQuoteId ? `/api/quotes/${currentQuoteId}` : "/api/quotes", {
       method: currentQuoteId ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productName: name, customerName: client, status: "DRAFT", baseCost: calc.costWithReserve, finalPrice: calc.price, margin: calc.profit, snapshot, notes }),
+      body: JSON.stringify({ productName: name, customerName: client.trim(), customerPhone: clientPhone.trim(), customerEmail: clientEmail.trim(), status: "DRAFT", baseCost: calc.costWithReserve, finalPrice: calc.price, margin: calc.profit, snapshot, notes }),
     });
     localStorage.setItem("minima3d-project", JSON.stringify({ name, client, price: calc.price, notes, snapshot }));
     if (!response.ok) return null;
@@ -310,6 +355,7 @@ function OrcamentosForm() {
     return result;
   }
   async function save() {
+    if (!clientFieldsValid()) return;
     const result = await saveQuote();
     if (!result) {
       setReportError("Não foi possível salvar o orçamento. Tente novamente.");
@@ -327,6 +373,7 @@ function OrcamentosForm() {
       window.setTimeout(() => setReportError(""), 3500);
       return;
     }
+    if (!clientFieldsValid()) return;
     setReportError("");
     // Abre a aba já no clique (síncrono) pra não ser bloqueada como pop-up:
     // navegadores permitem window.open só durante o gesto do usuário, e o
@@ -426,30 +473,48 @@ function OrcamentosForm() {
       <AdminHeader active="orcamentos" />
       <div className="calculator-content">
         <section className="project-header">
-          <label><span>NOME DO ORÇAMENTO (PRODUTO / KIT / VARIAÇÃO) *</span><input required value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex: Porta Guardanapos Árvore de Natal" /></label>
-          <label className="client-field">
-            <span>NOME DO CLIENTE (OPCIONAL)</span>
-            <input
-              value={client}
-              onChange={(event) => { setClient(event.target.value); setClientSuggestionsOpen(true); }}
-              onFocus={() => setClientSuggestionsOpen(true)}
-              onBlur={() => setClientSuggestionsOpen(false)}
-              placeholder="Ex: João Silva - Orçamento #102"
-              autoComplete="off"
-            />
+          <label className="field-span-full"><span>NOME DO ORÇAMENTO (PRODUTO / KIT / VARIAÇÃO) *</span><input required value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex: Porta Guardanapos Árvore de Natal" /></label>
+
+          <div className="client-name-wrap">
+            <label>
+              <span>NOME DO CLIENTE *</span>
+              <input
+                required
+                value={client}
+                onChange={(event) => { setClient(event.target.value); setClientSuggestionsOpen(true); }}
+                onFocus={() => setClientSuggestionsOpen(true)}
+                onBlur={() => setClientSuggestionsOpen(false)}
+                placeholder="Ex: João Silva"
+                autoComplete="off"
+              />
+            </label>
             {clientSuggestionsOpen && clientSuggestions.length > 0 ? (
               <ul className="client-suggestions">
                 {clientSuggestions.map((item) => (
                   <li key={item.id}>
-                    <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setClient(item.name); setClientSuggestionsOpen(false); }}>
+                    <button
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => { setClient(item.name); setClientPhone(item.phone); setClientEmail(item.email); setClientSuggestionsOpen(false); }}
+                    >
                       {item.name}
                     </button>
                   </li>
                 ))}
               </ul>
             ) : null}
+          </div>
+
+          <label>
+            <span>TELEFONE *</span>
+            <input required type="tel" value={clientPhone} onChange={(event) => setClientPhone(event.target.value)} placeholder="(11) 91234-5678" />
           </label>
-          <button className="quiet-button" onClick={() => { setName(""); setClient(""); setNotes(""); setProductLines([]); setCurrentQuoteId(null); }}>↻ Limpar Campos</button>
+          <label>
+            <span>E-MAIL *</span>
+            <input required type="email" value={clientEmail} onChange={(event) => setClientEmail(event.target.value)} placeholder="cliente@email.com" />
+          </label>
+
+          <button className="quiet-button" onClick={() => { setName(""); setClient(""); setClientPhone(""); setClientEmail(""); setNotes(""); setProductLines([]); setCurrentQuoteId(null); }}>↻ Limpar Campos</button>
         </section>
 
         <div className="calculator-grid">

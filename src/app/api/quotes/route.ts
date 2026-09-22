@@ -6,7 +6,12 @@ import { prisma } from "@/lib/prisma";
 export const quoteSchema = z.object({
   productId: z.string().optional().nullable(),
   productName: z.string().min(2),
+  // Orçamentos (a tela atual) já exige nome/telefone/e-mail no formulário —
+  // aqui fica permissivo pro /calculator legado (mantido fora do menu, ver
+  // memória do projeto) continuar salvando como sempre salvou.
   customerName: z.string().optional(),
+  customerPhone: z.string().optional(),
+  customerEmail: z.string().email("E-mail do cliente inválido").or(z.literal("")).optional(),
   status: z.string().default("DRAFT"),
   baseCost: z.number().min(0),
   finalPrice: z.number().min(0),
@@ -58,7 +63,7 @@ export async function POST(request: Request) {
 
   const settings = await prisma.pricingSettings.upsert({ where: { id: "default" }, update: {}, create: {} });
   const validUntil = new Date(Date.now() + settings.quoteValidityDays * 24 * 60 * 60 * 1000);
-  const data = { productId: parsed.data.productId ?? null, productName: parsed.data.productName, customerName: parsed.data.customerName ?? "", status: parsed.data.status, baseCost: parsed.data.baseCost, finalPrice: parsed.data.finalPrice, margin: parsed.data.margin, snapshotJson: JSON.stringify(parsed.data.snapshot), notes: parsed.data.notes ?? "", validUntil };
+  const data = { productId: parsed.data.productId ?? null, productName: parsed.data.productName, customerName: parsed.data.customerName ?? "", customerPhone: parsed.data.customerPhone ?? "", customerEmail: parsed.data.customerEmail ?? "", status: parsed.data.status, baseCost: parsed.data.baseCost, finalPrice: parsed.data.finalPrice, margin: parsed.data.margin, snapshotJson: JSON.stringify(parsed.data.snapshot), notes: parsed.data.notes ?? "", validUntil };
 
   // Código sequencial por dia: em uso concorrente duas requisições podem ler o
   // mesmo "último código" antes de gravar — a constraint @unique pega isso, e

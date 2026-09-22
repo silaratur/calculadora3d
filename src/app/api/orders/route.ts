@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateOrderMetrics } from "@/lib/costing";
+import { buildProductionItemDrafts } from "@/lib/production";
 
 const orderSchema = z.object({
   customerId: z.string().optional().nullable(),
@@ -129,6 +130,13 @@ export async function POST(request: Request) {
   if ("error" in resolved) return NextResponse.json({ error: resolved.error }, { status: 400 });
   const { product, channel, productName, unitCostSnapshot, unitPrice, printTimeHours, marketplaceFee, metrics } = resolved;
 
+  const quote = data.quoteId ? await prisma.quote.findUnique({ where: { id: data.quoteId }, select: { snapshotJson: true } }) : null;
+  const itemDrafts = await buildProductionItemDrafts(prisma, quote?.snapshotJson, {
+    name: productName,
+    quantity: data.quantity,
+    productId: product?.id ?? null,
+  });
+
   const paidAmount = data.paidAmount ?? 0;
   const orderData = {
     customerId: data.customerId ?? null,
@@ -160,8 +168,17 @@ export async function POST(request: Request) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       const order = await prisma.salesOrder.create({
-        data: { ...orderData, orderNumber: await nextOrderNumber(), production: { create: { plannedMinutes: Math.round(metrics.totalPrintHours * 60) } } },
-        include: { production: true, customer: true, product: true, marketplace: true },
+        data: {
+          ...orderData,
+          orderNumber: await nextOrderNumber(),
+          production: {
+            create: {
+              plannedMinutes: Math.round(metrics.totalPrintHours * 60),
+              items: { create: itemDrafts },
+            },
+          },
+        },
+        include: { production: { include: { items: true } }, customer: true, product: true, marketplace: true },
       });
       return NextResponse.json({ order, metrics }, { status: 201 });
     } catch (error) {
@@ -228,12 +245,20 @@ export async function PUT(request: Request) {
         plannedProductionDate: data.plannedProductionDate ?? existing.plannedProductionDate,
         expectedPaymentDate: data.expectedPaymentDate ?? existing.expectedPaymentDate,
       },
-      include: { production: true, customer: true, product: true, marketplace: true },
+      include: { production: { include: { items: true } }, customer: true, product: true, marketplace: true },
     });
     // A peça pode ter mudado (produto/quantidade) — realinha o tempo planejado
-    // na fila de produção, contanto que ela ainda não tenha começado.
+    // e o item de produção, contanto que a produção ainda não tenha começado.
+    // Só sincroniza o item quando o pedido tem uma peça só: pedidos vindos de
+    // orçamento com várias peças não passam por este formulário de edição.
     if (updated.production && updated.production.status === "WAITING") {
       const production = await tx.productionJob.update({ where: { orderId: id }, data: { plannedMinutes: Math.round(metrics.totalPrintHours * 60) } });
+      if (updated.production.items.length === 1) {
+        await tx.productionItem.update({
+          where: { id: updated.production.items[0].id },
+          data: { name: productName, quantity: data.quantity, productId: product?.id ?? null },
+        });
+      }
       // `updated` foi buscado antes desta escrita — sem isto o retorno da API
       // ecoaria o plannedMinutes antigo mesmo com o banco já correto.
       return { ...updated, production };
@@ -248,6 +273,8 @@ export async function DELETE(request: Request) {
   if (!(await authenticated())) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   const id = new URL(request.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "ID obrigatório" }, { status: 400 });
+  const job = await prisma.productionJob.findUnique({ where: { orderId: id }, select: { id: true } });
+  if (job) await prisma.productionItem.deleteMany({ where: { jobId: job.id } });
   await prisma.productionJob.deleteMany({ where: { orderId: id } });
   await prisma.salesOrder.delete({ where: { id } });
   return NextResponse.json({ success: true });

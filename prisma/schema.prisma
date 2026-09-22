@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   // "native" cobre o dev local (Windows); "debian-openssl-3.0.x" garante o
   // engine certo para o container de produção (node:22-bookworm-slim), que
   // precisa da libssl3 instalada via docker-compose (ver DEPLOY.md).
@@ -39,129 +39,130 @@ model Customer {
 }
 
 model PricingSettings {
-  id                    String   @id @default("default")
-  energyRate            Float    @default(0.85)
-  defaultPowerWatts     Float    @default(250)
-  laborRate             Float    @default(25)
-  monthlyRent           Float    @default(0)
-  monthlySubscriptions  Float    @default(50)
-  monthlyMaintenance    Float    @default(40)
-  monthlyOtherCosts     Float    @default(0)
-  monthlyPieces         Float    @default(60)
-  defaultMarkup         Float    @default(40)
-  defaultLossRate       Float    @default(5)
+  id                   String   @id @default("default")
+  energyRate           Float    @default(0.85)
+  defaultPowerWatts    Float    @default(250)
+  laborRate            Float    @default(25)
+  monthlyRent          Float    @default(0)
+  monthlySubscriptions Float    @default(50)
+  monthlyMaintenance   Float    @default(40)
+  monthlyOtherCosts    Float    @default(0)
+  monthlyPieces        Float    @default(60)
+  defaultMarkup        Float    @default(40)
+  defaultLossRate      Float    @default(5)
   // Usados no orçamento em PDF enviado ao cliente (src/app/quotes/[id]/print) —
   // nada aqui é custo interno, só textos institucionais e de política comercial.
-  companyName           String   @default("AC3D")
-  companyContact        String   @default("")
-  quoteValidityDays     Int      @default(7)
-  quoteDeliveryText     String   @default("5 a 10 dias úteis após a confirmação do pagamento, conforme a fila de produção.")
-  quoteWarrantyText     String   @default("30 dias contra defeitos de fabricação a partir da entrega. Não cobre uso inadequado, quedas, exposição a calor excessivo ou desgaste natural da peça.")
-  quotePaymentText      String   @default("50% de sinal para iniciar a produção e 50% na entrega ou retirada.")
-  updatedAt             DateTime @updatedAt
+  companyName          String   @default("AC3D")
+  companyContact       String   @default("")
+  quoteValidityDays    Int      @default(7)
+  quoteDeliveryText    String   @default("5 a 10 dias úteis após a confirmação do pagamento, conforme a fila de produção.")
+  quoteWarrantyText    String   @default("30 dias contra defeitos de fabricação a partir da entrega. Não cobre uso inadequado, quedas, exposição a calor excessivo ou desgaste natural da peça.")
+  quotePaymentText     String   @default("50% de sinal para iniciar a produção e 50% na entrega ou retirada.")
+  updatedAt            DateTime @updatedAt
 }
 
 model MarketplaceChannel {
-  id             String   @id @default(cuid())
-  name           String   @unique
-  commissionRate Float    @default(0)
-  fixedFee       Float    @default(0)
-  adsRate        Float    @default(0)
-  notes          String   @default("")
-  active         Boolean  @default(true)
+  id             String       @id @default(cuid())
+  name           String       @unique
+  commissionRate Float        @default(0)
+  fixedFee       Float        @default(0)
+  adsRate        Float        @default(0)
+  notes          String       @default("")
+  active         Boolean      @default(true)
   orders         SalesOrder[]
   products       Product[]
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 model Material {
-  id              String   @id @default(cuid())
-  name            String   @unique
-  brand           String   @default("")
-  type            String
-  color           String   @default("")
-  costPerKg       Float
-  unitPrice       Float    @default(0)
-  unitWeightGrams Float    @default(1000)
-  stockGrams      Float    @default(0)
-  lowStockThresholdGrams Float @default(200)
-  purchaseDate    DateTime?
-  purchaseLink    String   @default("")
-  active          Boolean  @default(true)
-  purchases       MaterialPurchase[]
-  productMaterials ProductMaterial[]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                     String             @id @default(cuid())
+  name                   String             @unique
+  brand                  String             @default("")
+  type                   String
+  color                  String             @default("")
+  costPerKg              Float
+  unitPrice              Float              @default(0)
+  unitWeightGrams        Float              @default(1000)
+  stockGrams             Float              @default(0)
+  lowStockThresholdGrams Float              @default(200)
+  purchaseDate           DateTime?
+  purchaseLink           String             @default("")
+  active                 Boolean            @default(true)
+  purchases              MaterialPurchase[]
+  productMaterials       ProductMaterial[]
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 }
 
 model Printer {
-  id                 String   @id @default(cuid())
-  model              String   @unique
+  id                 String    @id @default(cuid())
+  model              String    @unique
   purchasePrice      Float
   powerWatts         Float
   usefulLifeHours    Float
   maintenancePerHour Float
   purchaseDate       DateTime?
-  purchaseLink       String   @default("")
-  active             Boolean  @default(true)
+  purchaseLink       String    @default("")
+  active             Boolean   @default(true)
   products           Product[]
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 }
 
 model Supply {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  category    String
-  unitCost    Float
-  purchaseDate DateTime?
-  purchaseLink String   @default("")
-  active      Boolean  @default(true)
+  id              String          @id @default(cuid())
+  name            String          @unique
+  category        String
+  unitCost        Float
+  purchaseDate    DateTime?
+  purchaseLink    String          @default("")
+  active          Boolean         @default(true)
   productSupplies ProductSupply[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 }
 
 model Product {
-  id            String   @id @default(cuid())
-  sku           String   @unique
-  name          String
-  category      String
-  description   String?
-  imageUrl      String   @default("")
-  material      String
-  weightGrams   Float
-  volumeCm3     Float    @default(0)
-  printTimeHours Float
-  materialCost  Float
-  laborCost     Float
-  overheadCost  Float
-  profitMargin  Float
-  cost          Float
-  price         Float
-  active        Boolean  @default(true)
+  id                   String              @id @default(cuid())
+  sku                  String              @unique
+  name                 String
+  category             String
+  description          String?
+  imageUrl             String              @default("")
+  material             String
+  weightGrams          Float
+  volumeCm3            Float               @default(0)
+  printTimeHours       Float
+  materialCost         Float
+  laborCost            Float
+  overheadCost         Float
+  profitMargin         Float
+  cost                 Float
+  price                Float
+  active               Boolean             @default(true)
   // Campos do Catálogo Novo (src/app/catalog-new) — só populados por ele;
   // produtos criados no Catálogo atual ficam com os padrões (0/nenhum).
-  prepMinutes    Float    @default(0)
-  cleanupMinutes Float    @default(0)
-  energyCost     Float    @default(0)
-  machineCost    Float    @default(0)
-  printerId      String?
-  printer        Printer? @relation(fields: [printerId], references: [id])
+  prepMinutes          Float               @default(0)
+  cleanupMinutes       Float               @default(0)
+  energyCost           Float               @default(0)
+  machineCost          Float               @default(0)
+  printerId            String?
+  printer              Printer?            @relation(fields: [printerId], references: [id])
   // Margem de Lucro & Taxas (Catálogo Novo) — mesmo bloco da Calculadora.
-  lossRatePercent      Float    @default(0)
-  pricingMethod        String   @default("markup")
-  discountPerUnit      Float    @default(0)
+  lossRatePercent      Float               @default(0)
+  pricingMethod        String              @default("markup")
+  discountPerUnit      Float               @default(0)
   marketplaceChannelId String?
   marketplaceChannel   MarketplaceChannel? @relation(fields: [marketplaceChannelId], references: [id])
-  materials      ProductMaterial[]
-  supplies       ProductSupply[]
-  quotes         Quote[]
-  orders         SalesOrder[]
-  competitors    CompetitorPrice[]
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  materials            ProductMaterial[]
+  supplies             ProductSupply[]
+  quotes               Quote[]
+  orders               SalesOrder[]
+  competitors          CompetitorPrice[]
+  productionItems      ProductionItem[]
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
 }
 
 model MaterialPurchase {
@@ -178,12 +179,13 @@ model MaterialPurchase {
 }
 
 model ProductMaterial {
-  id          String   @id @default(cuid())
-  productId   String
-  materialId  String
-  grams       Float
-  product     Product  @relation(fields: [productId], references: [id])
-  material    Material @relation(fields: [materialId], references: [id])
+  id         String   @id @default(cuid())
+  productId  String
+  materialId String
+  grams      Float
+  product    Product  @relation(fields: [productId], references: [id])
+  material   Material @relation(fields: [materialId], references: [id])
+
   @@unique([productId, materialId])
 }
 
@@ -194,49 +196,55 @@ model ProductSupply {
   quantity  Float   @default(1)
   product   Product @relation(fields: [productId], references: [id])
   supply    Supply  @relation(fields: [supplyId], references: [id])
+
   @@unique([productId, supplyId])
 }
 
 model Quote {
-  id           String    @id @default(cuid())
-  productId    String?
-  product      Product?  @relation(fields: [productId], references: [id])
-  productName  String
-  customerName String    @default("")
-  status       String    @default("DRAFT")
-  baseCost     Float
-  finalPrice   Float
-  margin       Float
-  snapshotJson String
-  notes        String    @default("")
+  id            String      @id @default(cuid())
+  productId     String?
+  product       Product?    @relation(fields: [productId], references: [id])
+  productName   String
+  // Nome, telefone e e-mail agora são obrigatórios em Orçamentos (ver
+  // src/app/orcamentos/page.tsx) — orçamentos criados antes dessa regra
+  // podem ficar com telefone/email vazios, daí o default "".
+  customerName  String      @default("")
+  customerPhone String      @default("")
+  customerEmail String      @default("")
+  status        String      @default("DRAFT")
+  baseCost      Float
+  finalPrice    Float
+  margin        Float
+  snapshotJson  String
+  notes         String      @default("")
   // ORC-AAAAMMDD-0001, sequencial por dia — orçamentos criados antes desta
   // coluna existir ficam com code null (não tinham essa identificação).
-  code         String?   @unique
-  validUntil   DateTime?
+  code          String?     @unique
+  validUntil    DateTime?
   // Motivo informado ao arquivar (aba "Não Executados" em Projetos) — por
   // que esse orçamento não virou venda.
-  archiveReason String?  @default("")
-  order        SalesOrder?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  archiveReason String?     @default("")
+  order         SalesOrder?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
 model SalesOrder {
-  id            String          @id @default(cuid())
-  orderNumber   String          @unique
+  id            String              @id @default(cuid())
+  orderNumber   String              @unique
   customerId    String?
-  customer      Customer?       @relation(fields: [customerId], references: [id])
-  quoteId       String?          @unique
-  quote         Quote?           @relation(fields: [quoteId], references: [id])
+  customer      Customer?           @relation(fields: [customerId], references: [id])
+  quoteId       String?             @unique
+  quote         Quote?              @relation(fields: [quoteId], references: [id])
   productId     String?
-  product       Product?        @relation(fields: [productId], references: [id])
+  product       Product?            @relation(fields: [productId], references: [id])
   productName   String
-  quantity      Float           @default(1)
-  channel       String          @default("Venda Direta")
+  quantity      Float               @default(1)
+  channel       String              @default("Venda Direta")
   channelId     String?
   marketplace   MarketplaceChannel? @relation(fields: [channelId], references: [id])
-  status        String          @default("PENDING")
-  paymentStatus String          @default("PENDING")
+  status        String              @default("PENDING")
+  paymentStatus String              @default("PENDING")
 
   // Preço praticado e custo do item congelados na data da venda, para que
   // reprecificar o produto depois não reescreva o histórico.
@@ -249,18 +257,18 @@ model SalesOrder {
   shippingCost    Float @default(0)
 
   totalAmount   Float
-  paidAmount    Float           @default(0)
-  paymentMethod String          @default("PIX")
+  paidAmount    Float  @default(0)
+  paymentMethod String @default("PIX")
 
   dueDate               DateTime?
   plannedProductionDate DateTime?
   expectedPaymentDate   DateTime?
 
-  notes         String          @default("")
-  production    ProductionJob?
-  payments      Payment[]
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  notes      String         @default("")
+  production ProductionJob?
+  payments   Payment[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
 }
 
 // Um recebimento registrado contra um pedido. `SalesOrder.paidAmount` é
@@ -282,17 +290,38 @@ model Payment {
 }
 
 model ProductionJob {
-  id             String     @id @default(cuid())
-  orderId        String     @unique
-  order          SalesOrder @relation(fields: [orderId], references: [id])
-  status         String     @default("WAITING")
-  priority       String     @default("NORMAL")
-  printerName    String     @default("")
-  plannedMinutes Int        @default(0)
+  id             String           @id @default(cuid())
+  orderId        String           @unique
+  order          SalesOrder       @relation(fields: [orderId], references: [id])
+  // Sempre o pior caso entre os itens (ver rollupStatus em src/lib/production.ts)
+  // — só "COMPLETED" quando a última peça chegar lá. Continua existindo pra
+  // não quebrar o que já lê este campo (sync com Vendas, dashboard).
+  status         String           @default("WAITING")
+  priority       String           @default("NORMAL")
+  printerName    String           @default("")
+  plannedMinutes Int              @default(0)
   completedAt    DateTime?
-  notes          String     @default("")
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  notes          String           @default("")
+  items          ProductionItem[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+// Uma peça do pedido, rastreada de forma independente pelo board de Produção.
+// Um pedido com vários produtos (ex: um kit com 2 peças diferentes) pode ter
+// uma peça em Acabamento e outra ainda na Fila ao mesmo tempo.
+model ProductionItem {
+  id          String        @id @default(cuid())
+  jobId       String
+  job         ProductionJob @relation(fields: [jobId], references: [id])
+  productId   String?
+  product     Product?      @relation(fields: [productId], references: [id])
+  name        String
+  quantity    Float         @default(1)
+  status      String        @default("WAITING")
+  completedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
 model CompetitorPrice {
@@ -309,52 +338,52 @@ model CompetitorPrice {
 
 // Custos fixos lançados por mês (AAAA-MM), com histórico.
 model FixedCostMonth {
-  id             String   @id @default(cuid())
-  month          String   @unique
-  rent           Float    @default(0)
-  software       Float    @default(0)
-  accounting     Float    @default(0)
-  internet       Float    @default(0)
-  maintenance    Float    @default(0)
-  marketing      Float    @default(0)
-  energy         Float    @default(0)
-  subscriptions  Float    @default(0)
-  other          Float    @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String   @id @default(cuid())
+  month         String   @unique
+  rent          Float    @default(0)
+  software      Float    @default(0)
+  accounting    Float    @default(0)
+  internet      Float    @default(0)
+  maintenance   Float    @default(0)
+  marketing     Float    @default(0)
+  energy        Float    @default(0)
+  subscriptions Float    @default(0)
+  other         Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 // Um custo variável datado (compra de material, comissão, frete, perda...).
 model VariableCostEntry {
-  id           String   @id @default(cuid())
-  date         DateTime
-  description  String   @default("")
-  filament     Float    @default(0)
-  commission   Float    @default(0)
-  energy       Float    @default(0)
-  shipping     Float    @default(0)
-  packaging    Float    @default(0)
-  waste        Float    @default(0)
-  salesFee     Float    @default(0)
-  maintenance  Float    @default(0)
-  createdAt    DateTime @default(now())
+  id          String   @id @default(cuid())
+  date        DateTime
+  description String   @default("")
+  filament    Float    @default(0)
+  commission  Float    @default(0)
+  energy      Float    @default(0)
+  shipping    Float    @default(0)
+  packaging   Float    @default(0)
+  waste       Float    @default(0)
+  salesFee    Float    @default(0)
+  maintenance Float    @default(0)
+  createdAt   DateTime @default(now())
 }
 
 // Extrato de caixa. Entradas de recebimento e saídas de custo variável são
 // geradas automaticamente (via `sourceType`/`sourceId`) e mantidas em sincronia
 // quando a origem é editada ou apagada; lançamentos manuais não têm origem.
 model CashEntry {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   date        DateTime
   category    String
   type        String // "IN" | "OUT"
-  description String    @default("")
-  status      String    @default("REALIZED") // "REALIZED" | "PLANNED"
+  description String   @default("")
+  status      String   @default("REALIZED") // "REALIZED" | "PLANNED"
   amount      Float
   orderId     String?
   sourceType  String? // "PAYMENT" | "VARIABLE_COST" | "FIXED_COST" | null (manual)
   sourceId    String?
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime @default(now())
 
   @@unique([sourceType, sourceId])
 }

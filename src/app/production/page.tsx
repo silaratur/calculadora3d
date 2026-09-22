@@ -6,7 +6,7 @@ import { AdminHeader } from "@/components/AdminHeader";
 import { IconFileText } from "@/components/Icons";
 
 type Customer = { id: string; name: string };
-type OrderQuote = { id: string; code: string | null; snapshotJson?: string };
+type OrderQuote = { id: string; code: string | null };
 type Order = {
   id: string;
   orderNumber: string;
@@ -19,35 +19,41 @@ type Order = {
   customer?: Customer | null;
   quote?: OrderQuote | null;
 };
-type Job = { id: string; status: string; priority: string; printerName: string; plannedMinutes: number; completedAt: string | null; notes: string; createdAt: string; order: Order };
+type ProductionItem = {
+  id: string;
+  name: string;
+  quantity: number;
+  status: string;
+  completedAt: string | null;
+  product?: { imageUrl: string; material: string; printTimeHours: number } | null;
+};
+type Job = {
+  id: string;
+  status: string;
+  priority: string;
+  printerName: string;
+  plannedMinutes: number;
+  notes: string;
+  order: Order;
+  items: ProductionItem[];
+};
 type Printer = { id: string; model: string };
 
-const columns = [
-  { id: "WAITING", label: "Na fila", hint: "Aguardando impressão" },
+const STATUSES = [
+  { id: "WAITING", label: "Fila", hint: "Aguardando impressão" },
   { id: "PRINTING", label: "Imprimindo", hint: "Na impressora" },
   { id: "FINISHING", label: "Acabamento", hint: "Pós-processamento e embalagem" },
-  { id: "COMPLETED", label: "Concluído", hint: "Pronto para envio — baixa o estoque do material automaticamente" },
+  { id: "COMPLETED", label: "Concluído", hint: "Baixa o estoque do material automaticamente" },
 ] as const;
 
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const hours = (minutes: number) => (minutes >= 60 ? `${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, "0")}` : `${minutes}min`);
 
-/**
- * Itens de verdade a imprimir, não só "1x nome do pedido" — quando o pedido
- * veio de um orçamento com vários produtos do Catálogo, usa a lista real do
- * snapshot; senão cai no nome/quantidade do próprio pedido (pedido criado
- * direto em Vendas, sem orçamento por trás).
- */
-function orderItems(order: Order): { name: string; quantity: number }[] {
-  if (order.quote?.snapshotJson) {
-    try {
-      const snapshot = JSON.parse(order.quote.snapshotJson) as { products?: { name: string; quantity: number }[] };
-      if (snapshot.products?.length) return snapshot.products.map((item) => ({ name: item.name, quantity: item.quantity || 1 }));
-    } catch {
-      // snapshot corrompido/formato antigo — cai no fallback abaixo
-    }
-  }
-  return [{ name: order.productName, quantity: order.quantity || 1 }];
+function jobDone(job: Job) {
+  return job.items.length > 0 && job.items.every((item) => item.status === "COMPLETED");
+}
+function jobDoneCount(job: Job) {
+  return job.items.filter((item) => item.status === "COMPLETED").length;
 }
 
 export default function ProductionPage() {
@@ -70,13 +76,35 @@ export default function ProductionPage() {
         return;
       }
       setNeedsLogin(false);
-      if (jobResponse.ok) setJobs((await jobResponse.json()) as Job[]);
-      if (printerResponse.ok) setPrinters((await printerResponse.json()) as Printer[]);
+      const loadedPrinters = printerResponse.ok ? ((await printerResponse.json()) as Printer[]) : [];
+      setPrinters(loadedPrinters);
+      let loadedJobs = jobResponse.ok ? ((await jobResponse.json()) as Job[]) : [];
+
+      // Só existe uma impressora cadastrada — já atribui ela nos pedidos sem
+      // impressora, em vez de obrigar escolher manualmente algo que só pode
+      // ser uma opção. Some sozinho assim que uma 2ª impressora for cadastrada.
+      if (loadedPrinters.length === 1) {
+        const onlyPrinter = loadedPrinters[0].model;
+        const toAssign = loadedJobs.filter((job) => !job.printerName.trim());
+        if (toAssign.length) {
+          loadedJobs = loadedJobs.map((job) => (job.printerName.trim() ? job : { ...job, printerName: onlyPrinter }));
+          void Promise.all(
+            toAssign.map((job) =>
+              fetch(`/api/production?id=${encodeURIComponent(job.id)}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ printerName: onlyPrinter }),
+              }),
+            ),
+          );
+        }
+      }
+      setJobs(loadedJobs);
     }
     void load();
   }, [reloadToken]);
 
-  async function update(job: Job, patch: Partial<Pick<Job, "status" | "priority" | "printerName" | "plannedMinutes" | "notes">>) {
+  async function updateJob(job: Job, patch: Partial<Pick<Job, "priority" | "printerName" | "notes">>) {
     setJobs((current) => current.map((item) => (item.id === job.id ? { ...item, ...patch } : item)));
     const response = await fetch(`/api/production?id=${encodeURIComponent(job.id)}`, {
       method: "PUT",
@@ -84,26 +112,61 @@ export default function ProductionPage() {
       body: JSON.stringify(patch),
     });
     if (!response.ok) {
-      setFeedback("Não foi possível atualizar o job. Verifique o login e tente novamente.");
+      setFeedback("Não foi possível atualizar o pedido. Verifique o login e tente novamente.");
       reload();
       return;
     }
     setFeedback(`${job.order.orderNumber} atualizado.`);
   }
 
-  function move(job: Job, direction: 1 | -1) {
-    const index = columns.findIndex((column) => column.id === job.status);
-    const target = columns[(index < 0 ? 0 : index) + direction];
+  async function moveItem(job: Job, item: ProductionItem, direction: 1 | -1) {
+    const index = STATUSES.findIndex((column) => column.id === item.status);
+    const target = STATUSES[(index < 0 ? 0 : index) + direction];
     if (!target) return;
-    void update(job, { status: target.id });
+
+    setJobs((current) =>
+      current.map((j) => (j.id !== job.id ? j : { ...j, items: j.items.map((it) => (it.id === item.id ? { ...it, status: target.id } : it)) })),
+    );
+    const response = await fetch(`/api/production/items?id=${encodeURIComponent(item.id)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: target.id }),
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      setFeedback(typeof body?.error === "string" ? body.error : "Não foi possível mover a peça. Verifique o login e tente novamente.");
+      reload();
+      return;
+    }
+    setFeedback(`${item.name} (${job.order.orderNumber}) → ${target.label}.`);
   }
 
-  const visible = useMemo(() => (showCompleted ? jobs : jobs.filter((job) => job.status !== "COMPLETED")), [jobs, showCompleted]);
-  const grouped = useMemo(
-    () => columns.map((column) => ({ ...column, jobs: visible.filter((job) => job.status === column.id) })),
-    [visible],
-  );
-  const open = jobs.filter((job) => job.status !== "COMPLETED");
+  const visible = useMemo(() => (showCompleted ? jobs : jobs.filter((job) => !jobDone(job))), [jobs, showCompleted]);
+  const laneCounts = useMemo(() => {
+    const counts: Record<string, number> = { WAITING: 0, PRINTING: 0, FINISHING: 0, COMPLETED: 0 };
+    visible.forEach((job) => job.items.forEach((item) => {
+      if (item.status === "COMPLETED" && !showCompleted) return;
+      counts[item.status] = (counts[item.status] ?? 0) + 1;
+    }));
+    return counts;
+  }, [visible, showCompleted]);
+
+  // Nome da impressora -> peça que já está imprimindo nela agora, pra travar
+  // o botão "Avançar" na hora (sem round-trip) quando a impressora escolhida
+  // já estiver ocupada — mesma regra checada de novo no servidor.
+  const printerInUse = useMemo(() => {
+    const map = new Map<string, { itemId: string; itemName: string; orderNumber: string }>();
+    jobs.forEach((job) => {
+      const printerName = job.printerName.trim();
+      if (!printerName) return;
+      job.items.forEach((item) => {
+        if (item.status === "PRINTING") map.set(printerName, { itemId: item.id, itemName: item.name, orderNumber: job.order.orderNumber });
+      });
+    });
+    return map;
+  }, [jobs]);
+
+  const open = jobs.filter((job) => !jobDone(job));
   const plannedMinutes = open.reduce((total, job) => total + job.plannedMinutes, 0);
   const urgent = open.filter((job) => job.priority === "URGENT" || job.priority === "HIGH").length;
   const late = open.filter((job) => job.order.dueDate && new Date(job.order.dueDate) < new Date()).length;
@@ -126,14 +189,14 @@ export default function ProductionPage() {
         <section className="library-heading">
           <div>
             <h1>Fila de Produção</h1>
-            <p>Da fila até a conclusão — recebimentos financeiros ficam em Vendas.</p>
+            <p>Cada peça do pedido se move sozinha — o pedido só fecha quando a última chegar em Concluído.</p>
           </div>
         </section>
 
         {feedback ? <p className="admin-feedback">{feedback}</p> : null}
 
         <section className="production-stats">
-          <div><span>Jobs abertos</span><strong>{open.length}</strong></div>
+          <div><span>Pedidos abertos</span><strong>{open.length}</strong></div>
           <div><span>Tempo planejado</span><strong>{hours(plannedMinutes)}</strong></div>
           <div><span>Prioridade alta</span><strong>{urgent}</strong></div>
           <div><span>Prazo vencido</span><strong>{late}</strong></div>
@@ -146,90 +209,157 @@ export default function ProductionPage() {
           <a className="new-quote-button" href="/sales">＋ Novo pedido</a>
         </div>
 
-        <div className="production-board">
-              {grouped.map((column) => (
-                <section className="board-column" key={column.id}>
-                  <header className="board-column-head">
-                    <div>
-                      <strong>{column.label}</strong>
-                      <small>{column.hint}</small>
+        <div className="swimlanes-scroll">
+          <div className="swimlanes">
+            <div className="swim-head-cell swim-order-col">Pedido</div>
+            {STATUSES.map((column) => (
+              <div className="swim-head-cell swim-lane-col" key={column.id}>
+                <span className={`lane-dot lane-${column.id.toLowerCase()}`} />
+                <div>
+                  <strong>{column.label}</strong>
+                  <small>{column.hint}</small>
+                </div>
+                <span className="material-badge">{laneCounts[column.id] ?? 0}</span>
+              </div>
+            ))}
+
+            {visible.map((job) => {
+              const dueDate = job.order.dueDate ? new Date(job.order.dueDate) : null;
+              const isLate = Boolean(dueDate && dueDate < new Date() && !jobDone(job));
+              const done = jobDoneCount(job);
+              const total = job.items.length;
+              const pct = total ? Math.round((done / total) * 100) : 0;
+              const isDone = jobDone(job);
+
+              return (
+                <div className={`swim-row${isDone ? " done" : ""}`} key={job.id}>
+                  <div className="swim-order-cell">
+                    <a className="material-badge" href={`/sales?highlight=${job.order.id}`} title="Ver o pedido completo em Vendas">{job.order.orderNumber}</a>
+                    {job.order.quote?.id ? (
+                      <a className="job-quote-link" href={`/quotes/${job.order.quote.id}/print`} target="_blank" rel="noreferrer" title="Abrir o orçamento original">
+                        <IconFileText className="nav-icon" /> {job.order.quote.code ?? "Ver orçamento"}
+                      </a>
+                    ) : null}
+                    <h2>{job.order.productName}</h2>
+                    <p className="card-detail">
+                      {job.order.customer?.name || "Cliente não informado"} · {brl(job.order.totalAmount)}
+                    </p>
+                    <p className={isLate ? "job-due late" : "job-due"}>
+                      {dueDate ? `Prazo: ${dueDate.toLocaleDateString("pt-BR")}` : "Sem prazo definido"}
+                      {isLate ? " · atrasado" : ""}
+                      {job.order.paymentStatus === "PAID" ? " · pago" : " · pagamento pendente"}
+                    </p>
+
+                    <div className="swim-progress">
+                      <div className="swim-progress-track"><div className="swim-progress-fill" style={{ width: `${pct}%` }} /></div>
+                      <span>{done}/{total}</span>
                     </div>
-                    <span className="material-badge">{column.jobs.length}</span>
-                  </header>
+                    {isDone ? <p className="swim-done-badge">✓ Pedido completo</p> : null}
 
-                  {column.jobs.map((job) => {
-                    const dueDate = job.order.dueDate ? new Date(job.order.dueDate) : null;
-                    const isLate = Boolean(dueDate && dueDate < new Date() && job.status !== "COMPLETED");
-                    const items = orderItems(job.order);
-                    const totalPieces = items.reduce((sum, item) => sum + item.quantity, 0);
+                    <div className="job-fields">
+                      <label>
+                        Prioridade
+                        <select value={job.priority} onChange={(event) => void updateJob(job, { priority: event.target.value })}>
+                          <option value="NORMAL">Normal</option>
+                          <option value="HIGH">Alta</option>
+                          <option value="URGENT">Urgente</option>
+                          <option value="LOW">Baixa</option>
+                        </select>
+                      </label>
+                      <label>
+                        Impressora
+                        <select value={job.printerName} onChange={(event) => void updateJob(job, { printerName: event.target.value })}>
+                          <option value="">Não atribuída</option>
+                          {printers.map((printer) => <option key={printer.id} value={printer.model}>{printer.model}</option>)}
+                          {job.printerName && !printers.some((printer) => printer.model === job.printerName) ? (
+                            <option value={job.printerName}>{job.printerName}</option>
+                          ) : null}
+                        </select>
+                      </label>
+                    </div>
+                    <label className="job-notes">
+                      Observações
+                      <textarea
+                        defaultValue={job.notes}
+                        placeholder="Cor, acabamento, cuidados de embalagem..."
+                        onBlur={(event) => { if (event.target.value !== job.notes) void updateJob(job, { notes: event.target.value }); }}
+                      />
+                    </label>
+                  </div>
+
+                  {STATUSES.map((column, columnIndex) => {
+                    // Peça concluída é terminal: sem seta pra voltar, e só aparece
+                    // aqui com "Mostrar concluídos" ligado — senão a coluna Concluído
+                    // ficaria lotada de peças já resolvidas, atrapalhando quem olha
+                    // a fila pra priorizar o que ainda falta.
+                    const itemsHere = job.items.filter((item) => item.status === column.id && (showCompleted || item.status !== "COMPLETED"));
                     return (
-                      <article className={`job-card priority-${job.priority.toLowerCase()}`} key={job.id}>
-                        <div className="card-top">
-                          <span className="material-badge">{job.order.orderNumber}</span>
-                        </div>
-                        {job.order.quote?.id ? (
-                          <a className="job-quote-link" href={`/quotes/${job.order.quote.id}/print`} target="_blank" rel="noreferrer" title="Abrir o orçamento original">
-                            <IconFileText className="nav-icon" /> {job.order.quote.code ?? "Ver orçamento"}
-                          </a>
-                        ) : null}
-
-                        <h2>{job.order.productName}</h2>
-                        <p className="card-detail">
-                          {job.order.customer?.name || "Cliente não informado"} · {brl(job.order.totalAmount)}
-                        </p>
-                        <p className={isLate ? "job-due late" : "job-due"}>
-                          {dueDate ? `Prazo: ${dueDate.toLocaleDateString("pt-BR")}` : "Sem prazo definido"}
-                          {isLate ? " · atrasado" : ""}
-                          {job.order.paymentStatus === "PAID" ? " · pago" : " · pagamento pendente"}
-                        </p>
-
-                        <div className="job-items">
-                          <span className="job-items-count">{totalPieces} {totalPieces === 1 ? "item" : "itens"} a imprimir</span>
-                          <ul className="job-items-list">
-                            {items.map((item, index) => (
-                              <li key={index}>{item.name}{item.quantity > 1 ? ` × ${item.quantity}` : ""}</li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        <div className="job-fields">
-                          <label>
-                            Impressora
-                            <select value={job.printerName} onChange={(event) => void update(job, { printerName: event.target.value })}>
-                              <option value="">Não atribuída</option>
-                              {printers.map((printer) => <option key={printer.id} value={printer.model}>{printer.model}</option>)}
-                              {job.printerName && !printers.some((printer) => printer.model === job.printerName) ? (
-                                <option value={job.printerName}>{job.printerName}</option>
-                              ) : null}
-                            </select>
-                          </label>
-                        </div>
-
-                        <label className="job-notes">
-                          Observações
-                          <textarea
-                            defaultValue={job.notes}
-                            placeholder="Cor, acabamento, cuidados de embalagem..."
-                            onBlur={(event) => { if (event.target.value !== job.notes) void update(job, { notes: event.target.value }); }}
-                          />
-                        </label>
-
-                        <div className="job-actions">
-                          <button className="secondary-button" type="button" disabled={job.status === columns[0].id} onClick={() => move(job, -1)}>← Voltar</button>
-                          <button className="primary-button" type="button" disabled={job.status === columns[columns.length - 1].id} onClick={() => move(job, 1)}>Avançar →</button>
-                        </div>
-                        {job.completedAt ? <p className="card-detail">Concluído em {new Date(job.completedAt).toLocaleDateString("pt-BR")}</p> : null}
-                      </article>
+                      <div className="swim-lane-cell" key={column.id}>
+                        {itemsHere.length === 0 ? <div className="swim-empty-slot" /> : null}
+                        {itemsHere.map((item) => {
+                          const isCompleted = item.status === "COMPLETED";
+                          const minutes = item.product ? Math.round(item.product.printTimeHours * item.quantity * 60) : 0;
+                          // Regra da bancada: uma impressora só imprime uma peça de cada
+                          // vez — sem impressora escolhida no pedido não dá pra checar
+                          // isso, então trava o avanço pra Imprimindo aqui (em vez de
+                          // deixar ir, o servidor recusar, e a peça "piscar" e voltar).
+                          const nextStatus = STATUSES[columnIndex + 1]?.id;
+                          const printerName = job.printerName.trim();
+                          const needsPrinterFirst = nextStatus === "PRINTING" && !printerName;
+                          const busyWith = nextStatus === "PRINTING" && printerName ? printerInUse.get(printerName) : undefined;
+                          const printerBusy = Boolean(busyWith && busyWith.itemId !== item.id);
+                          return (
+                            <article className={`item-card lane-${column.id.toLowerCase()}`} key={item.id}>
+                              <div className="item-card-top">
+                                {item.product?.imageUrl ? <img className="item-card-photo" src={item.product.imageUrl} alt="" /> : null}
+                                <div className="item-card-main">
+                                  <div className="item-card-name-row">
+                                    <span className="item-card-name">{item.name}</span>
+                                    {item.quantity > 1 ? <span className="item-card-qty">×{item.quantity}</span> : null}
+                                  </div>
+                                  {item.product ? (
+                                    <div className="item-card-meta">
+                                      {item.product.material ? <span title={item.product.material}>{item.product.material}</span> : null}
+                                      {minutes > 0 ? <span>{hours(minutes)}</span> : null}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              </div>
+                              <div className="item-card-controls">
+                                <button type="button" disabled={columnIndex === 0 || isCompleted} onClick={() => void moveItem(job, item, -1)} aria-label={`Voltar ${item.name}`}>‹</button>
+                                <button
+                                  type="button"
+                                  disabled={columnIndex === STATUSES.length - 1 || needsPrinterFirst || printerBusy}
+                                  title={
+                                    needsPrinterFirst
+                                      ? "Atribua uma impressora a este pedido antes de mover para Imprimindo"
+                                      : printerBusy && busyWith
+                                        ? `Impressora "${printerName}" já está imprimindo "${busyWith.itemName}" (pedido ${busyWith.orderNumber})`
+                                        : undefined
+                                  }
+                                  onClick={() => void moveItem(job, item, 1)}
+                                  aria-label={`Avançar ${item.name}`}
+                                >
+                                  ›
+                                </button>
+                              </div>
+                            </article>
+                          );
+                        })}
+                      </div>
                     );
                   })}
-
-                  {column.jobs.length === 0 ? <div className="empty-note">Nada nesta etapa.</div> : null}
-                </section>
-              ))}
-            </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         {jobs.length === 0 && !needsLogin ? (
           <div className="empty-note">Nenhum job de produção ainda. Crie um pedido em Vendas para abrir a fila.</div>
+        ) : null}
+        {jobs.length > 0 && visible.length === 0 && !needsLogin ? (
+          <div className="empty-note">Todos os pedidos abertos estão concluídos. Clique em &quot;Mostrar concluídos&quot; para vê-los.</div>
         ) : null}
       </div>
     </main>
