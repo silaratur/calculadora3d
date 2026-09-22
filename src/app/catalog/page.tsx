@@ -4,7 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconClock, IconSave, IconShieldAlert, IconShoppingBag, IconTag, IconTrash, IconX } from "@/components/Icons";
-import { calculateMultiMaterialCost, calculatePieceCost, calculateSuggestedPrice, effectiveMonthlyFixedCost, fixedCostPerPiece, type PricingMethod } from "@/lib/costing";
+import { calculateMultiMaterialCost, calculatePieceCost, calculateSuggestedPrice, effectiveMonthlyFixedCost, fixedCostPerPiece, markupPercentForFinalPrice, type PricingMethod } from "@/lib/costing";
 import { resizeImage } from "@/lib/image";
 
 type Material = { id: string; name: string; type: string; unitPrice: number; unitWeightGrams: number; costPerKg: number };
@@ -258,9 +258,30 @@ export default function CatalogPage() {
   const costSegmentsTotal = costSegments.reduce((sum, segment) => sum + segment.value, 0) || 1;
   const profit = suggestedPrice - cost.total;
   const realMarginPercent = suggestedPrice ? (profit / suggestedPrice) * 100 : 0;
+  // draft.markup guarda casas decimais extras (pra reproduzir exatamente o
+  // preço digitado em "Preço Final Sugerido") — só arredonda pra exibir.
+  const markupDisplay = Math.round(n(draft.markup));
 
   function bumpMarkup(delta: number) {
     setDraft({ ...draft, markup: String(Math.min(200, Math.max(0, n(draft.markup) + delta))) });
+  }
+
+  // Caminho inverso: usuário digita o preço final que quer testar, a gente
+  // acha o markup/margem que chega nele — ajuda a explorar oportunidades de
+  // precificação sem fazer a conta na mão. O preço digitado é o mandante:
+  // precisão de 4 casas no % evita que o preço volte arredondado (1 casa já
+  // deriva alguns centavos de diferença em preços mais altos).
+  function applyFinalPrice(value: string) {
+    const target = n(value);
+    if (!target || !cost.total) return;
+    const percent = markupPercentForFinalPrice({
+      unitCost: cost.total,
+      finalPrice: target,
+      channel: marketplace,
+      discountPerUnit: n(draft.discount),
+      method: draft.pricingMethod,
+    });
+    setDraft((current) => ({ ...current, markup: String(Math.round(percent * 10000) / 10000) }));
   }
 
   function addMaterialLine() {
@@ -573,7 +594,7 @@ export default function CatalogPage() {
                   <Title text="MARGEM DE LUCRO & TAXAS" />
                   <div className="margin-panel">
                     <div className="margin-panel-head"><span>MARGEM DE LUCRO DESEJADA</span><span className="margin-method-badge">{draft.pricingMethod === "markup" ? "Markup" : "Margem Real"}</span></div>
-                    <div className="margin-panel-value"><strong>{draft.markup}%</strong></div>
+                    <div className="margin-panel-value"><strong>{markupDisplay}%</strong></div>
                     <input type="range" min="0" max="200" value={draft.markup} onChange={(event) => setDraft({ ...draft, markup: event.target.value })} />
                     <div className="range-presets">
                       {markupPresets.map((value) => <button type="button" key={value} onClick={() => setDraft({ ...draft, markup: value })}>{value}%</button>)}
@@ -605,8 +626,19 @@ export default function CatalogPage() {
 
               <aside className="price-summary">
                 <span className="summary-eyebrow">PREÇO FINAL SUGERIDO</span>
-                <h2>{brl(suggestedPrice)}</h2>
+                <div className="price-final-editable">
+                  <span>R$</span>
+                  <input
+                    key={suggestedPrice.toFixed(2)}
+                    className="price-final-input"
+                    inputMode="decimal"
+                    defaultValue={suggestedPrice.toFixed(2).replace(".", ",")}
+                    onBlur={(event) => applyFinalPrice(event.target.value)}
+                    aria-label="Digitar o preço final e calcular a margem"
+                  />
+                </div>
                 <button className="saved-tag" type="submit"><IconSave className="nav-icon" /> {editingId ? "Atualizar" : "Salvar"}</button>
+                <small className="price-final-hint">Digite um preço pra calcular a margem automaticamente</small>
                 <hr />
                 <div className="summary-title"><span>Composição de Custos</span><strong>Custo Total: {brl(cost.total)}</strong></div>
                 <div className="cost-bar">
@@ -638,7 +670,7 @@ export default function CatalogPage() {
                 </div>
                 <div className="summary-card">
                   <Info label="Método de Precificação" value={draft.pricingMethod === "markup" ? "Markup" : "Margem Real"} />
-                  <Info label="% Aplicado" value={`${draft.markup}%`} />
+                  <Info label="% Aplicado" value={`${markupDisplay}%`} />
                   <Info label="Canal de Venda" value={marketplace.name} />
                   <Info label="Comissão do Canal" value={`${(marketplace.commissionRate * 100).toFixed(1)}%`} />
                   <Info label="Ads do Canal" value={`${(marketplace.adsRate * 100).toFixed(1)}%`} />

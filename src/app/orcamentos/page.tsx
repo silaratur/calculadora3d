@@ -4,12 +4,12 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AdminHeader } from "@/components/AdminHeader";
 import { IconBookmark, IconChevronDown, IconChevronUp, IconClock, IconCopy, IconDownload, IconSave, IconShoppingBag, IconTrash } from "@/components/Icons";
-import { calculateSuggestedPrice, type PricingMethod } from "@/lib/costing";
+import { calculateSuggestedPrice, markupPercentForFinalPrice, type PricingMethod } from "@/lib/costing";
 
 // Produto já cadastrado no Catálogo — custo e tempo de impressão vêm prontos
 // de lá (calculados com o motor multi-material do Catálogo), então aqui só
 // usamos os valores finais, sem recalcular nada.
-type Product = { id: string; name: string; sku: string; category: string; cost: number; printTimeHours: number; imageUrl?: string };
+type Product = { id: string; name: string; sku: string; category: string; cost: number; price: number; printTimeHours: number; imageUrl?: string };
 type Supply = { id: string; name: string; category: string; unitCost: number };
 type Marketplace = { id: string; name: string; commissionRate: number; fixedFee: number; adsRate: number };
 type CustomExtra = { id: string; name: string; unitCost: number };
@@ -224,13 +224,18 @@ function OrcamentosForm() {
   );
 
   const calc = useMemo(() => {
-    const productsCost = productLinesWithData.reduce((sum, entry) => sum + entry.product.cost * (n(entry.line.quantity) || 1), 0);
+    // Base é o Preço Final Sugerido de cada produto no Catálogo (já com o
+    // markup/margem definidos lá), não o custo — senão o orçamento recalcula
+    // do zero em cima do custo e ignora o preço que já foi ajustado no
+    // Catálogo (inclusive via "digite o preço final"). O markup do orçamento
+    // ainda se aplica por cima dessa base, junto com os insumos/extras.
+    const productsCost = productLinesWithData.reduce((sum, entry) => sum + entry.product.price * (n(entry.line.quantity) || 1), 0);
     const productsPrintTime = productLinesWithData.reduce((sum, entry) => sum + entry.product.printTimeHours * (n(entry.line.quantity) || 1), 0);
     const presetsCost = supplyLinesWithData.reduce((sum, entry) => sum + (n(entry.line.unitCost) || entry.supply.unitCost) * (n(entry.line.quantity) || 1), 0);
     const customCost = customExtras.reduce((sum, item) => sum + item.unitCost, 0);
     const suppliesCost = presetsCost + customCost;
     // Sem reserva para perdas aqui — cada produto do catálogo já embute o
-    // próprio risco de falha/refugo no custo dele, calculado lá na origem.
+    // próprio risco de falha/refugo no preço dele, calculado lá na origem.
     const costWithReserve = productsCost + suppliesCost;
     const pricing = calculateSuggestedPrice({
       unitCost: costWithReserve,
@@ -388,6 +393,28 @@ function OrcamentosForm() {
   }
 
   const realMarginPercent = calc.price ? (calc.profit / calc.price) * 100 : 0;
+  // markup guarda casas decimais extras (evita o preço voltar arredondado
+  // quando calculado a partir do % — mesma lógica do Catálogo) — só
+  // arredonda pra exibir.
+  const markupDisplay = Math.round(n(markup));
+
+  // Caminho inverso: digitar o preço final do orçamento (ex: 23,90) acha o
+  // markup que chega nele, em vez de sobrescrever o preço direto — mesmo
+  // mecanismo do Catálogo, só que aplicado sobre a base do orçamento inteiro
+  // (produtos já com preço do Catálogo + insumos/extras).
+  function applyFinalPrice(value: string) {
+    const target = n(value);
+    if (!target || !calc.costWithReserve) return;
+    const percent = markupPercentForFinalPrice({
+      unitCost: calc.costWithReserve,
+      finalPrice: target,
+      channel: marketplace,
+      discountPerUnit: n(discount),
+      method: pricingMethod,
+    });
+    setMarkup(String(Math.round(percent * 10000) / 10000));
+  }
+
   const costSegments = [
     { label: "Produtos", value: calc.productsCost, color: legendColors[0] },
     { label: "Insumos", value: calc.suppliesCost, color: legendColors[4] },
@@ -463,8 +490,8 @@ function OrcamentosForm() {
                           .map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
                       </select>
                       {product ? (
-                        <small className="product-line-info" title={`${fmtHours(product.printTimeHours * quantity)} de impressão · ${brl(product.cost * quantity)}${quantity > 1 ? ` (${quantity}x ${brl(product.cost)} cada)` : ""}`}>
-                          <IconClock className="nav-icon" /> {fmtHours(product.printTimeHours * quantity)} · {brl(product.cost * quantity)}
+                        <small className="product-line-info" title={`${fmtHours(product.printTimeHours * quantity)} de impressão · ${brl(product.price * quantity)}${quantity > 1 ? ` (${quantity}x ${brl(product.price)} cada)` : ""}`}>
+                          <IconClock className="nav-icon" /> {fmtHours(product.printTimeHours * quantity)} · {brl(product.price * quantity)}
                         </small>
                       ) : <span />}
                       <span className="qty-stepper">
@@ -571,7 +598,7 @@ function OrcamentosForm() {
                   </span>
                   <span className="range-current">
                     <span className="margin-method-badge">{pricingMethod === "markup" ? "Markup" : "Margem Real"}</span>
-                    <strong>{markup}%</strong>
+                    <strong>{markupDisplay}%</strong>
                   </span>
                 </div>
               </div>
@@ -602,8 +629,19 @@ function OrcamentosForm() {
           <div className="price-summary-col">
           <aside className="price-summary">
             <span className="summary-eyebrow">PREÇO FINAL SUGERIDO</span>
-            <h2>{brl(calc.price)}</h2>
+            <div className="price-final-editable">
+              <span>R$</span>
+              <input
+                key={calc.price.toFixed(2)}
+                className="price-final-input"
+                inputMode="decimal"
+                defaultValue={calc.price.toFixed(2).replace(".", ",")}
+                onBlur={(event) => applyFinalPrice(event.target.value)}
+                aria-label="Digitar o preço final e calcular a margem"
+              />
+            </div>
             <button className="saved-tag" onClick={save}><IconSave className="nav-icon" /> Salvar</button>
+            <small className="price-final-hint">Digite um preço pra calcular a margem automaticamente</small>
             <hr />
             <div className="summary-title"><span>Composição de Custos</span><strong>Custo Total: {brl(calc.costWithReserve)}</strong></div>
             <div className="cost-bar">
@@ -626,7 +664,7 @@ function OrcamentosForm() {
             </div>
             <div className="summary-card">
               <Info label="Método de Precificação" value={pricingMethod === "markup" ? "Markup" : "Margem Real"} />
-              <Info label="% Aplicado" value={`${markup}%`} />
+              <Info label="% Aplicado" value={`${markupDisplay}%`} />
               <Info label="Canal de Venda" value={marketplace.name} />
               <Info label="Comissão do Canal" value={`${(marketplace.commissionRate * 100).toFixed(1)}%`} />
               <Info label="Ads do Canal" value={`${(marketplace.adsRate * 100).toFixed(1)}%`} />

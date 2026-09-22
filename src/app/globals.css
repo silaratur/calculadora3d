@@ -149,6 +149,10 @@ textarea:focus {
 .field-grid small, .calc-section label small { color: #8a7472; font-size: 10px; }
 .metric-box, .metric-wide { background: #fbf6ef; border: 1px solid var(--calc-border); border-radius: 12px; display: flex; flex-direction: column; justify-content: center; padding: 13px; }
 .metric-box span, .metric-wide span { color: var(--calc-muted); font-size: 11px; }
+/* Só quando o span é rótulo com ícone (ex: "🕐 Tempo total de impressão") —
+   o outro uso de .metric-wide span (Calculadora, texto com <br/> dentro) não
+   pode virar flex, senão perde a quebra de linha. */
+.metric-wide span:has(.nav-icon) { align-items: center; display: inline-flex; gap: 6px; }
 .metric-box strong { color: #602f32; font-family: var(--font-mono); font-size: 18px; margin-top: 4px; }
 .metric-box small { color: var(--calc-muted); font-size: 10px; }
 .metric-value-label { color: var(--calc-muted) !important; font-family: var(--font-sans), Arial, sans-serif !important; font-weight: 600; letter-spacing: .06em; margin-top: 6px; text-transform: uppercase; }
@@ -227,6 +231,30 @@ textarea:focus {
 .price-summary { position: sticky; top: 94px; padding: 23px; }
 .summary-eyebrow, .profit-grid span { color: var(--calc-muted); font-size: 10px; letter-spacing: .08em; }
 .price-summary h2 { color: #602f32; font-family: var(--font-sans), Arial, sans-serif; font-size: 30px; margin: 7px 0 0; }
+.price-final-editable { align-items: baseline; display: flex; gap: 4px; margin: 7px 0 0; }
+.price-final-editable span { color: #602f32; font-family: var(--font-sans), Arial, sans-serif; font-size: 30px; }
+/* especificidade alta + !important: o seletor genérico de input (base do
+   formulário) tem 3 :not() + elemento, então "vence" qualquer classe simples
+   sem isso — esse campo precisa parecer o texto grande de preço, não um
+   input comum. */
+.price-summary .price-final-editable input.price-final-input {
+  background: #faf3ec !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  color: #602f32 !important;
+  font-family: var(--font-sans), Arial, sans-serif !important;
+  font-size: 30px !important;
+  min-height: auto !important;
+  padding: 2px 9px !important;
+  width: 160px;
+}
+.price-summary .price-final-editable input.price-final-input:hover,
+.price-summary .price-final-editable input.price-final-input:focus {
+  border-color: var(--calc-border) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+.price-final-hint { color: var(--calc-muted); display: block; font-size: 10px; margin-top: 4px; }
 .saved-tag { align-items: center; background: var(--calc-copper); border: 0; border-radius: 8px; color: white; cursor: pointer; display: inline-flex; float: right; font-weight: 600; gap: 6px; margin-top: -32px; padding: 9px 12px; }
 .saved-tag:hover { background: #4c2528; }
 .price-summary hr, .summary-card hr { border: 0; border-top: 1px solid var(--calc-border); margin: 19px 0; }

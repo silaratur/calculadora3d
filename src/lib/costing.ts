@@ -216,6 +216,29 @@ export function calculateSuggestedPrice({
   };
 }
 
+/**
+ * Caminho inverso de `calculateSuggestedPrice`: em vez de markup → preço,
+ * parte do preço final que o produto deveria ter e descobre qual markup/margem
+ * (%) chega nele — pra achar boas oportunidades de precificação testando o
+ * preço que o mercado aceita primeiro.
+ */
+export function markupPercentForFinalPrice({
+  unitCost,
+  finalPrice,
+  channel = noChannelFees,
+  discountPerUnit = 0,
+  method = "markup",
+}: Omit<SuggestedPriceInput, "markupPercent"> & { finalPrice: number }): number {
+  if (unitCost <= 0) return 0;
+  const takeRate = Math.max(1 - channel.commissionRate - channel.adsRate, 0.01);
+  const beforeFees = (finalPrice + discountPerUnit) * takeRate - channel.fixedFee;
+  if (beforeFees <= 0) return 0;
+  if (method === "margin") {
+    return Math.max(0, (1 - unitCost / beforeFees) * 100);
+  }
+  return Math.max(0, (beforeFees / unitCost - 1) * 100);
+}
+
 export type OrderMetricsInput = {
   quantity: number;
   /** Preço praticado por unidade. */
