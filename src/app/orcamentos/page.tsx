@@ -93,21 +93,42 @@ function OrcamentosForm() {
   const productId = searchParams.get("productId");
 
   useEffect(() => {
+    // Catálogo pode mudar (preço/custo de produto editado) enquanto esta aba
+    // de Orçamentos continua aberta — sem no-store o navegador pode servir uma
+    // resposta em cache, e sem o refetch abaixo o orçamento calcularia sempre
+    // com o valor que estava em memória desde o carregamento da página.
+    async function loadCatalog() {
+      const [productsRes, suppliesRes] = await Promise.all([
+        fetch("/api/products", { cache: "no-store" }),
+        fetch("/api/supplies", { cache: "no-store" }),
+      ]);
+      if (productsRes.ok) setProducts((await productsRes.json()) as Product[]);
+      if (suppliesRes.ok) { const data = (await suppliesRes.json()) as Supply[]; if (data.length) setSupplies(data); }
+    }
     async function load() {
-      const responses = await Promise.all([fetch("/api/products"), fetch("/api/supplies"), fetch("/api/settings"), fetch("/api/marketplaces"), fetch("/api/customers")]);
-      if (responses[0].ok) setProducts((await responses[0].json()) as Product[]);
-      if (responses[1].ok) { const data = (await responses[1].json()) as Supply[]; if (data.length) setSupplies(data); }
-      if (responses[2].ok) {
-        const data = (await responses[2].json()) as Settings & { defaultMarkup: number };
+      await loadCatalog();
+      const responses = await Promise.all([fetch("/api/settings"), fetch("/api/marketplaces"), fetch("/api/customers")]);
+      if (responses[0].ok) {
+        const data = (await responses[0].json()) as Settings & { defaultMarkup: number };
         if (!quoteId) setMarkup(String(data.defaultMarkup));
         setSettings({ companyName: data.companyName, companyContact: data.companyContact, quoteDeliveryText: data.quoteDeliveryText, quoteWarrantyText: data.quoteWarrantyText, quotePaymentText: data.quotePaymentText });
       }
       // "Venda Direta" (0% de taxas) fica sempre disponível — antes, se você já
       // tivesse canais cadastrados em Configurações, ela desaparecia da lista.
-      if (responses[3].ok) { const data = (await responses[3].json()) as Marketplace[]; setMarketplaces([defaultMarketplace, ...data]); }
-      if (responses[4].ok) setCustomers((await responses[4].json()) as CustomerLead[]);
+      if (responses[1].ok) { const data = (await responses[1].json()) as Marketplace[]; setMarketplaces([defaultMarketplace, ...data]); }
+      if (responses[2].ok) setCustomers((await responses[2].json()) as CustomerLead[]);
     }
     void load();
+
+    function onFocus() {
+      if (document.visibilityState === "visible") void loadCatalog();
+    }
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
   }, [quoteId]);
 
   useEffect(() => {

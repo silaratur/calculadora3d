@@ -40,6 +40,22 @@ export function fixedCostPerPiece(settings: PricingSettingsLike, monthlyTotalOve
   return monthly / Math.max(settings.monthlyPieces, 1);
 }
 
+/**
+ * Total de Custos Fixos a usar no cálculo do mês corrente. Se já existe
+ * lançamento do mês em Custos → Fixos, usa ele; se o mês começou e ninguém
+ * lançou ainda, repete o total do lançamento anterior mais recente (em vez de
+ * cair nos campos antigos de `PricingSettings`, que não têm mais tela pra
+ * editar). Só retorna null se nunca houve nenhum lançamento.
+ */
+export function effectiveMonthlyFixedCost(months: { month: string; total: number }[], currentMonth: string): number | null {
+  const exact = months.find((item) => item.month === currentMonth);
+  if (exact) return exact.total;
+  const mostRecentPast = months
+    .filter((item) => item.month < currentMonth)
+    .sort((a, b) => (a.month < b.month ? 1 : -1))[0];
+  return mostRecentPast?.total ?? null;
+}
+
 export type PieceCostInput = {
   weightGrams: number;
   /** Preço do rolo inteiro; caia para o custo por kg quando não houver. */

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconTrash } from "@/components/Icons";
@@ -64,7 +64,7 @@ const currentMonth = () => todayLocal().slice(0, 7);
 
 const fixedFields: { key: keyof typeof emptyFixed; label: string }[] = [
   { key: "rent", label: "Aluguel" },
-  { key: "software", label: "Software / SaaS" },
+  { key: "software", label: "Prestação Impressora 3D" },
   { key: "accounting", label: "Contabilidade" },
   { key: "internet", label: "Internet" },
   { key: "maintenance", label: "Manutenção" },
@@ -80,6 +80,11 @@ const fixedMonthToDraft = (item: FixedCostMonth) => ({
   internet: String(item.internet), maintenance: String(item.maintenance), marketing: String(item.marketing),
   energy: String(item.energy), subscriptions: String(item.subscriptions), other: String(item.other),
 });
+// Sem lançamento do mês pedido ainda: repete os valores do mês anterior mais
+// recente, pra não começar o mês do zero — o cálculo de preço (effectiveMonthlyFixedCost
+// em costing.ts) já assume esse mesmo comportamento.
+const mostRecentPastMonth = (months: FixedCostMonth[], month: string) =>
+  months.filter((item) => item.month < month).sort((a, b) => (a.month < b.month ? 1 : -1))[0];
 
 const variableFields: { key: keyof typeof emptyVariable; label: string }[] = [
   { key: "filament", label: "Filamento" },
@@ -113,6 +118,11 @@ export default function CostsPage() {
   const [fixedMonths, setFixedMonths] = useState<FixedCostMonth[]>([]);
   const [variableEntries, setVariableEntries] = useState<VariableCostEntry[]>([]);
   const [fixedDraft, setFixedDraft] = useState(emptyFixed);
+  const [repeatedFromMonth, setRepeatedFromMonth] = useState<string | null>(null);
+  // Só pra ler o mês selecionado no form dentro do load() sem colocar
+  // fixedDraft nas deps do efeito (isso reexecutaria o fetch a cada tecla).
+  const fixedDraftMonthRef = useRef(fixedDraft.month);
+  useEffect(() => { fixedDraftMonthRef.current = fixedDraft.month; }, [fixedDraft.month]);
   const [variableDraft, setVariableDraft] = useState(emptyVariable);
   const [settings, setSettings] = useState<PricingSettings>(emptySettings);
   const [productionDraft, setProductionDraft] = useState(settingsToProductionDraft(emptySettings));
@@ -129,10 +139,16 @@ export default function CostsPage() {
       if (fixedRes.ok) {
         const months = (await fixedRes.json()) as FixedCostMonth[];
         setFixedMonths(months);
-        setFixedDraft((current) => {
-          const existing = months.find((item) => item.month === current.month);
-          return existing ? fixedMonthToDraft(existing) : current;
-        });
+        const targetMonth = fixedDraftMonthRef.current;
+        const existing = months.find((item) => item.month === targetMonth);
+        if (existing) {
+          setRepeatedFromMonth(null);
+          setFixedDraft(fixedMonthToDraft(existing));
+        } else {
+          const past = mostRecentPastMonth(months, targetMonth);
+          if (past) { setRepeatedFromMonth(past.month); setFixedDraft({ ...fixedMonthToDraft(past), month: targetMonth }); }
+          else setRepeatedFromMonth(null);
+        }
       }
       if (variableRes.ok) setVariableEntries((await variableRes.json()) as VariableCostEntry[]);
       if (settingsRes.ok) {
@@ -222,8 +238,14 @@ export default function CostsPage() {
               <label>Mês<input type="month" value={fixedDraft.month} onChange={(event) => {
                 const month = event.target.value;
                 const existing = fixedMonths.find((item) => item.month === month);
-                setFixedDraft(existing ? fixedMonthToDraft(existing) : { ...emptyFixed, month });
+                if (existing) { setRepeatedFromMonth(null); setFixedDraft(fixedMonthToDraft(existing)); return; }
+                const past = mostRecentPastMonth(fixedMonths, month);
+                if (past) { setRepeatedFromMonth(past.month); setFixedDraft({ ...fixedMonthToDraft(past), month }); }
+                else { setRepeatedFromMonth(null); setFixedDraft({ ...emptyFixed, month }); }
               }} /></label>
+              {repeatedFromMonth ? (
+                <p className="admin-feedback">Nenhum lançamento para {fixedDraft.month} ainda — repetindo os valores de {repeatedFromMonth}. Confira e clique em Salvar para confirmar este mês.</p>
+              ) : null}
               <div className="form-grid">
                 {fixedFields.map((field) => (
                   <label key={field.key}>{field.label}

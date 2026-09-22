@@ -22,9 +22,10 @@ export async function GET() {
   if (!(await authenticated())) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   return NextResponse.json(
     await prisma.productionJob.findMany({
-      // quote: só id+code — pra linkar direto pro orçamento que gerou o
-      // pedido (nem todo pedido vem de um orçamento convertido, daí opcional).
-      include: { order: { include: { customer: true, quote: { select: { id: true, code: true } } } } },
+      // quote: id+code linkam direto pro orçamento de origem; snapshotJson
+      // traz a lista real de produtos pra mostrar "quais itens imprimir" no
+      // card (nem todo pedido vem de um orçamento convertido, daí opcional).
+      include: { order: { include: { customer: true, quote: { select: { id: true, code: true, snapshotJson: true } } } } },
       orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
     }),
   );

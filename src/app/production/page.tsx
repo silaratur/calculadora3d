@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
+import { IconFileText } from "@/components/Icons";
 
 type Customer = { id: string; name: string };
-type OrderQuote = { id: string; code: string | null };
+type OrderQuote = { id: string; code: string | null; snapshotJson?: string };
 type Order = {
   id: string;
   orderNumber: string;
@@ -28,16 +29,26 @@ const columns = [
   { id: "COMPLETED", label: "Concluído", hint: "Pronto para envio — baixa o estoque do material automaticamente" },
 ] as const;
 
-const priorities = [
-  { id: "LOW", label: "Baixa" },
-  { id: "NORMAL", label: "Normal" },
-  { id: "HIGH", label: "Alta" },
-  { id: "URGENT", label: "Urgente" },
-] as const;
-
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const hours = (minutes: number) => (minutes >= 60 ? `${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, "0")}` : `${minutes}min`);
-const priorityLabel = (id: string) => priorities.find((item) => item.id === id)?.label ?? id;
+
+/**
+ * Itens de verdade a imprimir, não só "1x nome do pedido" — quando o pedido
+ * veio de um orçamento com vários produtos do Catálogo, usa a lista real do
+ * snapshot; senão cai no nome/quantidade do próprio pedido (pedido criado
+ * direto em Vendas, sem orçamento por trás).
+ */
+function orderItems(order: Order): { name: string; quantity: number }[] {
+  if (order.quote?.snapshotJson) {
+    try {
+      const snapshot = JSON.parse(order.quote.snapshotJson) as { products?: { name: string; quantity: number }[] };
+      if (snapshot.products?.length) return snapshot.products.map((item) => ({ name: item.name, quantity: item.quantity || 1 }));
+    } catch {
+      // snapshot corrompido/formato antigo — cai no fallback abaixo
+    }
+  }
+  return [{ name: order.productName, quantity: order.quantity || 1 }];
+}
 
 export default function ProductionPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -149,29 +160,37 @@ export default function ProductionPage() {
                   {column.jobs.map((job) => {
                     const dueDate = job.order.dueDate ? new Date(job.order.dueDate) : null;
                     const isLate = Boolean(dueDate && dueDate < new Date() && job.status !== "COMPLETED");
+                    const items = orderItems(job.order);
+                    const totalPieces = items.reduce((sum, item) => sum + item.quantity, 0);
                     return (
                       <article className={`job-card priority-${job.priority.toLowerCase()}`} key={job.id}>
                         <div className="card-top">
-                          <span className="job-card-badges">
-                            <span className="material-badge">{job.order.orderNumber}</span>
-                            {job.order.quote?.id ? (
-                              <a className="job-quote-link" href={`/quotes/${job.order.quote.id}/print`} target="_blank" rel="noreferrer" title="Abrir o orçamento original">
-                                {job.order.quote.code ?? "Orçamento"}
-                              </a>
-                            ) : null}
-                          </span>
-                          <span className="project-status">{priorityLabel(job.priority)}</span>
+                          <span className="material-badge">{job.order.orderNumber}</span>
                         </div>
+                        {job.order.quote?.id ? (
+                          <a className="job-quote-link" href={`/quotes/${job.order.quote.id}/print`} target="_blank" rel="noreferrer" title="Abrir o orçamento original">
+                            <IconFileText className="nav-icon" /> {job.order.quote.code ?? "Ver orçamento"}
+                          </a>
+                        ) : null}
 
                         <h2>{job.order.productName}</h2>
                         <p className="card-detail">
-                          {job.order.customer?.name || "Cliente não informado"} · {job.order.quantity} un · {brl(job.order.totalAmount)}
+                          {job.order.customer?.name || "Cliente não informado"} · {brl(job.order.totalAmount)}
                         </p>
                         <p className={isLate ? "job-due late" : "job-due"}>
                           {dueDate ? `Prazo: ${dueDate.toLocaleDateString("pt-BR")}` : "Sem prazo definido"}
                           {isLate ? " · atrasado" : ""}
                           {job.order.paymentStatus === "PAID" ? " · pago" : " · pagamento pendente"}
                         </p>
+
+                        <div className="job-items">
+                          <span className="job-items-count">{totalPieces} {totalPieces === 1 ? "item" : "itens"} a imprimir</span>
+                          <ul className="job-items-list">
+                            {items.map((item, index) => (
+                              <li key={index}>{item.name}{item.quantity > 1 ? ` × ${item.quantity}` : ""}</li>
+                            ))}
+                          </ul>
+                        </div>
 
                         <div className="job-fields">
                           <label>
@@ -183,23 +202,6 @@ export default function ProductionPage() {
                                 <option value={job.printerName}>{job.printerName}</option>
                               ) : null}
                             </select>
-                          </label>
-                          <label>
-                            Prioridade
-                            <select value={job.priority} onChange={(event) => void update(job, { priority: event.target.value })}>
-                              {priorities.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-                            </select>
-                          </label>
-                          <label>
-                            Tempo (min)
-                            <input
-                              inputMode="numeric"
-                              defaultValue={job.plannedMinutes}
-                              onBlur={(event) => {
-                                const minutes = Math.max(0, Math.round(Number(event.target.value.replace(",", ".")) || 0));
-                                if (minutes !== job.plannedMinutes) void update(job, { plannedMinutes: minutes });
-                              }}
-                            />
                           </label>
                         </div>
 

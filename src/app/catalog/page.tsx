@@ -4,7 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconClock, IconSave, IconShieldAlert, IconShoppingBag, IconTag, IconTrash, IconX } from "@/components/Icons";
-import { calculateMultiMaterialCost, calculatePieceCost, calculateSuggestedPrice, fixedCostPerPiece, type PricingMethod } from "@/lib/costing";
+import { calculateMultiMaterialCost, calculatePieceCost, calculateSuggestedPrice, effectiveMonthlyFixedCost, fixedCostPerPiece, type PricingMethod } from "@/lib/costing";
 import { resizeImage } from "@/lib/image";
 
 type Material = { id: string; name: string; type: string; unitPrice: number; unitWeightGrams: number; costPerKg: number };
@@ -163,7 +163,7 @@ export default function CatalogPage() {
       if (marketplaceRes.ok) { const data = (await marketplaceRes.json()) as Marketplace[]; setMarketplaces([defaultMarketplace, ...data]); }
       if (fixedRes.ok) {
         const data = (await fixedRes.json()) as { month: string; total: number }[];
-        setCurrentMonthFixedCost(data.find((item) => item.month === month)?.total ?? null);
+        setCurrentMonthFixedCost(effectiveMonthlyFixedCost(data, month));
       }
     }
     void load();

@@ -22,13 +22,16 @@ async function isAuthenticated() {
   return Boolean(await getCurrentUser());
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!(await isAuthenticated())) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
+  // Seletores (Orçamentos/Catálogo) só querem os disponíveis; a Biblioteca
+  // (?all=true) precisa ver os desativados também, pra poder reativar.
+  const includeInactive = new URL(request.url).searchParams.get("all") === "true";
   const materials = await prisma.material.findMany({
-    where: { active: true },
+    where: includeInactive ? {} : { active: true },
     orderBy: { name: "asc" },
   });
 
@@ -80,4 +83,15 @@ export async function DELETE(request: Request) {
   if (!id) return NextResponse.json({ error: "ID obrigatório" }, { status: 400 });
   await prisma.material.update({ where: { id }, data: { active: false } });
   return NextResponse.json({ success: true });
+}
+
+/** Reativar sem reabrir o formulário inteiro — só troca o active. */
+export async function PATCH(request: Request) {
+  if (!(await isAuthenticated())) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const id = new URL(request.url).searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "ID obrigatório" }, { status: 400 });
+  const parsed = z.object({ active: z.boolean() }).safeParse(await request.json());
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  const material = await prisma.material.update({ where: { id }, data: { active: parsed.data.active } });
+  return NextResponse.json(material);
 }

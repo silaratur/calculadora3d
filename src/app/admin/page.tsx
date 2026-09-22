@@ -98,9 +98,9 @@ export default function AdminPage() {
     async function loadLibrary() {
       setLoading(true);
       const [materialResponse, printerResponse, supplyResponse] = await Promise.all([
-        fetch("/api/materials"),
+        fetch("/api/materials?all=true"),
         fetch("/api/printers"),
-        fetch("/api/supplies"),
+        fetch("/api/supplies?all=true"),
       ]);
 
       const needsLogin = [materialResponse, printerResponse, supplyResponse].some((response) => response.status === 401);
@@ -163,6 +163,17 @@ export default function AdminPage() {
   async function deletePreset(endpoint: string, id: string) {
     if (!window.confirm("Desativar este preset? O histórico será preservado.")) return;
     const response = await fetch(`${endpoint}?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    if (response.ok) reload();
+  }
+
+  // Traz de volta um item desativado (ex: repôs o estoque) sem precisar
+  // reabrir e reenviar o formulário inteiro.
+  async function reactivatePreset(endpoint: string, id: string) {
+    const response = await fetch(`${endpoint}?id=${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: true }),
+    });
     if (response.ok) reload();
   }
 
@@ -298,13 +309,20 @@ export default function AdminPage() {
             <div className="preset-grid">
               {materials.map((item) => {
                 const lowStock = item.stockGrams <= item.lowStockThresholdGrams;
+                const cardClass = ["preset-card", lowStock && item.active ? "low-stock" : "", !item.active ? "inactive" : ""].filter(Boolean).join(" ");
                 return (
-                  <article className={lowStock ? "preset-card low-stock" : "preset-card"} key={item.id}>
+                  <article className={cardClass} key={item.id}>
                     <div className="card-top">
                       <span className="material-badge">{item.type}</span>
                       <span className="card-actions">
-                        <button className="edit-button" onClick={() => editPreset("filaments", item)}>Editar</button>
-                        <button className="delete-button" onClick={() => deletePreset("/api/materials", item.id)} aria-label={`Excluir ${item.name}`}><IconTrash className="nav-icon" /></button>
+                        {item.active ? (
+                          <>
+                            <button className="edit-button" onClick={() => editPreset("filaments", item)}>Editar</button>
+                            <button className="delete-button" onClick={() => deletePreset("/api/materials", item.id)} aria-label={`Excluir ${item.name}`}><IconTrash className="nav-icon" /></button>
+                          </>
+                        ) : (
+                          <button className="edit-button" type="button" onClick={() => reactivatePreset("/api/materials", item.id)}>Reativar</button>
+                        )}
                       </span>
                     </div>
                     <h3>{item.name}</h3>
@@ -312,7 +330,8 @@ export default function AdminPage() {
                     <strong>{money(item.unitPrice || item.costPerKg)} <small>({item.unitWeightGrams}g)</small></strong>
                     <p className="card-detail">
                       {money((item.unitPrice || item.costPerKg) / Math.max(item.unitWeightGrams, 1))}/g · Estoque: {item.stockGrams}g
-                      {lowStock ? <span className="low-stock-badge">Estoque baixo</span> : null}
+                      {lowStock && item.active ? <span className="low-stock-badge">Estoque baixo</span> : null}
+                      {!item.active ? <span className="inactive-badge">Desativado — sem estoque</span> : null}
                     </p>
                     <p className="card-detail">Compra: {item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString("pt-BR") : "não informada"} {item.purchaseLink ? <a href={item.purchaseLink} target="_blank" rel="noreferrer">Abrir link</a> : null}</p>
                   </article>
@@ -349,7 +368,28 @@ export default function AdminPage() {
               <div className="form-actions"><button className="primary-button" type="submit">{editingId ? "Atualizar Insumo" : "Salvar Insumo Preset"}</button>{editingId ? <button className="secondary-button" type="button" onClick={() => { setEditingId(null); setSupply(emptySupply); }}>Cancelar</button> : null}</div>
             </form>
             <div className="preset-grid">
-              {supplies.map((item) => <article className="preset-card" key={item.id}><div className="card-top"><span className="material-badge supply-badge">{item.category}</span><span className="card-actions"><button className="edit-button" onClick={() => editPreset("supplies", item)}>Editar</button><button className="delete-button" onClick={() => deletePreset("/api/supplies", item.id)} aria-label={`Excluir ${item.name}`}><IconTrash className="nav-icon" /></button></span></div><h3>{item.name}</h3><p>Categoria: {item.category}</p><strong>{money(item.unitCost)} <small>por unidade</small></strong><p className="card-detail">Compra: {item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString("pt-BR") : "não informada"} {item.purchaseLink ? <a href={item.purchaseLink} target="_blank" rel="noreferrer">Abrir link</a> : null}</p></article>)}
+              {supplies.map((item) => (
+                <article className={item.active ? "preset-card" : "preset-card inactive"} key={item.id}>
+                  <div className="card-top">
+                    <span className="material-badge supply-badge">{item.category}</span>
+                    <span className="card-actions">
+                      {item.active ? (
+                        <>
+                          <button className="edit-button" onClick={() => editPreset("supplies", item)}>Editar</button>
+                          <button className="delete-button" onClick={() => deletePreset("/api/supplies", item.id)} aria-label={`Excluir ${item.name}`}><IconTrash className="nav-icon" /></button>
+                        </>
+                      ) : (
+                        <button className="edit-button" type="button" onClick={() => reactivatePreset("/api/supplies", item.id)}>Reativar</button>
+                      )}
+                    </span>
+                  </div>
+                  <h3>{item.name}</h3>
+                  <p>Categoria: {item.category}</p>
+                  <strong>{money(item.unitCost)} <small>por unidade</small></strong>
+                  {!item.active ? <p className="card-detail"><span className="inactive-badge">Desativado — sem estoque</span></p> : null}
+                  <p className="card-detail">Compra: {item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString("pt-BR") : "não informada"} {item.purchaseLink ? <a href={item.purchaseLink} target="_blank" rel="noreferrer">Abrir link</a> : null}</p>
+                </article>
+              ))}
             </div>
           </section>
         ) : null}

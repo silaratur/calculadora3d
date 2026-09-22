@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AdminHeader } from "@/components/AdminHeader";
 import { IconBookmark, IconClock, IconCopy, IconDownload, IconSave, IconShieldAlert, IconShoppingBag, IconSparkles, IconTrash } from "@/components/Icons";
-import { calculatePieceCost, calculateSuggestedPrice, fixedCostPerPiece, type PricingMethod } from "@/lib/costing";
+import { calculatePieceCost, calculateSuggestedPrice, effectiveMonthlyFixedCost, fixedCostPerPiece, type PricingMethod } from "@/lib/costing";
 
 type Material = { id: string; name: string; type: string; unitPrice?: number; unitWeightGrams?: number; costPerKg: number };
 type Printer = { id: string; model: string; purchasePrice: number; powerWatts: number; usefulLifeHours: number; maintenancePerHour: number };
@@ -148,7 +148,7 @@ function CalculatorForm() {
       if (responses[4].ok) { const data = (await responses[4].json()) as Marketplace[]; setMarketplaces([defaultMarketplace, ...data]); }
       if (responses[5].ok) {
         const data = (await responses[5].json()) as { month: string; total: number }[];
-        setCurrentMonthFixedCost(data.find((item) => item.month === month)?.total ?? null);
+        setCurrentMonthFixedCost(effectiveMonthlyFixedCost(data, month));
       }
       if (responses[6].ok) setCustomers((await responses[6].json()) as CustomerLead[]);
     }

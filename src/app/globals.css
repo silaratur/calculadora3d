@@ -716,9 +716,12 @@ a.primary-button {
 }
 /* Agrupa o nº do pedido com o link pro orçamento de origem (Produção) — os
    dois ficam do lado esquerdo do card-top, sem brigar com o status à direita. */
-.job-card-badges { align-items: center; display: flex; gap: 6px; }
-.job-quote-link { align-items: center; background: transparent; border: 1px solid var(--admin-copper); border-radius: 6px; color: var(--admin-copper); display: inline-flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 9px; font-weight: 700; padding: 3px 6px; text-decoration: none; white-space: nowrap; }
-.job-quote-link:hover { background: var(--admin-copper); color: white; }
+/* Link pro orçamento de origem (Produção) — linha própria abaixo do topo do
+   card, não mais espremido ao lado do nº do pedido (quebrava o badge em
+   várias linhas quando os dois códigos juntos não cabiam). */
+.job-quote-link { align-items: center; color: var(--admin-copper); display: inline-flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; font-weight: 600; gap: 4px; margin-top: 8px; text-decoration: none; }
+.job-quote-link .nav-icon { flex-shrink: 0; height: 11px; width: 11px; }
+.job-quote-link:hover { text-decoration: underline; }
 
 .card-actions {
   align-items: center;
@@ -835,6 +838,22 @@ a.primary-button {
   font-size: 10px;
   font-weight: 700;
   margin-left: 8px;
+  padding: 2px 6px;
+}
+
+/* Material/insumo desativado (Biblioteca) — some da seleção em
+   Orçamentos/Catálogo, mas continua visível aqui, esmaecido, com um jeito
+   rápido de reativar quando repuser o estoque. */
+.preset-card.inactive { opacity: .55; }
+.preset-card.inactive:hover { opacity: .85; }
+.inactive-badge {
+  background: #e8ddd7;
+  border-radius: 5px;
+  color: var(--admin-muted);
+  display: inline-block;
+  font-family: var(--font-sans), Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
   padding: 2px 6px;
 }
 
@@ -1225,6 +1244,13 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .job-card h2 { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 14px; line-height: 1.35; margin: 10px 0 5px; }
 .job-due { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; margin: 5px 0 0; }
 .job-due.late { color: #a95037; }
+/* Lista dos itens de verdade a imprimir nesse pedido (Produção) — o que
+   importa pra quem está na bancada é "o quê e quantos", não prioridade/tempo
+   planejado (isso já aparece resumido no topo da página). */
+.job-items { background: #f2e6da; border-radius: 8px; margin-top: 10px; padding: 9px 11px; }
+.job-items-count { color: var(--admin-copper); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.job-items-list { display: grid; gap: 3px; list-style: none; margin: 7px 0 0; padding: 0; }
+.job-items-list li { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; line-height: 1.4; }
 .job-fields { display: grid; gap: 9px; margin-top: 12px; }
 .job-fields label, .job-notes { color: var(--admin-muted); display: grid; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; gap: 5px; letter-spacing: .06em; text-transform: uppercase; }
 .job-fields select, .job-fields input, .job-notes textarea { letter-spacing: normal; text-transform: none; width: 100%; }
