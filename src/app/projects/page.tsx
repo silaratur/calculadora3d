@@ -23,7 +23,7 @@ type Quote = {
   updatedAt: string;
 };
 type Competitor = { id: string; productName: string; competitor: string; channel: string; price: number; url: string; checkedAt: string };
-type SortField = "recent" | "client" | "value" | "status";
+type SortField = "recent" | "client" | "value";
 type QuoteItem = { name: string; quantity: number };
 type ConvertForm = { shippingPaid: boolean; shippingCost: string; paymentMethod: string; plannedProductionDate: string; expectedPaymentDate: string };
 
@@ -31,7 +31,7 @@ const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency"
 const n = (value: string) => Number(value.replace(",", ".")) || 0;
 const paymentMethods = ["PIX", "Cartão de Crédito", "Cartão de Débito", "Dinheiro", "Boleto"];
 const emptyConvertForm: ConvertForm = { shippingPaid: false, shippingCost: "0", paymentMethod: "PIX", plannedProductionDate: "", expectedPaymentDate: "" };
-const statusLabel: Record<string, string> = { DRAFT: "Rascunho", CONVERTED: "Convertido em venda", ARCHIVED: "Arquivado" };
+const statusLabel: Record<string, string> = { DRAFT: "Orçamento", CONVERTED: "Convertido em venda", ARCHIVED: "Arquivado" };
 const statusBadgeColor: Record<string, string> = { DRAFT: "#8a4a4e", CONVERTED: "#777f5d", ARCHIVED: "#602f32" };
 
 /** Itens, canal e desconto do orçamento — mostrados como leitura no popup de conversão, nenhum deles editável ali. */
@@ -50,7 +50,7 @@ function convertPreview(snapshotJson: string): { items: QuoteItem[]; marketplace
 // Mesma ideia do Catálogo: qual direção faz sentido como padrão na primeira
 // vez que cada critério é escolhido (recente = mais novo, cliente = A-Z,
 // valor = maior primeiro, status = A-Z).
-const defaultSortDirection: Record<SortField, "asc" | "desc"> = { recent: "desc", client: "asc", value: "desc", status: "asc" };
+const defaultSortDirection: Record<SortField, "asc" | "desc"> = { recent: "desc", client: "asc", value: "desc" };
 
 /** Foto do primeiro produto do Catálogo incluso no orçamento, se tiver — vira a miniatura do card. */
 function firstItemPhoto(snapshotJson: string): string | null {
@@ -67,7 +67,7 @@ export default function ProjectsPage() {
   const [archivedQuotes, setArchivedQuotes] = useState<Quote[]>([]);
   const [competitors, setCompetitors] = useState<Competitor[]>([]);
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"quotes" | "archived" | "competitors">("quotes");
+  const [tab, setTab] = useState<"quotes" | "converted" | "archived" | "competitors">("quotes");
   const [needsLogin, setNeedsLogin] = useState(false);
   const [feedback, setFeedback] = useState("");
   // Orçamento em processo de virar pedido — abre o popup de conversão, que já
@@ -87,8 +87,9 @@ export default function ProjectsPage() {
   const [role, setRole] = useState<string>("");
   const [deleteTarget, setDeleteTarget] = useState<Quote | null>(null);
   const [deleting, setDeleting] = useState(false);
-  // Mesmo padrão de listagem do Catálogo: ordenação, filtro e paginação.
-  const [statusFilter, setStatusFilter] = useState("all");
+  // Mesmo padrão de listagem do Catálogo: ordenação e paginação. O filtro por
+  // status virou aba (Orçamentos/Convertidos/Não Executados) — orçamento e
+  // venda não se misturam mais na mesma lista.
   const [sortBy, setSortBy] = useState<SortField>("recent");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [itemsPerPage, setItemsPerPage] = useState(15);
@@ -118,32 +119,26 @@ export default function ProjectsPage() {
     if (sortBy === "recent") sorted.sort((a, b) => sign * (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()));
     else if (sortBy === "client") sorted.sort((a, b) => sign * ((a.customerName || "").localeCompare(b.customerName || "") || a.productName.localeCompare(b.productName)));
     else if (sortBy === "value") sorted.sort((a, b) => sign * (a.finalPrice - b.finalPrice));
-    else if (sortBy === "status") sorted.sort((a, b) => sign * ((statusLabel[a.status] ?? a.status).localeCompare(statusLabel[b.status] ?? b.status)));
     return sorted;
   }
 
-  const filteredQuotes = useMemo(() => {
-    const items = quotes.filter(
-      (quote) =>
-        `${quote.productName} ${quote.customerName} ${quote.code ?? ""}`.toLowerCase().includes(search.toLowerCase()) &&
-        (statusFilter === "all" || quote.status === statusFilter),
-    );
-    return sortQuotes(items);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quotes, search, statusFilter, sortBy, sortDirection]);
-  const filteredArchivedQuotes = useMemo(() => {
-    const items = archivedQuotes.filter((quote) => `${quote.productName} ${quote.customerName} ${quote.code ?? ""}`.toLowerCase().includes(search.toLowerCase()));
-    return sortQuotes(items);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [archivedQuotes, search, sortBy, sortDirection]);
+  const matchesSearch = (quote: Quote) => `${quote.productName} ${quote.customerName} ${quote.code ?? ""}`.toLowerCase().includes(search.toLowerCase());
+  // Aba "Orçamentos" só traz o que ainda está em orçamento (nem virou venda,
+  // nem foi arquivado) — convertido tem aba própria, não se mistura aqui.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const filteredQuotes = useMemo(() => sortQuotes(quotes.filter((quote) => quote.status === "DRAFT" && matchesSearch(quote))), [quotes, search, sortBy, sortDirection]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const filteredConvertedQuotes = useMemo(() => sortQuotes(quotes.filter((quote) => quote.status === "CONVERTED" && matchesSearch(quote))), [quotes, search, sortBy, sortDirection]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const filteredArchivedQuotes = useMemo(() => sortQuotes(archivedQuotes.filter(matchesSearch)), [archivedQuotes, search, sortBy, sortDirection]);
   const filteredCompetitors = useMemo(() => competitors.filter((item) => `${item.productName} ${item.competitor} ${item.channel}`.toLowerCase().includes(search.toLowerCase())), [competitors, search]);
 
-  const activeQuoteList = tab === "archived" ? filteredArchivedQuotes : filteredQuotes;
+  const activeQuoteList = tab === "archived" ? filteredArchivedQuotes : tab === "converted" ? filteredConvertedQuotes : filteredQuotes;
   const totalPages = Math.max(1, Math.ceil(activeQuoteList.length / itemsPerPage));
   const currentPage = Math.min(page, totalPages);
   const paginatedQuotes = activeQuoteList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  function selectTab(value: "quotes" | "archived" | "competitors") {
+  function selectTab(value: "quotes" | "converted" | "archived" | "competitors") {
     setTab(value);
     setPage(1);
   }
@@ -249,13 +244,14 @@ export default function ProjectsPage() {
 
         <div className="project-tabs">
           <button className={tab === "quotes" ? "selected" : ""} onClick={() => selectTab("quotes")}>Orçamentos ({filteredQuotes.length})</button>
+          <button className={tab === "converted" ? "selected" : ""} onClick={() => selectTab("converted")}>Convertidos em Venda ({filteredConvertedQuotes.length})</button>
           <button className={tab === "archived" ? "selected" : ""} onClick={() => selectTab("archived")}>Não Executados ({filteredArchivedQuotes.length})</button>
           <button className={tab === "competitors" ? "selected" : ""} onClick={() => selectTab("competitors")}>Concorrência ({filteredCompetitors.length})</button>
         </div>
 
         {feedback ? <p className="admin-feedback">{feedback}</p> : null}
 
-        {tab === "quotes" || tab === "archived" ? (
+        {tab === "quotes" || tab === "converted" || tab === "archived" ? (
           <>
             <div className="catalog-filters">
               <strong>{activeQuoteList.length} orçamento{activeQuoteList.length === 1 ? "" : "s"}</strong>
@@ -264,16 +260,8 @@ export default function ProjectsPage() {
                 <button type="button" className={sortBy === "recent" ? "chip selected" : "chip"} onClick={() => selectSort("recent")}>Mais Recentes{sortArrow("recent")}</button>
                 <button type="button" className={sortBy === "client" ? "chip selected" : "chip"} onClick={() => selectSort("client")}>Cliente{sortArrow("client")}</button>
                 <button type="button" className={sortBy === "value" ? "chip selected" : "chip"} onClick={() => selectSort("value")}>Valor{sortArrow("value")}</button>
-                {tab === "quotes" ? <button type="button" className={sortBy === "status" ? "chip selected" : "chip"} onClick={() => selectSort("status")}>Status{sortArrow("status")}</button> : null}
               </div>
               <div className="catalog-filters-right">
-                {tab === "quotes" ? (
-                  <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}>
-                    <option value="all">Todos os status</option>
-                    <option value="DRAFT">Rascunho</option>
-                    <option value="CONVERTED">Convertido em venda</option>
-                  </select>
-                ) : null}
                 <label className="items-per-page">Por página
                   <select value={itemsPerPage} onChange={(event) => { setItemsPerPage(Number(event.target.value)); setPage(1); }}>
                     {[5, 10, 15, 20, 25, 30, 35, 40, 45, 50].map((value) => <option key={value} value={value}>{value}</option>)}
@@ -332,7 +320,13 @@ export default function ProjectsPage() {
               })}
             </div>
             {activeQuoteList.length === 0 ? (
-              <div className="empty-note">{tab === "archived" ? "Nenhum orçamento arquivado ainda." : "Nenhum orçamento salvo ainda. Gere um em Orçamentos."}</div>
+              <div className="empty-note">
+                {tab === "archived"
+                  ? "Nenhum orçamento arquivado ainda."
+                  : tab === "converted"
+                    ? "Nenhum orçamento convertido em venda ainda."
+                    : "Nenhum orçamento salvo ainda. Gere um em Orçamentos."}
+              </div>
             ) : null}
             <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
           </>

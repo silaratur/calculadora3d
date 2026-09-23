@@ -279,6 +279,17 @@ textarea:focus {
    em vez de trocar pra cor de destaque. */
 .cost-line.subtotal span { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
 .cost-line.subtotal strong { font-size: 15px; }
+/* Custo Base não é a informação que decide se o orçamento tá bom (quem decide
+   é o Preço Final Sugerido, ver .final-highlight) — fica esmaecido de propósito. */
+.cost-line.muted { opacity: .55; }
+.cost-line.muted strong { font-weight: 500; }
+.summary-note { color: var(--calc-muted); font-size: 10px; line-height: 1.4; margin: -6px 0 12px; }
+/* Repete o Preço Final Sugerido dentro da composição de custos — ele já
+   aparece isolado no topo da tela, mas repetir aqui, destacado, evita que
+   "Custo Base" pareça a informação principal deste bloco. */
+.cost-line.final-highlight { background: var(--calc-copper); border-radius: 9px; color: #fff; margin: 12px -13px -13px; padding: 12px 13px; }
+.cost-line.final-highlight span { color: rgba(255, 255, 255, .85); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.cost-line.final-highlight strong { color: #fff; font-size: 17px; }
 .summary-card { background: #fbf6ef; border: 1px solid var(--calc-border); border-radius: 12px; margin-top: 18px; padding: 13px; }
 .summary-card .cost-line { margin: 0; }
 .profit-grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; margin-top: 16px; }
@@ -1172,9 +1183,11 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .material-line { align-items: center; display: grid; gap: 8px; grid-template-columns: 1fr 100px auto; }
 .material-line-header span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 /* Linha de produto do orçamento — thumbnail (pra reconhecer visualmente o
-   produto escolhido), nome, custo/tempo e quantidade tudo na mesma linha; o
-   select fica menor pra abrir espaço pra coluna de custo/tempo ao lado. */
-.product-line { grid-template-columns: 40px minmax(0, 1fr) 128px 70px auto; }
+   produto escolhido), nome, custo, preço de venda e quantidade tudo na mesma
+   linha; o campo de busca fica menor pra abrir espaço pras duas colunas
+   numéricas ao lado (custo de fabricação vs. preço sugerido no Catálogo —
+   antes só o preço aparecia, rotulado de "custo"). */
+.product-line { grid-template-columns: 40px minmax(0, 1fr) 76px 84px 70px auto; }
 .product-line-thumb { align-items: center; background: #f2e6da; border-radius: 8px; display: flex; height: 40px; justify-content: center; overflow: hidden; width: 40px; }
 .product-line-thumb img { display: block; height: 100%; object-fit: cover; width: 100%; }
 .product-line-thumb span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 15px; font-weight: 700; }
@@ -1188,6 +1201,10 @@ button.new-quote-button { border: 0; cursor: pointer; }
    total da linha, não o valor unitário). */
 .product-line-info { align-items: center; color: var(--admin-muted); display: flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; gap: 4px; justify-content: center; min-width: 0; overflow: hidden; text-align: center; white-space: nowrap; }
 .product-line-info .nav-icon { flex-shrink: 0; }
+/* Preço de venda (Catálogo) se destaca do custo de fabricação ao lado —
+   mesma cor do preço final sugerido, pra reforçar que é a info que importa
+   pra decisão, não o custo. */
+.product-line-price { color: var(--admin-copper); font-weight: 700; }
 /* Campo de quantidade com setas de incremento/decremento coladas ao lado,
    em vez do spinner nativo do navegador (inconsistente entre browsers).
    Sem overflow:hidden no wrapper — cortava os ícones das setas; o

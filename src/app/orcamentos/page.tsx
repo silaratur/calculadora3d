@@ -550,7 +550,8 @@ function OrcamentosForm() {
                   <div className="material-line material-line-header product-line">
                     <span />
                     <span>Produto (do Catálogo)</span>
-                    <span>Tempo · Custo</span>
+                    <span>Custo</span>
+                    <span>Preço de venda</span>
                     <span>Qtd.</span>
                     <span />
                   </div>
@@ -606,8 +607,13 @@ function OrcamentosForm() {
                         ) : null}
                       </div>
                       {product ? (
-                        <small className="product-line-info" title={`${fmtHours(product.printTimeHours * quantity)} de impressão · ${brl(product.price * quantity)}${quantity > 1 ? ` (${quantity}x ${brl(product.price)} cada)` : ""}`}>
-                          <IconClock className="nav-icon" /> {fmtHours(product.printTimeHours * quantity)} · {brl(product.price * quantity)}
+                        <small className="product-line-info" title={`Custo de fabricação · ${fmtHours(product.printTimeHours * quantity)} de impressão${quantity > 1 ? ` · ${quantity}x ${brl(product.cost)} cada` : ""}`}>
+                          <IconClock className="nav-icon" /> {brl(product.cost * quantity)}
+                        </small>
+                      ) : <span />}
+                      {product ? (
+                        <small className="product-line-info product-line-price" title={`Preço de venda sugerido no Catálogo${quantity > 1 ? ` · ${quantity}x ${brl(product.price)} cada` : ""}`}>
+                          {brl(product.price * quantity)}
                         </small>
                       ) : <span />}
                       <span className="qty-stepper">
@@ -772,11 +778,19 @@ function OrcamentosForm() {
               </div>
             </div>
             <div className="summary-card">
-              <Cost label="Produtos do Catálogo" value={calc.productsCost} />
+              <Cost label="Preço de Venda dos Produtos" value={calc.productsCost} />
               <Info label="Tempo Total de Impressão" value={fmtHours(calc.printTime)} />
               <Cost label={`Insumos (${calc.insumosCount})`} value={calc.suppliesCost} />
               <hr />
-              <Cost label="Custo Base" value={calc.costWithReserve} bold subtotal />
+              {/* Custo Base é só a base sobre a qual o markup/margem é aplicado — não
+                  é o que decide se o orçamento tá bom, por isso fica discreto aqui;
+                  quem decide é o Preço Final Sugerido, repetido em destaque abaixo. */}
+              <Cost label="Custo Base" value={calc.costWithReserve} subtotal muted />
+              <p className="summary-note">soma acima — base do cálculo, não o preço final</p>
+              <div className="cost-line final-highlight">
+                <span>Preço Final Sugerido</span>
+                <strong>{brl(calc.price)}</strong>
+              </div>
             </div>
             <div className="summary-card">
               <Info label="Método de Precificação" value={pricingMethod === "markup" ? "Markup" : "Margem Real"} />
@@ -805,8 +819,8 @@ function OrcamentosForm() {
 }
 
 function Title({ text }: { text: string }) { return <div className="section-title"><span />{text}</div>; }
-function Cost({ label, value, bold = false, dot, subtotal = false }: { label: string; value: number; bold?: boolean; dot?: string; subtotal?: boolean }) {
-  const className = ["cost-line", bold && "bold", subtotal && "subtotal"].filter(Boolean).join(" ");
+function Cost({ label, value, bold = false, dot, subtotal = false, muted = false }: { label: string; value: number; bold?: boolean; dot?: string; subtotal?: boolean; muted?: boolean }) {
+  const className = ["cost-line", bold && "bold", subtotal && "subtotal", muted && "muted"].filter(Boolean).join(" ");
   return (
     <div className={className}>
       <span>{dot ? <i className="cost-dot" style={{ background: dot }} /> : null}{label}</span>
