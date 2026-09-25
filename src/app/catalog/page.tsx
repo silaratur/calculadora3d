@@ -110,6 +110,10 @@ const categoryColors = ["#602f32", "#777f5d", "#a3402a", "#8a5a2e", "#4c6b7a", "
 // FNV-1a — espalha melhor que um hash ingênuo (soma/produto simples colidia
 // justamente nas categorias reais do catálogo: "NATAL" e "Organização" caindo
 // na mesma cor).
+function normalizeCategory(value: string) {
+  return value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
 function categoryColor(category: string) {
   let hash = 0x811c9dc5;
   for (let i = 0; i < category.length; i += 1) {
@@ -187,10 +191,12 @@ export default function CatalogPage() {
 
   const categories = useMemo(() => ["all", ...Array.from(new Set(products.map((product) => product.category)))], [products]);
   const existingCategories = useMemo(() => Array.from(new Set(products.map((product) => product.category))).sort(), [products]);
+  // Campo vazio mostra todas as categorias; digitando, filtra ignorando
+  // maiúsculas e acentos ("decor" acha "Decoração").
   const categorySuggestions = useMemo(() => {
-    const query = draft.category.trim().toLowerCase();
-    if (!query) return [];
-    return existingCategories.filter((item) => item.toLowerCase().includes(query)).slice(0, 6);
+    const query = normalizeCategory(draft.category);
+    if (!query) return existingCategories;
+    return existingCategories.filter((item) => normalizeCategory(item).includes(query) && item !== draft.category.trim());
   }, [draft.category, existingCategories]);
   const filtered = useMemo(() => {
     const items = products.filter(
@@ -373,9 +379,13 @@ export default function CatalogPage() {
   async function save(event: FormEvent) {
     event.preventDefault();
     setFeedback("");
+    // Só cria categoria nova se não existir nenhuma equivalente — "natal" ou
+    // "Decoracao" reaproveitam "NATAL"/"Decoração" em vez de duplicar.
+    const typedCategory = draft.category.trim();
+    const category = existingCategories.find((item) => normalizeCategory(item) === normalizeCategory(typedCategory)) ?? typedCategory;
     const payload = {
       name: draft.name,
-      category: draft.category,
+      category,
       description: draft.description,
       imageUrl: draft.imageUrl,
       weightGrams: totalWeightGrams,
