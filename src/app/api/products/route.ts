@@ -12,6 +12,8 @@ const productSchema = z.object({
   category: z.string().min(2),
   description: z.string().optional(),
   imageUrl: z.string().optional(),
+  // Até 4 fotos além da capa (imageUrl) — o Catálogo aceita 5 no total.
+  extraImages: z.array(z.string().min(1)).max(4).optional(),
   material: z.string().optional(),
   materials: z.array(z.object({ materialId: z.string().min(1), grams: z.number().min(0) })).optional(),
   weightGrams: z.number().min(0),
@@ -96,9 +98,21 @@ async function resolveMaterials(lines: MaterialLine[] | undefined) {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const user = await ensureAuthenticated();
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+
+  // ?id= devolve só o necessário pro popup de foto (ProductPreview) — inclusive
+  // de produto arquivado, que ainda aparece em orçamentos/produção antigos.
+  const id = new URL(request.url).searchParams.get("id");
+  if (id) {
+    const product = await prisma.product.findUnique({
+      where: { id },
+      select: { id: true, sku: true, name: true, category: true, description: true, imageUrl: true, extraImages: true, price: true, active: true },
+    });
+    if (!product) return NextResponse.json({ error: "Produto não encontrado" }, { status: 404 });
+    return NextResponse.json(product);
+  }
 
   const [products, sales] = await Promise.all([
     prisma.product.findMany({
@@ -131,6 +145,7 @@ export async function POST(request: Request) {
     category: data.category,
     description: data.description ?? "",
     imageUrl: data.imageUrl ?? "",
+    extraImages: JSON.stringify(data.extraImages ?? []),
     material: resolved?.materialName ?? data.material ?? "",
     weightGrams: data.weightGrams,
     volumeCm3: data.volumeCm3 ?? 0,
@@ -201,6 +216,8 @@ export async function PUT(request: Request) {
         category: data.category,
         description: data.description ?? "",
         imageUrl: data.imageUrl ?? "",
+        // Só reescreve se veio no corpo — quem não manda o campo não apaga as fotos extras.
+        ...(data.extraImages ? { extraImages: JSON.stringify(data.extraImages) } : {}),
         material: resolved?.materialName ?? data.material ?? "",
         weightGrams: data.weightGrams,
         volumeCm3: data.volumeCm3 ?? 0,

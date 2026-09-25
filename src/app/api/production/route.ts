@@ -18,7 +18,7 @@ export async function GET() {
         order: { include: { customer: true, quote: { select: { id: true, code: true } } } },
         // material/imageUrl/printTimeHours vêm do Catálogo — ajudam a priorizar
         // a fila (o que rende mais rápido, qual filamento carregar na impressora).
-        items: { orderBy: { createdAt: "asc" }, include: { product: { select: { imageUrl: true, material: true, printTimeHours: true } } } },
+        items: { orderBy: { createdAt: "asc" }, include: { product: { select: { id: true, imageUrl: true, material: true, printTimeHours: true } } } },
       },
       orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
     }),

@@ -1,8 +1,92 @@
 @import "tailwindcss";
 
-:root {
-  --background: #2a1618;
-  --foreground: #f3ece6;
+/* ---------------------------------------------------------------------------
+   Tema: todas as cores do site saem daqui. Claro é o padrão; o escuro (tons
+   de vinho) liga com data-theme="dark" no <html>, pelo botão do cabeçalho
+   (ThemeToggle). O orçamento impresso (.quote-print-page) redefine a paleta
+   clara pra continuar sempre claro — é documento que vai pro cliente.
+   --------------------------------------------------------------------------- */
+:root,
+.quote-print-page {
+  color-scheme: light;
+  --admin-ink: #3d2225;
+  --admin-muted: #8a7472;
+  --admin-border: #e8ddd7;
+  --admin-border-strong: #e3cfc9;
+  --admin-paper: #fffdfb;
+  --admin-bg: #f7f1e9;
+  --admin-copper: #602f32;
+  --admin-copper-hover: #4c2528;
+  --admin-olive: #777f5d;
+  --admin-olive-hover: #5f6549;
+  --on-accent: #ffffff;
+  --field-bg: #faf3ec;
+  --sunk: #f2e6da;
+  --soft: #fbf6ef;
+  --soft-warm: #f8ede0;
+  --pink-soft: #f8dee7;
+  --raised: #ffffff;
+  --danger: #a3402a;
+  --danger-strong: #a95037;
+  --danger-hover: #7e2f1c;
+  --danger-soft: #fbeae5;
+  --danger-soft-2: #f7e2db;
+  --warn: #8a6a1f;
+  --warn-soft: #fbf0da;
+  --warn-border: #e3b591;
+  --notice-bg: #fff8ef;
+  --notice-border: #e8cdb3;
+  --ok: #3f7d55;
+  --ok-soft: #e8f0e2;
+  --ok-row: #eef4f0;
+  --lane-finishing: #6a4a7a;
+  --report: #8a4a4e;
+  --grid-line: #efe6e1;
+  --logo-ring: #d6c8c4;
+  --overlay: rgba(255, 253, 251, .92);
+  --topbar-bg: rgba(250, 248, 244, .96);
+  --focus-ring: rgba(189, 107, 66, .1);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --admin-ink: #f3e9e4;
+  --admin-muted: #b9a7a3;
+  --admin-border: #3d3033;
+  --admin-border-strong: #4d3b3e;
+  --admin-paper: #271d1e;
+  --admin-bg: #1d1516;
+  --admin-copper: #d9989b;
+  --admin-copper-hover: #e7b3b5;
+  --admin-olive: #b7bf98;
+  --admin-olive-hover: #c9d0ad;
+  --on-accent: #1d1516;
+  --field-bg: #2f2426;
+  --sunk: #33272a;
+  --soft: #2b2123;
+  --soft-warm: #33272a;
+  --pink-soft: #4a2a30;
+  --raised: #3a2d30;
+  --danger: #ff8272;
+  --danger-strong: #ff8272;
+  --danger-hover: #f5aaa5;
+  --danger-soft: #402221;
+  --danger-soft-2: #402221;
+  --warn: #e3b865;
+  --warn-soft: #3a2f1a;
+  --warn-border: #7a5a2a;
+  --notice-bg: #33291f;
+  --notice-border: #5a4530;
+  --ok: #8fc79a;
+  --ok-soft: #22332a;
+  --ok-row: #1f2b24;
+  --lane-finishing: #c9a6d6;
+  --report: #b4787b;
+  --grid-line: #33282a;
+  --logo-ring: #4d3b3e;
+  --overlay: rgba(39, 29, 30, .9);
+  --topbar-bg: rgba(29, 21, 22, .96);
+  --focus-ring: rgba(217, 152, 155, .2);
 }
 
 html {
@@ -21,10 +105,8 @@ html, body {
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top, rgba(119, 127, 93, 0.22), transparent 20%),
-    linear-gradient(180deg, #2a1618 0%, #1c0f10 100%);
-  color: var(--foreground);
+  background: var(--admin-bg);
+  color: var(--admin-ink);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
@@ -48,7 +130,7 @@ select,
 textarea {
   max-width: 100%;
   min-width: 0;
-  background: #faf3ec;
+  background: var(--field-bg);
   border: 1px solid var(--admin-border);
   border-radius: 9px;
   color: var(--admin-ink);
@@ -67,22 +149,11 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
 select:focus,
 textarea:focus {
   border-color: var(--admin-copper);
-  box-shadow: 0 0 0 2px rgba(189, 107, 66, .1);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 .calculator-shell {
-  /* Mesma paleta do admin-shell — eram dois temas quase idênticos que tinham
-     derivado (tons de marrom levemente diferentes). O AdminHeader
-     compartilhado roda dentro deste shell também, então as variáveis
-     --admin-* precisam existir aqui de verdade (não só como fallback), senão
-     o CTA e os ícones do cabeçalho ficam sem cor nesta página. */
-  --admin-ink: #3d2225;
-  --admin-muted: #8a7472;
-  --admin-border: #e8ddd7;
-  --admin-paper: #fffdfb;
-  --admin-bg: #f7f1e9;
-  --admin-copper: #602f32;
-  --admin-olive: #777f5d;
+  /* As cores vêm do tema (:root); --calc-* são só apelidos das --admin-*. */
   --calc-ink: var(--admin-ink);
   --calc-muted: var(--admin-muted);
   --calc-border: var(--admin-border);
@@ -101,15 +172,15 @@ textarea:focus {
 .project-header, .calc-section, .price-summary { background: var(--calc-paper); border: 1px solid var(--calc-border); border-radius: 16px; box-shadow: 0 2px 5px rgba(79, 56, 39, .035); }
 .project-header { align-items: end; display: grid; gap: 12px; grid-template-columns: repeat(3, 1fr) auto; margin-bottom: 24px; padding: 18px 20px; }
 .project-header .field-span-full { grid-column: 1 / -1; }
-.project-header label span, .calc-section label, .notes-field { color: var(--calc-muted); display: flex; flex-direction: column; font-size: 11px; gap: 6px; }
+.project-header label span, .calc-section label, .notes-field { color: var(--calc-muted); display: flex; flex-direction: column; font-size: 12px; gap: 6px; }
 .project-header label span, .section-title { letter-spacing: .08em; }
-.project-header input:focus, .calc-section input:focus, .calc-section select:focus, .calc-section textarea:focus { border-color: var(--calc-copper); box-shadow: 0 0 0 2px rgba(189, 107, 66, .1); }
+.project-header input:focus, .calc-section input:focus, .calc-section select:focus, .calc-section textarea:focus { border-color: var(--calc-copper); box-shadow: 0 0 0 2px var(--focus-ring); }
 /* Sem width explícito o <input> usa a largura intrínseca do navegador
    (~20 caracteres) mesmo dentro de uma coluna do grid bem mais larga —
    isso limita quantos caracteres ficam visíveis ao digitar. */
 .project-header label { min-width: 0; }
 .project-header input { width: 100%; }
-.quiet-button { background: #faf3ec; border: 1px solid var(--calc-border); border-radius: 9px; color: var(--calc-muted); cursor: pointer; min-height: 36px; padding: 0 14px; }
+.quiet-button { background: var(--admin-paper); border: 1px solid var(--calc-border); border-radius: 9px; color: var(--calc-ink); cursor: pointer; min-height: 36px; padding: 0 14px; }
 .client-name-wrap { min-width: 0; position: relative; }
 /* Âncora do dropdown .client-suggestions (absolute) — sem isso a lista ia
    parar lá embaixo da página, fora da tela. */
@@ -117,23 +188,23 @@ textarea:focus {
 .client-suggestions { background: var(--calc-paper); border: 1px solid var(--calc-border); border-radius: 12px; box-shadow: 0 8px 20px rgba(60, 34, 37, .12); left: 0; list-style: none; margin: 6px 0 0; max-height: 220px; overflow-y: auto; padding: 6px; position: absolute; right: 0; top: 100%; z-index: 20; }
 .client-suggestions li { display: block; }
 .client-suggestions button { background: transparent; border: 0; border-radius: 8px; color: var(--calc-ink); cursor: pointer; display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 14px; padding: 9px 11px; text-align: left; width: 100%; }
-.client-suggestions button:hover { background: #faf3ec; color: var(--calc-copper); }
+.client-suggestions button:hover { background: var(--field-bg); color: var(--calc-copper); }
 .calculator-grid { align-items: start; display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) 380px; }
 .calculator-main { display: grid; gap: 18px; }
 .price-summary-col .report-error { margin: 10px 4px 0; text-align: center; }
 .calc-section { padding: 20px; }
-.section-title { align-items: center; border-bottom: 1px solid #e8ddd7; color: #8a7472; display: flex; font-size: 12px; font-weight: 600; gap: 8px; margin-bottom: 17px; padding-bottom: 12px; }
-.section-title span { background: #777f5d; border-radius: 50%; height: 7px; width: 7px; }
+.section-title { align-items: center; border-bottom: 1px solid var(--admin-border); color: var(--admin-muted); display: flex; font-size: 12px; font-weight: 600; gap: 8px; margin-bottom: 17px; padding-bottom: 12px; }
+.section-title span { background: var(--admin-olive); border-radius: 50%; height: 7px; width: 7px; }
 .field-row { align-items: end; display: flex; gap: 12px; justify-content: space-between; }
 .field-row label { flex: 1; }
-.field-row a, .library-row a { color: var(--calc-copper); font-size: 11px; margin-bottom: 10px; text-decoration: none; }
+.field-row a, .library-row a { color: var(--calc-copper); font-size: 12px; margin-bottom: 10px; text-decoration: none; }
 .field-grid { display: grid; gap: 12px; margin-top: 14px; }
 .field-grid.three { grid-template-columns: repeat(3, 1fr); }
 .field-grid.two { grid-template-columns: repeat(2, 1fr); }
 .field-grid.two-one { grid-template-columns: 1fr 1fr 1.3fr; }
 .field-grid.one-two { grid-template-columns: 1fr 1.6fr; }
 .label-hint-row span { align-items: baseline; display: flex; justify-content: space-between; }
-.label-hint-row em { color: var(--calc-copper); font-size: 9px; font-style: normal; font-weight: 600; letter-spacing: normal; text-transform: none; }
+.label-hint-row em { color: var(--calc-copper); font-size: 12px; font-style: normal; font-weight: 600; letter-spacing: normal; text-transform: none; }
 .label-icon-text { align-items: center; display: inline-flex; gap: 5px; }
 .bookmark-link { align-items: center; color: var(--calc-copper); display: inline-flex; margin-bottom: 10px; padding: 4px; }
 /* .field-row/.library-row/.bookmark-link nasceram dentro do .calculator-shell
@@ -141,8 +212,8 @@ textarea:focus {
    (--admin-copper) — sem isto o link do "Selecionar Impressora" ficava sem cor. */
 .admin-shell .field-row a, .admin-shell .library-row a, .admin-shell .bookmark-link { color: var(--admin-copper); }
 .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.chip { background: #faf3ec; border: 1px solid var(--calc-border); border-radius: 20px; color: var(--calc-muted); cursor: pointer; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; padding: 5px 10px; }
-.chip.selected, .chip:hover { background: #f8dee7; border-color: var(--calc-copper); color: var(--calc-copper); }
+.chip { background: var(--field-bg); border: 1px solid var(--calc-border); border-radius: 20px; color: var(--calc-muted); cursor: pointer; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; padding: 5px 10px; }
+.chip.selected, .chip:hover { background: var(--pink-soft); border-color: var(--calc-copper); color: var(--calc-copper); }
 .field-grid > label,
 .field-row > label,
 .metric-box,
@@ -150,45 +221,45 @@ textarea:focus {
 .calc-section input,
 .calc-section select,
 .calc-section textarea { max-width: 100%; width: 100%; }
-.field-grid small, .calc-section label small { color: #8a7472; font-size: 10px; }
-.metric-box, .metric-wide { background: #fbf6ef; border: 1px solid var(--calc-border); border-radius: 12px; display: flex; flex-direction: column; justify-content: center; padding: 13px; }
-.metric-box span, .metric-wide span { color: var(--calc-muted); font-size: 11px; }
+.field-grid small, .calc-section label small { color: var(--admin-muted); font-size: 12px; }
+.metric-box, .metric-wide { background: var(--soft); border: 1px solid var(--calc-border); border-radius: 12px; display: flex; flex-direction: column; justify-content: center; padding: 13px; }
+.metric-box span, .metric-wide span { color: var(--calc-muted); font-size: 12px; }
 /* Só quando o span é rótulo com ícone (ex: "🕐 Tempo total de impressão") —
    o outro uso de .metric-wide span (Calculadora, texto com <br/> dentro) não
    pode virar flex, senão perde a quebra de linha. */
 .metric-wide span:has(.nav-icon) { align-items: center; display: inline-flex; gap: 6px; }
-.metric-box strong { color: #602f32; font-family: var(--font-mono); font-size: 18px; margin-top: 4px; }
-.metric-box small { color: var(--calc-muted); font-size: 10px; }
+.metric-box strong { color: var(--admin-copper); font-family: var(--font-mono); font-size: 20px; margin-top: 4px; }
+.metric-box small { color: var(--calc-muted); font-size: 12px; }
 .metric-value-label { color: var(--calc-muted) !important; font-family: var(--font-sans), Arial, sans-serif !important; font-weight: 600; letter-spacing: .06em; margin-top: 6px; text-transform: uppercase; }
 .metric-split { flex-direction: row; gap: 10px; justify-content: space-between; }
 .metric-split > div { display: flex; flex-direction: column; }
-.metric-split-rate { color: var(--calc-ink) !important; font-family: var(--font-mono) !important; font-size: 13px !important; }
+.metric-split-rate { color: var(--calc-ink) !important; font-family: var(--font-mono) !important; font-size: 14px !important; }
 .metric-split-total { align-items: flex-end; }
 .metric-split-total strong { color: var(--calc-copper) !important; }
 .time-grid { grid-template-columns: 1.1fr 1fr 1fr; }
-.time-box { background: #fbf6ef; border: 1px solid var(--calc-border); border-radius: 12px; padding: 13px; }
-.time-box > span { align-items: center; color: #8a7472; display: flex; font-size: 12px; gap: 6px; margin-bottom: 6px; }
-.labor-strip { align-items: center; background: #f2e6da; border-top: 1px solid #e8ddd7; display: grid; gap: 15px; grid-template-columns: 1fr 130px 160px; margin-top: 17px; padding-top: 16px; }
-.labor-strip span { color: #8a7472; font-size: 12px; }
-.labor-strip small { color: var(--calc-muted); display: block; font-size: 10px; margin-top: 3px; }
-.labor-strip strong { color: var(--calc-copper); font-family: var(--font-mono); font-size: 10px; text-align: right; }
+.time-box { background: var(--soft); border: 1px solid var(--calc-border); border-radius: 12px; padding: 13px; }
+.time-box > span { align-items: center; color: var(--admin-muted); display: flex; font-size: 12px; gap: 6px; margin-bottom: 6px; }
+.labor-strip { align-items: center; background: var(--sunk); border-top: 1px solid var(--admin-border); display: grid; gap: 15px; grid-template-columns: 1fr 130px 160px; margin-top: 17px; padding-top: 16px; }
+.labor-strip span { color: var(--admin-muted); font-size: 12px; }
+.labor-strip small { color: var(--calc-muted); display: block; font-size: 12px; margin-top: 3px; }
+.labor-strip strong { color: var(--calc-copper); font-family: var(--font-mono); font-size: 12px; text-align: right; }
 .metric-wide { align-items: center; flex-direction: row; gap: 14px; justify-content: space-between; margin-top: 16px; }
-.metric-wide > strong { color: #602f32; font-family: var(--font-mono); font-size: 11px; text-align: right; white-space: nowrap; }
+.metric-wide > strong { color: var(--admin-copper); font-family: var(--font-mono); font-size: 12px; text-align: right; white-space: nowrap; }
 .metric-wide span strong { color: var(--calc-ink); font-family: var(--font-mono); }
-.metric-wide small { color: #8a7472; display: inline-block; font-size: 10px; margin-top: 2px; }
+.metric-wide small { color: var(--admin-muted); display: inline-block; font-size: 12px; margin-top: 2px; }
 .section-heading-row { align-items: center; display: flex; justify-content: space-between; margin-bottom: -6px; }
 .section-heading-row .section-title { flex: 1; margin-bottom: 0; }
-.section-total { color: var(--calc-muted); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
-.section-total strong { color: var(--calc-copper); font-family: var(--font-mono); font-size: 13px; letter-spacing: normal; margin-left: 6px; text-transform: none; }
-.supply-list-label { color: #8a7472; display: block; font-size: 11px; margin: 12px 0 8px; }
+.section-total { color: var(--calc-muted); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+.section-total strong { color: var(--calc-copper); font-family: var(--font-mono); font-size: 14px; letter-spacing: normal; margin-left: 6px; text-transform: none; }
+.supply-list-label { color: var(--admin-muted); display: block; font-size: 12px; margin: 12px 0 8px; }
 .supply-list { display: grid; gap: 8px; }
 .custom-extra-row .supply-list { margin-top: 10px; }
-.supply-row { align-items: center; background: #faf3ec; border: 1px solid var(--calc-border); border-radius: 8px; color: var(--calc-muted); display: flex; gap: 10px; padding: 9px 11px; text-align: left; }
-.supply-row.selected { background: #f2e6da; border-color: #e3cfc9; }
-.supply-row strong { font-family: var(--font-mono); font-size: 11px; white-space: nowrap; }
+.supply-row { align-items: center; background: var(--field-bg); border: 1px solid var(--calc-border); border-radius: 8px; color: var(--calc-muted); display: flex; gap: 10px; padding: 9px 11px; text-align: left; }
+.supply-row.selected { background: var(--sunk); border-color: var(--admin-border-strong); }
+.supply-row strong { font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
 .supply-name { align-items: center; background: transparent; border: 0; color: inherit; cursor: pointer; display: flex; flex: 1; font: inherit; gap: 8px; min-width: 0; padding: 0; text-align: left; }
 .supply-name-static { cursor: default; }
-.supply-tag { background: #f8dee7; border-radius: 5px; color: var(--calc-copper); flex-shrink: 0; font-family: var(--font-sans), Arial, sans-serif; font-size: 9px; font-weight: 700; padding: 3px 6px; }
+.supply-tag { background: var(--pink-soft); border-radius: 5px; color: var(--calc-copper); flex-shrink: 0; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; font-weight: 700; padding: 3px 6px; }
 /* Sem os !important de antes — segue o padrão único de campo de texto do
    site (fundo, borda, raio, fonte e altura), só ajustando largura/alinhamento. */
 .supply-price { flex-shrink: 0; text-align: right; width: 76px; }
@@ -197,57 +268,57 @@ textarea:focus {
 .supply-static-price { color: var(--calc-ink); }
 .quantity-control { align-items: center; display: flex; flex-shrink: 0; gap: 7px; }
 .quantity-control button { background: var(--calc-paper); border: 1px solid var(--calc-border); border-radius: 5px; color: var(--calc-muted); cursor: pointer; height: 23px; width: 23px; }
-.quantity-control b { color: var(--calc-ink); font-size: 11px; min-width: 10px; text-align: center; }
-.row-trash { align-items: center; background: transparent; border: 0; color: #a3402a; cursor: pointer; display: inline-flex; flex-shrink: 0; opacity: .6; padding: 2px; }
+.quantity-control b { color: var(--calc-ink); font-size: 12px; min-width: 10px; text-align: center; }
+.row-trash { align-items: center; background: transparent; border: 0; color: var(--danger); cursor: pointer; display: inline-flex; flex-shrink: 0; opacity: .6; padding: 2px; }
 .row-trash:hover { opacity: 1; }
 .custom-extra-row { border-top: 1px dashed var(--calc-border); margin-top: 14px; padding-top: 12px; }
 .custom-extra-fields { display: grid; gap: 8px; grid-template-columns: 1.6fr 1fr auto; }
 .custom-extra-fields .secondary-button { white-space: nowrap; }
-.empty-note { border: 1px dashed var(--calc-border); color: #8a7472; font-size: 11px; margin-top: 13px; padding: 15px; text-align: center; }
-.margin-panel { background: var(--calc-olive); border-radius: 15px; color: white; padding: 20px; }
+.empty-note { border: 1px dashed var(--calc-border); color: var(--admin-muted); font-size: 12px; margin-top: 13px; padding: 15px; text-align: center; }
+.margin-panel { background: var(--calc-olive); border-radius: 15px; color: var(--on-accent); padding: 20px; }
 .margin-panel-head { align-items: center; display: flex; justify-content: space-between; }
-.margin-panel-head > span:first-child { font-size: 10px; letter-spacing: .08em; }
-.margin-method-badge { background: rgba(255, 255, 255, .16); border-radius: 20px; flex-shrink: 0; font-family: var(--font-sans), Arial, sans-serif; font-size: 9px; font-weight: 700; letter-spacing: .06em; padding: 4px 10px; text-transform: uppercase; }
+.margin-panel-head > span:first-child { font-size: 12px; letter-spacing: .08em; }
+.margin-method-badge { background: rgba(255, 255, 255, .16); border-radius: 20px; flex-shrink: 0; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .06em; padding: 4px 10px; text-transform: uppercase; }
 .margin-panel-value { text-align: right; }
-.margin-panel-value strong { font-size: 26px; font-weight: 400; }
-.margin-panel input { accent-color: white; display: block; margin: 14px 0 10px; width: 100%; }
+.margin-panel-value strong { font-size: 28px; font-weight: 400; }
+.margin-panel input { accent-color: var(--on-accent); display: block; margin: 14px 0 10px; width: 100%; }
 /* Versão compacta (Orçamentos) — caixa menor; badge do método e % ficam na
    mesma linha dos presets, depois do -5%/+5%, em vez do valor grande
    sozinho acima da barra. */
 .margin-panel-compact { padding: 14px 16px; }
 .margin-panel-compact input { margin: 12px 0 8px; }
 .range-presets { align-items: center; display: flex; flex-wrap: wrap; gap: 7px; }
-.range-presets button { background: rgba(255, 255, 255, .14); border: 0; border-radius: 10px; color: white; cursor: pointer; font-size: 10px; padding: 5px 9px; }
+.range-presets button { background: rgba(255, 255, 255, .14); border: 0; border-radius: 10px; color: var(--on-accent); cursor: pointer; font-size: 12px; padding: 5px 9px; }
 /* +5%/-5% incrementa sem precisar arrastar a barra — separado dos presets
    fixos por uma linha sutil, pra não parecer só mais um valor da lista. */
 .range-stepper { border-left: 1px solid rgba(255, 255, 255, .25); display: inline-flex; gap: 4px; margin-left: 2px; padding-left: 9px; }
 /* Markup/% atual, na mesma linha dos presets — outro separador sutil,
    igual ao do -5%/+5%, pra não se misturar com os botões clicáveis. */
 .range-current { align-items: center; border-left: 1px solid rgba(255, 255, 255, .25); display: inline-flex; gap: 7px; margin-left: auto; padding-left: 9px; }
-.range-current strong { font-size: 13px; font-weight: 700; }
-.method-toggle { background: #f2e6da; border-radius: 10px; display: flex; gap: 3px; padding: 3px; }
-.method-toggle button { background: transparent; border: 0; border-radius: 8px; color: var(--calc-muted); cursor: pointer; flex: 1; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; padding: 8px; }
-.method-toggle button.selected { background: white; box-shadow: 0 1px 3px rgba(0, 0, 0, .08); color: var(--calc-ink); font-weight: 700; }
+.range-current strong { font-size: 14px; font-weight: 700; }
+.method-toggle { background: var(--sunk); border-radius: 10px; display: flex; gap: 3px; padding: 3px; }
+.method-toggle button { background: transparent; border: 0; border-radius: 8px; color: var(--calc-muted); cursor: pointer; flex: 1; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; padding: 8px; }
+.method-toggle button.selected { background: var(--raised); box-shadow: 0 1px 3px rgba(0, 0, 0, .08); color: var(--calc-ink); font-weight: 700; }
 .pricing-options { margin-top: 18px; }
-.pricing-options small, .discount-field small { color: #8a7472; font-size: 10px; }
+.pricing-options small, .discount-field small { color: var(--admin-muted); font-size: 12px; }
 .discount-field { margin-top: 16px; max-width: 250px; }
 .notes-field textarea { min-height: 85px; resize: vertical; }
 .price-summary { position: sticky; top: 94px; padding: 23px; }
-.summary-eyebrow, .profit-grid span { color: var(--calc-muted); font-size: 10px; letter-spacing: .08em; }
-.price-summary h2 { color: #602f32; font-family: var(--font-sans), Arial, sans-serif; font-size: 30px; margin: 7px 0 0; }
+.summary-eyebrow, .profit-grid span { color: var(--calc-muted); font-size: 12px; letter-spacing: .08em; }
+.price-summary h2 { color: var(--admin-copper); font-family: var(--font-sans), Arial, sans-serif; font-size: 28px; margin: 7px 0 0; }
 .price-final-editable { align-items: baseline; display: flex; gap: 4px; margin: 7px 0 0; }
-.price-final-editable span { color: #602f32; font-family: var(--font-sans), Arial, sans-serif; font-size: 30px; }
+.price-final-editable span { color: var(--admin-copper); font-family: var(--font-sans), Arial, sans-serif; font-size: 28px; }
 /* especificidade alta + !important: o seletor genérico de input (base do
    formulário) tem 3 :not() + elemento, então "vence" qualquer classe simples
    sem isso — esse campo precisa parecer o texto grande de preço, não um
    input comum. */
 .price-summary .price-final-editable input.price-final-input {
-  background: #faf3ec !important;
+  background: var(--field-bg) !important;
   border: 1px solid transparent !important;
   border-radius: 8px !important;
-  color: #602f32 !important;
+  color: var(--admin-copper) !important;
   font-family: var(--font-sans), Arial, sans-serif !important;
-  font-size: 30px !important;
+  font-size: 28px !important;
   min-height: auto !important;
   padding: 2px 9px !important;
   width: 160px;
@@ -258,50 +329,52 @@ textarea:focus {
   box-shadow: none !important;
   outline: none !important;
 }
-.price-final-hint { color: var(--calc-muted); display: block; font-size: 10px; margin-top: 4px; }
-.saved-tag { align-items: center; background: var(--calc-copper); border: 0; border-radius: 8px; color: white; cursor: pointer; display: inline-flex; float: right; font-weight: 600; gap: 6px; margin-top: -32px; padding: 9px 12px; }
-.saved-tag:hover { background: #4c2528; }
+.price-final-hint { color: var(--calc-muted); display: block; font-size: 12px; margin-top: 4px; }
+.saved-tag { align-items: center; background: var(--calc-copper); border: 0; border-radius: 8px; color: var(--on-accent); cursor: pointer; display: inline-flex; float: right; font-weight: 600; gap: 6px; margin-top: -32px; padding: 9px 12px; }
+.saved-tag:hover { background: var(--admin-copper-hover); }
 .price-summary hr, .summary-card hr { border: 0; border-top: 1px solid var(--calc-border); margin: 19px 0; }
 /* margin-top separa do bloco anterior — sem isso "Margem de Lucro & Taxas"
    (o 2º summary-title, sem <hr/> antes dele) ficava colado na caixa de cima
    em vez de ler como legenda da caixa logo abaixo. */
 .summary-title { display: flex; font-size: 12px; justify-content: space-between; margin-top: 22px; }
-.summary-title strong { font-family: var(--font-mono); font-size: 11px; font-weight: 600; }
-.cost-bar { background: #f2e6da; border: 1px solid var(--calc-border); border-radius: 999px; display: flex; height: 12px; margin: 14px 0; overflow: hidden; padding: 2px; }
+.summary-title strong { font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+.cost-bar { background: var(--sunk); border: 1px solid var(--calc-border); border-radius: 999px; display: flex; height: 12px; margin: 14px 0; overflow: hidden; padding: 2px; }
 .cost-bar i { display: block; height: 100%; }
 .cost-bar i:first-child { border-radius: 999px 0 0 999px; }
 .cost-bar i:last-child { border-radius: 0 999px 999px 0; }
 .summary-columns { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
-.cost-line { color: #8a7472; display: flex; font-size: 11px; justify-content: space-between; margin: 9px 0; }
+.cost-line { color: var(--admin-muted); display: flex; font-size: 12px; justify-content: space-between; margin: 9px 0; }
 .cost-line span { align-items: center; display: flex; font-family: var(--font-sans), Arial, sans-serif; gap: 7px; }
 .cost-dot { border-radius: 50%; flex-shrink: 0; height: 7px; width: 7px; }
-.cost-line strong { color: #3d2225; font-family: var(--font-mono); font-weight: 600; }
-.cost-line.bold { color: #3d2225; font-weight: 700; }
+.cost-line strong { color: var(--admin-ink); font-family: var(--font-mono); font-weight: 600; }
+.cost-line.bold { color: var(--admin-ink); font-weight: 700; }
 /* Subtotal (ex: Custo Base) — mesma fonte/tamanho do rótulo e valor usados
    em .profit-grid (PREÇO ATACADO etc.), só que mantendo a cor já usada aqui
    em vez de trocar pra cor de destaque. */
-.cost-line.subtotal span { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
-.cost-line.subtotal strong { font-size: 15px; }
+.cost-line.subtotal span { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.cost-line.subtotal strong { font-size: 16px; }
 /* Custo Base não é a informação que decide se o orçamento tá bom (quem decide
    é o Preço Final Sugerido, ver .final-highlight) — fica esmaecido de propósito. */
 .cost-line.muted { opacity: .55; }
 .cost-line.muted strong { font-weight: 500; }
-.summary-note { color: var(--calc-muted); font-size: 10px; line-height: 1.4; margin: -6px 0 12px; }
+.summary-note { color: var(--calc-muted); font-size: 12px; line-height: 1.4; margin: -6px 0 12px; }
 /* Repete o Preço Final Sugerido dentro da composição de custos — ele já
    aparece isolado no topo da tela, mas repetir aqui, destacado, evita que
    "Custo Base" pareça a informação principal deste bloco. */
-.cost-line.final-highlight { background: var(--calc-copper); border-radius: 9px; color: #fff; margin: 12px -13px -13px; padding: 12px 13px; }
-.cost-line.final-highlight span { color: rgba(255, 255, 255, .85); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-.cost-line.final-highlight strong { color: #fff; font-size: 17px; }
-.summary-card { background: #fbf6ef; border: 1px solid var(--calc-border); border-radius: 12px; margin-top: 18px; padding: 13px; }
+.cost-line.final-highlight { background: var(--calc-copper); border-radius: 9px; color: var(--on-accent); margin: 12px -13px -13px; padding: 12px 13px; }
+.cost-line.final-highlight span { color: var(--on-accent); opacity: .85; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.cost-line.final-highlight strong { color: var(--on-accent); font-size: 16px; }
+.summary-card { background: var(--soft); border: 1px solid var(--calc-border); border-radius: 12px; margin-top: 18px; padding: 13px; }
 .summary-card .cost-line { margin: 0; }
 .profit-grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; margin-top: 16px; }
-.profit-grid div { background: #fbf6ef; border: 1px solid var(--calc-border); border-radius: 12px; padding: 12px; }
-.profit-grid strong { color: var(--calc-copper); display: block; font-family: var(--font-mono); font-size: 15px; margin-top: 4px; }
-.profit-grid small { color: var(--calc-muted); display: block; font-size: 9px; margin-top: 3px; }
-.report-button, .whatsapp-button { align-items: center; border: 0; border-radius: 11px; color: white; cursor: pointer; display: flex; font-weight: 600; gap: 8px; justify-content: center; margin-top: 18px; min-height: 40px; width: 100%; }
-.report-button { background: #8a4a4e; }
-.whatsapp-button { background: var(--calc-olive); margin-top: 8px; }
+.profit-grid div { background: var(--soft); border: 1px solid var(--calc-border); border-radius: 12px; padding: 12px; }
+.profit-grid strong { color: var(--calc-copper); display: block; font-family: var(--font-mono); font-size: 16px; margin-top: 4px; }
+.profit-grid small { color: var(--calc-muted); display: block; font-size: 12px; margin-top: 3px; }
+.report-button, .whatsapp-button { align-items: center; border: 0; border-radius: 11px; color: var(--on-accent); cursor: pointer; display: flex; font-weight: 600; gap: 8px; justify-content: center; margin-top: 18px; min-height: 40px; width: 100%; }
+.report-button { background: var(--admin-copper); }
+.clear-quote-button { background: transparent; border: 0; color: var(--admin-muted); cursor: pointer; display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; margin: 12px auto 0; padding: 6px 10px; text-decoration: underline; }
+.clear-quote-button:hover { color: var(--danger); }
+.whatsapp-button { background: var(--admin-paper); border: 1px solid var(--calc-border) !important; color: var(--calc-ink) !important; margin-top: 8px; }
 @media (max-width: 900px) { .calculator-grid { grid-template-columns: 1fr; } .price-summary { position: static; } }
 @media (max-width: 640px) {
   .project-header, .field-grid.three, .field-grid.two-one, .time-grid { grid-template-columns: 1fr; }
@@ -316,13 +389,6 @@ textarea:focus {
 }
 
 .admin-shell {
-  --admin-ink: #3d2225;
-  --admin-muted: #8a7472;
-  --admin-border: #e8ddd7;
-  --admin-paper: #fffdfb;
-  --admin-bg: #f7f1e9;
-  --admin-copper: #602f32;
-  --admin-olive: #777f5d;
   min-height: 100vh;
   background: var(--admin-bg);
   color: var(--admin-ink);
@@ -332,7 +398,7 @@ textarea:focus {
 
 .admin-topbar {
   align-items: center;
-  background: rgba(250, 248, 244, 0.96);
+  background: var(--topbar-bg);
   border-bottom: 1px solid var(--admin-border);
   display: flex;
   gap: 28px;
@@ -348,7 +414,7 @@ textarea:focus {
   color: var(--admin-ink);
   display: flex;
   gap: 12px;
-  min-width: 275px;
+  min-width: 0;
   text-decoration: none;
 }
 
@@ -360,30 +426,30 @@ textarea:focus {
 
 .admin-brand strong {
   display: block;
-  font-size: 19px;
+  font-size: 20px;
   font-weight: 500;
   letter-spacing: 0.23em;
 }
 
 .brand-tag {
-  background: #f8dee7;
-  border: 1px solid #e8ddd7;
+  background: var(--pink-soft);
+  border: 1px solid var(--admin-border);
   border-radius: 20px;
   color: var(--admin-copper);
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  padding: 3px 9px;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
 }
 
 .admin-brand small {
   color: var(--admin-muted);
   display: block;
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 9px;
-  letter-spacing: 0.15em;
-  margin-top: 4px;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  margin-top: 3px;
 }
 
 .brand-mark {
@@ -391,7 +457,7 @@ textarea:focus {
      "AC" e o texto "{3D STUDIO}" embaixo — background-size dá zoom pra
      caber só o monograma no círculo pequeno do cabeçalho. */
   background: url("/Logo.jpeg") 55% 40% / 175% no-repeat;
-  border: 1px solid #d6c8c4;
+  border: 1px solid var(--logo-ring);
   border-radius: 50%;
   flex-shrink: 0;
   height: 42px;
@@ -411,12 +477,12 @@ textarea:focus {
   align-items: center;
   border: 1px solid transparent;
   border-radius: 13px;
-  color: #8a7472;
+  color: var(--admin-muted);
   display: inline-flex;
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 12.5px;
-  gap: 7px;
-  padding: 10px 13px;
+  font-size: 14px;
+  gap: 6px;
+  padding: 8px 11px;
   text-decoration: none;
 }
 
@@ -432,10 +498,10 @@ textarea:focus {
 }
 
 .admin-nav b {
-  background: #602f32;
+  background: var(--admin-copper);
   border-radius: 50%;
-  color: white;
-  font-size: 10px;
+  color: var(--on-accent);
+  font-size: 12px;
   margin-left: -2px;
   padding: 3px 6px;
 }
@@ -446,15 +512,19 @@ textarea:focus {
   width: 15px;
 }
 
+/* Sistema de botões (3 tipos): principal = vinho sólido (.primary-button,
+   .new-order-cta, .new-quote-button, .saved-tag); secundário = fundo do cartão
+   com borda (.secondary-button, .quiet-button, .load-editor-button);
+   discreto = só texto. Oliva fica para status de "concluído", não para ação. */
 .new-order-cta {
   align-items: center;
-  background: var(--admin-olive);
+  background: var(--admin-copper);
   border-radius: 12px;
-  color: white;
+  color: var(--on-accent);
   display: inline-flex;
   flex-shrink: 0;
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 600;
   gap: 7px;
   padding: 11px 16px;
@@ -463,12 +533,12 @@ textarea:focus {
 }
 
 .new-order-cta:hover {
-  background: #5f6549;
+  background: var(--admin-copper-hover);
 }
 
 .admin-account {
   align-items: center;
-  color: #8a7472;
+  color: var(--admin-muted);
   display: flex;
   flex-shrink: 0;
   font-family: var(--font-sans), Arial, sans-serif;
@@ -488,12 +558,34 @@ textarea:focus {
 }
 
 .logout-button:hover {
-  color: #a95037;
+  color: var(--danger-strong);
+}
+
+@media (max-width: 1600px) {
+  .admin-account-email { display: none; }
+}
+
+.theme-toggle {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--admin-border);
+  border-radius: 50%;
+  color: var(--admin-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  width: 32px;
+}
+
+.theme-toggle:hover {
+  border-color: var(--admin-copper);
+  color: var(--admin-copper);
 }
 
 .admin-account a {
   color: var(--admin-muted);
-  font-size: 18px;
+  font-size: 20px;
   margin-left: 12px;
   text-decoration: none;
 }
@@ -527,17 +619,15 @@ textarea:focus {
   padding: 0 24px;
 }
 
+/* Cabeçalho de página: sem caixa (antes era um card de ~105px que só repetia
+   o nome do menu) — título e descrição direto no fundo, ações à direita. */
 .library-heading {
   align-items: center;
-  background: var(--admin-paper);
-  border: 1px solid var(--admin-border);
-  border-radius: 17px;
-  box-shadow: 0 2px 4px rgba(80, 58, 40, 0.04);
   display: flex;
   gap: 16px;
   justify-content: space-between;
-  margin-bottom: 24px;
-  padding: 22px 25px;
+  margin-bottom: 20px;
+  padding: 4px 0 0;
 }
 
 /* Sem isto, uma descrição longa (ex: Usuários) não cede espaço pro botão
@@ -548,19 +638,22 @@ textarea:focus {
 }
 
 .library-heading h1 {
-  font-size: 25px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  line-height: 1.2;
   margin: 0;
 }
 
 .library-heading p {
   color: var(--admin-muted);
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 12px;
-  margin: 4px 0 0;
+  font-size: 14px;
+  margin: 2px 0 0;
 }
 
 .preset-tabs {
-  background: #faf3ec;
+  background: var(--field-bg);
   border: 1px solid var(--admin-border);
   border-radius: 14px;
   display: flex;
@@ -572,7 +665,7 @@ textarea:focus {
   background: transparent;
   border: 0;
   border-radius: 10px;
-  color: #8a7472;
+  color: var(--admin-muted);
   cursor: pointer;
   font-family: var(--font-sans), Arial, sans-serif;
   font-size: 12px;
@@ -580,7 +673,7 @@ textarea:focus {
 }
 
 .preset-tabs button.selected, .preset-tabs button:hover {
-  background: white;
+  background: var(--raised);
   box-shadow: 0 1px 4px rgba(84, 58, 37, 0.08);
   color: var(--admin-copper);
 }
@@ -624,11 +717,11 @@ textarea:focus {
 }
 
 .preset-form label {
-  color: #8a7472;
+  color: var(--admin-muted);
   display: flex;
   flex-direction: column;
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   gap: 5px;
 }
 
@@ -642,15 +735,15 @@ textarea:focus {
 /* Perfis de acesso do usuário — vários podem ficar marcados ao mesmo tempo
    (ex: Catálogo + Vendas), por isso virou uma lista de checkboxes em vez de
    um único select. */
-.role-field > span { color: #8a7472; display: flex; flex-direction: column; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; gap: 2px; margin-bottom: 5px; }
-.role-field > span > small { color: var(--admin-muted); font-size: 10px; text-transform: none; letter-spacing: normal; }
+.role-field > span { color: var(--admin-muted); display: flex; flex-direction: column; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; gap: 2px; margin-bottom: 5px; }
+.role-field > span > small { color: var(--admin-muted); font-size: 12px; text-transform: none; letter-spacing: normal; }
 .role-checkbox-list { display: grid; gap: 6px; }
-.role-checkbox { align-items: flex-start; background: #faf3ec; border: 1px solid var(--admin-border); border-radius: 9px; cursor: pointer; display: flex; gap: 9px; padding: 9px 11px; }
-.role-checkbox.selected { background: #f2e6da; border-color: var(--admin-copper); }
+.role-checkbox { align-items: flex-start; background: var(--field-bg); border: 1px solid var(--admin-border); border-radius: 9px; cursor: pointer; display: flex; gap: 9px; padding: 9px 11px; }
+.role-checkbox.selected { background: var(--sunk); border-color: var(--admin-copper); }
 .role-checkbox.disabled { cursor: not-allowed; opacity: .6; }
 .role-checkbox input[type="checkbox"] { accent-color: var(--admin-copper); flex-shrink: 0; height: 15px; margin-top: 2px; width: 15px; }
 .role-checkbox strong { color: var(--admin-ink); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; }
-.role-checkbox small { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; margin-top: 2px; }
+.role-checkbox small { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; margin-top: 2px; }
 
 .form-grid {
   display: grid;
@@ -680,7 +773,7 @@ textarea:focus {
   background: var(--admin-copper);
   border: 0;
   border-radius: 11px;
-  color: white;
+  color: var(--on-accent);
   cursor: pointer;
   font-family: var(--font-sans), Arial, sans-serif;
   font-size: 12px;
@@ -691,7 +784,7 @@ textarea:focus {
 }
 
 .primary-button:hover {
-  background: #4c2528;
+  background: var(--admin-copper-hover);
 }
 
 a.primary-button {
@@ -720,10 +813,10 @@ a.primary-button {
 
 .secondary-button {
   align-items: center;
-  background: #f2e6da;
+  background: var(--admin-paper);
   border: 1px solid var(--admin-border);
   border-radius: 11px;
-  color: var(--admin-muted);
+  color: var(--admin-ink);
   cursor: pointer;
   display: inline-flex;
   font-family: var(--font-sans), Arial, sans-serif;
@@ -762,7 +855,7 @@ a.primary-button {
 /* Link pro orçamento de origem (Produção) — linha própria abaixo do topo do
    card, não mais espremido ao lado do nº do pedido (quebrava o badge em
    várias linhas quando os dois códigos juntos não cabiam). */
-.job-quote-link { align-items: center; color: var(--admin-copper); display: inline-flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; font-weight: 600; gap: 4px; margin-top: 8px; text-decoration: none; }
+.job-quote-link { align-items: center; color: var(--admin-copper); display: inline-flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; font-weight: 600; gap: 4px; margin-top: 8px; text-decoration: none; }
 .job-quote-link .nav-icon { flex-shrink: 0; height: 11px; width: 11px; }
 .job-quote-link:hover { text-decoration: underline; }
 
@@ -784,7 +877,7 @@ a.material-badge:hover { text-decoration: underline; }
   color: var(--admin-muted);
   cursor: pointer;
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   padding: 4px 7px;
   white-space: nowrap;
 }
@@ -805,11 +898,11 @@ a.material-badge:hover { text-decoration: underline; }
 }
 
 .material-badge {
-  background: #f8dee7;
+  background: var(--pink-soft);
   border-radius: 6px;
   color: var(--admin-copper);
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   padding: 4px 7px;
 }
@@ -819,7 +912,7 @@ a.material-badge:hover { text-decoration: underline; }
 }
 
 .supply-badge {
-  color: #8a7472;
+  color: var(--admin-muted);
   max-width: 190px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -830,14 +923,14 @@ a.material-badge:hover { text-decoration: underline; }
   align-items: center;
   background: transparent;
   border: 0;
-  color: #8a7472;
+  color: var(--admin-muted);
   cursor: pointer;
   display: inline-flex;
   padding: 3px;
 }
 
 .delete-button:hover {
-  color: #a95037;
+  color: var(--danger-strong);
 }
 
 .preset-card h3 {
@@ -849,9 +942,9 @@ a.material-badge:hover { text-decoration: underline; }
 }
 
 .preset-card p {
-  color: #8a7472;
+  color: var(--admin-muted);
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.4;
   margin: 3px 0;
 }
@@ -859,7 +952,7 @@ a.material-badge:hover { text-decoration: underline; }
 .preset-card > strong {
   display: block;
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   margin-top: 7px;
 }
 
@@ -868,22 +961,22 @@ a.material-badge:hover { text-decoration: underline; }
 }
 
 .card-detail {
-  border-top: 1px solid #e8ddd7;
+  border-top: 1px solid var(--admin-border);
   margin-top: 9px !important;
   padding-top: 7px;
 }
 
 .preset-card.low-stock {
-  border-color: #e3b591;
+  border-color: var(--warn-border);
 }
 
 .low-stock-badge {
-  background: #f7e2db;
+  background: var(--danger-soft-2);
   border-radius: 5px;
-  color: #a3402a;
+  color: var(--danger);
   display: inline-block;
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   margin-left: 8px;
   padding: 2px 6px;
@@ -895,12 +988,12 @@ a.material-badge:hover { text-decoration: underline; }
 .preset-card.inactive { opacity: .55; }
 .preset-card.inactive:hover { opacity: .85; }
 .inactive-badge {
-  background: #e8ddd7;
+  background: var(--admin-border);
   border-radius: 5px;
   color: var(--admin-muted);
   display: inline-block;
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   padding: 2px 6px;
 }
@@ -912,12 +1005,12 @@ a.material-badge:hover { text-decoration: underline; }
 }
 
 .cost-pill {
-  background: #f8dee7;
+  background: var(--pink-soft);
   border-radius: 5px;
   color: var(--admin-copper);
   display: inline-block;
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   margin-top: 8px;
   padding: 4px 7px;
 }
@@ -932,7 +1025,7 @@ a.material-badge:hover { text-decoration: underline; }
 /* Sucesso/erro no mesmo cinza-neutro fazia uma falha (ex: bloqueio de
    segurança ao editar o próprio perfil) parecer que não aconteceu nada —
    aqui distingue visualmente sem mudar o padrão pros casos neutros. */
-.admin-feedback.feedback-error { color: #a95037; font-weight: 600; }
+.admin-feedback.feedback-error { color: var(--danger-strong); font-weight: 600; }
 .admin-feedback.feedback-ok { color: var(--admin-olive); font-weight: 600; }
 
 .settings-layout {
@@ -950,22 +1043,22 @@ a.material-badge:hover { text-decoration: underline; }
 .settings-intro {
   color: var(--admin-muted);
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.45;
   margin: -3px 0 4px;
 }
 
 .settings-group {
-  border-top: 1px solid #e8ddd7;
+  border-top: 1px solid var(--admin-border);
   display: grid;
   gap: 11px;
   padding-top: 13px;
 }
 
 .settings-group h3 {
-  color: #8a7472;
+  color: var(--admin-muted);
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: .08em;
   margin: 0;
   text-transform: uppercase;
@@ -1010,111 +1103,115 @@ a.material-badge:hover { text-decoration: underline; }
    (encolhe) e o texto ao lado (quebra as próprias linhas), nunca o botão. */
 .project-tools { align-items: center; display: flex; flex-shrink: 0; gap: 8px; }
 .project-tools input { flex-shrink: 1; min-width: 120px; width: 255px; }
-.new-quote-button, .load-editor-button { background: var(--admin-copper); border-radius: 9px; color: white; flex-shrink: 0; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; padding: 10px 13px; text-decoration: none; white-space: nowrap; }
+.new-quote-button, .load-editor-button { background: var(--admin-copper); border-radius: 9px; color: var(--on-accent); flex-shrink: 0; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; padding: 10px 13px; text-decoration: none; white-space: nowrap; }
 button.new-quote-button { border: 0; cursor: pointer; }
 .catalog-new-formbar { align-items: center; display: flex; gap: 16px; justify-content: space-between; margin-bottom: 18px; }
 .catalog-new-formbar .sku-hint { flex: 1; margin: 0; }
 .project-tabs { display: flex; gap: 6px; margin: 0 0 16px; }
-.project-tabs button { background: #faf3ec; border: 1px solid var(--admin-border); border-radius: 9px; color: var(--admin-muted); cursor: pointer; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; padding: 9px 13px; }
-.project-tabs button.selected { background: var(--admin-olive); border-color: var(--admin-olive); color: white; }
+.project-tabs button { background: var(--field-bg); border: 1px solid var(--admin-border); border-radius: 9px; color: var(--admin-muted); cursor: pointer; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; padding: 9px 13px; }
+.project-tabs button.selected { background: var(--pink-soft); border-color: var(--admin-copper); color: var(--admin-copper); font-weight: 700; }
 .project-list { display: grid; gap: 14px; max-width: 760px; }
 .project-card { background: var(--admin-paper); border: 1px solid var(--admin-border); border-radius: 16px; box-shadow: 0 2px 5px rgba(80, 58, 40, .04); padding: 20px; }
 .project-card-top, .project-card-heading, .project-card-details { align-items: center; display: flex; justify-content: space-between; }
 .project-card-top > div { align-items: center; display: flex; gap: 8px; }
-.project-status { background: #f2e6da; border-radius: 6px; color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; padding: 5px 7px; }
-.project-card-heading { border-bottom: 1px solid #e8ddd7; margin-top: 14px; padding-bottom: 13px; }
+.project-status { background: var(--sunk); border-radius: 6px; color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; padding: 5px 7px; }
+.project-card-heading { border-bottom: 1px solid var(--admin-border); margin-top: 14px; padding-bottom: 13px; }
 .project-card-heading h2 { font-family: var(--font-sans), Arial, sans-serif; font-size: 16px; margin: 0; }
-.project-card-heading p, .project-card-details, .competitor-card > a { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; margin: 5px 0 0; }
-.project-card-heading > strong { color: var(--admin-copper); font-family: var(--font-sans), Arial, sans-serif; font-size: 21px; }
+.project-card-heading p, .project-card-details, .competitor-card > a { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; margin: 5px 0 0; }
+.project-card-heading > strong { color: var(--admin-copper); font-family: var(--font-sans), Arial, sans-serif; font-size: 20px; }
 .project-card-details { justify-content: flex-start; gap: 18px; padding: 12px 0 15px; }
-.load-editor-button { background: #f2e6da; color: var(--admin-muted); display: inline-block; }
+.load-editor-button { background: var(--admin-paper); border: 1px solid var(--admin-border); color: var(--admin-ink); display: inline-block; }
+.load-editor-button:hover { border-color: var(--admin-copper); color: var(--admin-copper); }
 .project-card-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; }
 .project-card-actions .primary-button { margin: 0; padding: 0 14px; }
 .competitor-card > a { color: var(--admin-copper); text-decoration: none; }
-.receivable-detail { border-top: 1px solid #e8ddd7; margin-top: 14px; padding-top: 14px; }
+.receivable-detail { border-top: 1px solid var(--admin-border); margin-top: 14px; padding-top: 14px; }
 /* Aba "Não Executados" — mesmo card de orçamento, levemente esmaecido pra
    diferenciar visualmente de um orçamento ainda válido na outra aba. */
 .project-card-archived { opacity: .85; }
-.project-card-archive-reason { background: #faf3ec; border-radius: 8px; color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; margin: 12px 0 0; padding: 10px 12px; }
+.project-card-archive-reason { background: var(--field-bg); border-radius: 8px; color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; margin: 12px 0 0; padding: 10px 12px; }
 
 /* Popup de confirmação (motivo do arquivamento) — sem componente de modal
    no site ainda, então nasce aqui; reaproveitável se surgir outro caso. */
 .modal-backdrop { align-items: center; background: rgba(61, 34, 37, .45); bottom: 0; display: flex; justify-content: center; left: 0; padding: 20px; position: fixed; right: 0; top: 0; z-index: 100; }
 .modal-card { background: var(--admin-paper); border-radius: 16px; box-shadow: 0 12px 40px rgba(61, 34, 37, .25); max-width: 420px; padding: 24px; width: 100%; }
-.modal-card h2 { font-family: var(--font-sans), Arial, sans-serif; font-size: 17px; margin: 0 0 10px; }
-.modal-card > p { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 13px; margin: 0 0 16px; }
+.modal-card h2 { font-family: var(--font-sans), Arial, sans-serif; font-size: 16px; margin: 0 0 10px; }
+.modal-card > p { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 14px; margin: 0 0 16px; }
 .modal-card > p strong { color: var(--admin-ink); }
-.modal-card label { color: var(--admin-muted); display: flex; flex-direction: column; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; gap: 6px; }
+.modal-card label { color: var(--admin-muted); display: flex; flex-direction: column; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; gap: 6px; }
 .modal-card textarea { min-height: 84px; resize: vertical; }
 .modal-card .form-actions { margin-top: 18px; }
 .modal-card > label, .modal-card .form-grid { margin-top: 12px; }
 /* Aviso de ação irreversível (excluir definitivo) — vermelho de alerta, não
    o vinho padrão de "ação principal", pra diferenciar de um confirm comum. */
-.modal-warning { background: #fbeae5; border-radius: 8px; color: #a3402a !important; font-size: 12px !important; margin: -8px 0 0 !important; padding: 10px 12px; }
-.modal-danger { background: #a3402a !important; }
-.modal-danger:hover { background: #7e2f1c !important; }
+.modal-warning { background: var(--danger-soft); border-radius: 8px; color: var(--danger) !important; font-size: 12px !important; margin: -8px 0 0 !important; padding: 10px 12px; }
+.modal-danger { background: var(--danger) !important; }
+.modal-danger:hover { background: var(--danger-hover) !important; }
 
 /* Popup de conversão de orçamento em venda (Projetos → Converter em Venda) —
    mais largo pra caber o resumo do orçamento (só leitura) + os campos que
    são da venda em si. */
 .modal-card-wide { max-height: 90vh; max-width: 560px; overflow-y: auto; }
-.convert-summary { background: #f2e6da; border-radius: 12px; margin-bottom: 12px; padding: 13px 15px; }
+.convert-summary { background: var(--sunk); border-radius: 12px; margin-bottom: 12px; padding: 13px 15px; }
 .convert-summary-block { margin-bottom: 10px; }
-.convert-summary-block > span, .convert-summary-row > span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.convert-summary-block > span, .convert-summary-row > span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .convert-summary-block ul { list-style: none; margin: 6px 0 0; padding: 0; }
-.convert-summary-block li { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 13px; line-height: 1.5; }
+.convert-summary-block li { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 14px; line-height: 1.5; }
 .convert-summary-row { align-items: center; display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; }
-.convert-summary-row strong { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 13px; font-weight: 600; text-align: right; }
+.convert-summary-row strong { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 14px; font-weight: 600; text-align: right; }
 .convert-summary-row.total { border-top: 1px solid var(--admin-border); margin-top: 10px; padding-top: 10px; }
 .convert-summary-row.total strong { color: var(--admin-copper); font-size: 16px; }
 .convert-summary-value { display: flex; flex-direction: column; text-align: right; }
-.convert-summary-value small { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; margin-top: 2px; }
+.convert-summary-value small { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; margin-top: 2px; }
 .convert-edit-link { display: inline-block; margin-bottom: 12px; }
 
 .payment-history { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
-.payment-row { align-items: center; background: #faf3ec; border: 1px solid var(--admin-border); border-radius: 8px; display: flex; font-size: 12px; gap: 10px; padding: 8px 11px; }
+.payment-row { align-items: center; background: var(--field-bg); border: 1px solid var(--admin-border); border-radius: 8px; display: flex; font-size: 12px; gap: 10px; padding: 8px 11px; }
 .payment-row strong { font-family: var(--font-mono); margin-right: auto; }
 .payment-row.reversed { opacity: .6; }
 .payment-row .secondary-button { min-height: 0; padding: 5px 10px; }
 
 .costs-stack { display: flex; flex-direction: column; gap: 24px; }
+.cash-section-title { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 16px; font-weight: 700; margin: 8px 0 -12px; }
 .wide-form .form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 .cashflow-stats { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .cash-in { color: var(--admin-olive); }
-.cash-out { color: #a3402a; }
+.cash-out { color: var(--danger); }
+/* Valor negativo em qualquer indicador (saldo, projeção, lucro, margem). */
+.negative, .production-stats strong.negative { color: var(--danger); }
 .scroll-table { overflow-x: auto; }
 .cash-table { border-collapse: collapse; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; min-width: 720px; width: 100%; }
-.cash-table th { border-bottom: 1px solid var(--admin-border); color: var(--admin-muted); font-size: 10px; letter-spacing: .06em; padding: 0 12px 9px 0; text-align: left; text-transform: uppercase; }
-.cash-table td { border-bottom: 1px solid #e8ddd7; padding: 11px 12px 11px 0; }
+.cash-table th { border-bottom: 1px solid var(--admin-border); color: var(--admin-muted); font-size: 12px; letter-spacing: .06em; padding: 0 12px 9px 0; text-align: left; text-transform: uppercase; }
+.cash-table td { border-bottom: 1px solid var(--admin-border); padding: 11px 12px 11px 0; }
 .cash-table tr:last-child td { border-bottom: 0; }
 .catalog-layout { align-items: start; display: grid; gap: 24px; grid-template-columns: 325px minmax(0, 1fr); }
 .catalog-results { min-width: 0; }
 /* Mesma linha de "X produtos" (dentro de .catalog-filters) — evita mais uma
    fileira própria empurrando o resto do layout pra baixo. */
 .catalog-sort { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
-.catalog-sort > span { color: var(--calc-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; margin-right: 2px; }
+.catalog-sort > span { color: var(--calc-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; margin-right: 2px; }
 .catalog-filters { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; margin-bottom: 14px; }
 .catalog-filters strong { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; }
 .catalog-filters input { flex: 1; min-width: 200px; }
 .catalog-filters-right { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; }
-.items-per-page { align-items: center; color: var(--admin-muted); display: flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; gap: 6px; }
+.items-per-page { align-items: center; color: var(--admin-muted); display: flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; gap: 6px; }
 
 .pagination { align-items: center; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 22px 0 4px; }
 .pagination button { background: var(--admin-paper); border: 1px solid var(--admin-border); border-radius: 8px; color: var(--admin-muted); cursor: pointer; font-family: var(--font-mono); font-size: 12px; min-width: 32px; padding: 7px 9px; }
 .pagination button:hover:not(:disabled) { border-color: var(--admin-copper); color: var(--admin-copper); }
-.pagination button.selected { background: var(--admin-copper); border-color: var(--admin-copper); color: white; }
+.pagination button.selected { background: var(--admin-copper); border-color: var(--admin-copper); color: var(--on-accent); }
 .pagination button:disabled { cursor: not-allowed; opacity: .4; }
 
-.sim-panel { background: #f8ede0; border: 1px solid #e3cfc9; border-radius: 12px; margin: 4px 0; padding: 14px 16px; }
-.sim-title { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; letter-spacing: .1em; margin-bottom: 10px; text-transform: uppercase; }
+.sim-panel { background: var(--soft-warm); border: 1px solid var(--admin-border-strong); border-radius: 12px; margin: 4px 0; padding: 14px 16px; }
+.sim-title { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; letter-spacing: .1em; margin-bottom: 10px; text-transform: uppercase; }
 .sim-grid { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 10px; }
-.sim-grid span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; }
-.sim-grid strong { color: var(--admin-copper); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 15px; margin-top: 2px; }
-.sim-alert { border-radius: 8px; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; margin: 8px 0 0; padding: 8px 10px; }
-.sim-alert.sim-good { background: #e8f0e2; color: var(--admin-olive); }
-.sim-alert.sim-warning { background: #fbf0da; color: #8a6a1f; }
-.sim-alert.sim-bad { background: #f7e2db; color: #a3402a; }
+.sim-grid span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; }
+.sim-grid strong { color: var(--admin-copper); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 16px; margin-top: 2px; }
+.sim-alert { border-radius: 8px; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; margin: 8px 0 0; padding: 8px 10px; }
+.sim-alert.sim-good { background: var(--ok-soft); color: var(--admin-olive); }
+.sim-alert.sim-warning { background: var(--warn-soft); color: var(--warn); }
+.sim-alert.sim-bad { background: var(--danger-soft-2); color: var(--danger); }
 
 .login-content { align-items: center; display: flex; justify-content: center; min-height: 55vh; }
 .login-form { max-width: 360px; width: 100%; }
@@ -1125,13 +1222,13 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .dashboard-shortcuts { display: flex; flex-wrap: wrap; gap: 10px; }
 .product-grid { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .product-card { background: var(--admin-paper); border: 1px solid var(--admin-border); border-radius: 16px; box-shadow: 0 2px 5px rgba(80, 58, 40, .04); min-width: 0; padding: 17px; }
-.product-card h2 { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 11px 0 5px; }
-.product-card > p { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; line-height: 1.4; margin: 4px 0; }
+.product-card h2 { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 16px; line-height: 1.35; margin: 11px 0 5px; }
+.product-card > p { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; line-height: 1.4; margin: 4px 0; }
 .product-card > p.card-description { color: var(--admin-ink); font-style: italic; }
 
-.product-card-photo { align-items: center; aspect-ratio: 4 / 3; background: #f2e6da; border-radius: 16px 16px 0 0; display: flex; justify-content: center; margin: -17px -17px 12px; overflow: hidden; position: relative; }
+.product-card-photo { align-items: center; aspect-ratio: 4 / 3; background: var(--sunk); border-radius: 16px 16px 0 0; display: flex; justify-content: center; margin: -17px -17px 12px; overflow: hidden; position: relative; }
 .product-card-photo img { display: block; height: 100%; object-fit: cover; width: 100%; }
-.product-card-photo-placeholder { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 34px; }
+.product-card-photo-placeholder { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 28px; }
 
 /* Catálogo Novo (src/app/catalog-new) — cards menores, mais por linha, pra
    ficar navegável com muitos produtos; o Catálogo atual não usa esta classe
@@ -1142,67 +1239,116 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .product-grid-compact .product-card { display: flex; flex-direction: column; gap: 4px; padding: 10px; }
 .product-grid-compact .product-card-photo { aspect-ratio: 1 / 1; margin: -10px -10px 10px; }
 /* contain (não cover) — reduz mantendo a proporção, sem cortar o produto; o
-   fundo (#f2e6da, igual ao do container) preenche a sobra dos dois lados. */
+   fundo (var(--sunk), igual ao do container) preenche a sobra dos dois lados. */
 .product-grid-compact .product-card-photo img { height: 100%; object-fit: contain; width: 100%; }
-.product-grid-compact .product-card-photo-placeholder { font-size: 30px; }
+.product-grid-compact .product-card-photo-placeholder { font-size: 28px; }
 .product-grid-compact .material-badge { align-self: flex-start; }
 .product-grid-compact h2 { margin: 2px 0 4px; }
 /* Cor de fundo vem por inline style (uma por categoria, ver categoryColor em
    catalog/page.tsx) — aqui só o resto do visual da tarja. */
-.product-card-category { border-radius: 20px; box-shadow: 0 1px 4px rgba(0, 0, 0, .18); color: white; font-family: var(--font-sans), Arial, sans-serif; font-size: 9px; font-weight: 700; left: 8px; letter-spacing: .04em; padding: 4px 9px; position: absolute; text-transform: uppercase; top: 8px; }
+.product-card-category { border-radius: 20px; box-shadow: 0 1px 4px rgba(0, 0, 0, .18); color: white; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; font-weight: 700; left: 8px; letter-spacing: .04em; padding: 4px 9px; position: absolute; text-transform: uppercase; top: 8px; }
 .product-card-photo-actions { display: flex; gap: 4px; position: absolute; right: 8px; top: 8px; }
 /* Editar é a ação principal do card (o que se faz o tempo todo); Excluir é
    destrutiva e rara — por isso um vira botão cheio, na cor da marca, e o
    outro continua discreto, só um ícone, pra não convidar clique acidental. */
-.product-card-photo-actions .edit-button { background: var(--admin-copper); border: 0; color: white; font-weight: 700; padding: 5px 10px; }
-.product-card-photo-actions .edit-button:hover { background: #4c2528; }
-.product-card-photo-actions .delete-button { background: rgba(255, 253, 251, .92); border-radius: 7px; }
-.product-card-stats { border-top: 1px solid #e8ddd7; color: var(--admin-muted); display: flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; justify-content: space-between; margin-top: 8px; padding-top: 9px; }
+.product-card-photo-actions .edit-button { background: var(--admin-copper); border: 0; color: var(--on-accent); font-weight: 700; padding: 5px 10px; }
+.product-card-photo-actions .edit-button:hover { background: var(--admin-copper-hover); }
+.product-card-photo-actions .delete-button { background: var(--overlay); border-radius: 7px; }
+.product-card-stats { border-top: 1px solid var(--admin-border); color: var(--admin-muted); display: flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; justify-content: space-between; margin-top: 8px; padding-top: 9px; }
 .product-card-stats span { align-items: center; display: inline-flex; gap: 4px; }
 .product-card-stats .nav-icon { height: 12px; width: 12px; }
-.price-highlight { color: var(--admin-copper) !important; font-size: 19px !important; }
+.price-highlight { color: var(--admin-copper) !important; font-size: 20px !important; }
 /* Card compacto de orçamento (Projetos, mesmo grid do Catálogo) — ações
    extras (PDF/Converter) abaixo dos indicadores, e o motivo de
    arquivamento encolhido pra caber num card de 5 por linha. */
-.quote-card-actions { align-items: center; border-top: 1px solid #e8ddd7; display: flex; gap: 8px; justify-content: space-between; margin-top: 8px; padding-top: 8px; }
-.quote-card-actions a { align-items: center; color: var(--admin-copper); display: inline-flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; gap: 4px; text-decoration: none; }
+.quote-card-actions { align-items: center; border-top: 1px solid var(--admin-border); display: flex; gap: 8px; justify-content: space-between; margin-top: 8px; padding-top: 8px; }
+.quote-card-actions a { align-items: center; color: var(--admin-copper); display: inline-flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; gap: 4px; text-decoration: none; }
 .quote-card-actions a .nav-icon { height: 12px; width: 12px; }
-.quote-card-actions button { background: var(--admin-olive); border: 0; border-radius: 6px; color: white; cursor: pointer; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; padding: 4px 8px; }
+.quote-card-actions button { background: var(--admin-copper); border: 0; border-radius: 6px; color: var(--on-accent); cursor: pointer; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; padding: 4px 8px; }
 .quote-card-actions button:disabled { cursor: not-allowed; opacity: .6; }
-.product-card .project-card-archive-reason { font-size: 10px; line-height: 1.4; margin: 8px 0 0; padding: 7px 9px; }
+.product-card .project-card-archive-reason { font-size: 12px; line-height: 1.4; margin: 8px 0 0; padding: 7px 9px; }
 @media (max-width: 1500px) { .product-grid-compact { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 1100px) { .product-grid-compact { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .product-grid-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 480px) { .product-grid-compact { grid-template-columns: 1fr; } }
 
-.sku-hint { background: #f8ede0; border-radius: 8px; color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; margin: -4px 0 2px; padding: 8px 10px; }
+.sku-hint { background: var(--soft-warm); border-radius: 8px; color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; margin: -4px 0 2px; padding: 8px 10px; }
 .sku-hint strong { color: var(--admin-copper); }
 
 .image-preview { align-items: center; display: flex; gap: 12px; }
 .image-preview img { border: 1px solid var(--admin-border); border-radius: 10px; height: 64px; object-fit: cover; width: 64px; }
 
+/* Galeria de fotos no formulário do Catálogo (até 5; a primeira é a capa). */
+.image-gallery { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.image-gallery-item { border: 1px solid var(--admin-border); border-radius: 10px; height: 96px; overflow: hidden; position: relative; width: 96px; }
+.image-gallery-item.cover { border: 2px solid var(--admin-copper); }
+.image-gallery-item img { display: block; height: 100%; object-fit: cover; width: 100%; }
+.image-gallery-badge, .image-gallery-cover { background: rgba(61, 34, 37, .78); border: 0; bottom: 0; color: white; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; font-weight: 700; left: 0; padding: 4px 0; position: absolute; right: 0; text-align: center; }
+.image-gallery-badge { background: var(--admin-copper); }
+.image-gallery-cover { cursor: pointer; opacity: 0; transition: opacity .15s; }
+.image-gallery-item:hover .image-gallery-cover, .image-gallery-cover:focus-visible { opacity: 1; }
+@media (hover: none) { .image-gallery-cover { opacity: 1; } }
+.image-gallery-remove { align-items: center; background: var(--overlay); border: 0; border-radius: 50%; color: var(--admin-copper); cursor: pointer; display: flex; height: 22px; justify-content: center; padding: 0; position: absolute; right: 4px; top: 4px; width: 22px; }
+.image-gallery-remove .nav-icon { height: 12px; width: 12px; }
+
+/* Carrossel do card do Catálogo — só aparece quando o produto tem 2+ fotos. */
+.photo-carousel { height: 100%; overflow: hidden; position: relative; width: 100%; }
+.photo-carousel-track { display: flex; height: 100%; transition: transform .3s ease; }
+.product-card-photo .photo-carousel-track img { flex: 0 0 100%; min-width: 0; }
+.photo-carousel-arrow { align-items: center; background: var(--overlay); border: 0; border-radius: 50%; box-shadow: 0 1px 4px rgba(0, 0, 0, .18); color: var(--admin-copper); cursor: pointer; display: flex; font-size: 20px; height: 26px; justify-content: center; line-height: 1; opacity: 0; padding: 0 0 2px; position: absolute; top: 50%; transform: translateY(-50%); transition: opacity .15s; width: 26px; }
+.photo-carousel-arrow.prev { left: 6px; }
+.photo-carousel-arrow.next { right: 6px; }
+.photo-carousel:hover .photo-carousel-arrow, .photo-carousel-arrow:focus-visible { opacity: 1; }
+@media (hover: none) { .photo-carousel-arrow { opacity: 1; } }
+.photo-carousel-dots { bottom: 8px; display: flex; gap: 5px; left: 50%; position: absolute; transform: translateX(-50%); }
+.photo-carousel-dots button { background: var(--overlay); border: 1px solid rgba(61, 34, 37, .25); border-radius: 50%; cursor: pointer; height: 8px; padding: 0; width: 8px; }
+.photo-carousel-dots button.active { background: var(--admin-copper); border-color: var(--admin-copper); }
+.product-card-photo .product-card-category, .product-card-photo .product-card-photo-actions { z-index: 1; }
+
+/* Foto de produto clicável (ProductPhotoLink / ProductPhotoCarousel) — abre o popup. */
+.product-photo-link { background: none; border: 0; color: inherit; cursor: zoom-in; display: block; font: inherit; line-height: 0; padding: 0; }
+.product-photo-link:focus-visible { outline: 2px solid var(--admin-copper); outline-offset: 2px; }
+.product-card-photo > .product-photo-link, .photo-carousel > .product-photo-link, .product-line-thumb > .product-photo-link { height: 100%; width: 100%; }
+.product-grid-compact .product-card-photo .product-photo-link img { object-fit: contain; }
+.item-card-top > .product-photo-link { flex-shrink: 0; }
+
+/* Popup de produto: o mesmo card do Catálogo (compacto), sozinho e centralizado.
+   Renderizado via portal direto no <body>; as cores vêm do :root. */
+.product-preview-backdrop { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; }
+.product-preview { background: var(--admin-paper); box-shadow: 0 12px 40px rgba(61, 34, 37, .3); display: flex; flex-direction: column; gap: 4px; max-height: calc(100vh - 40px); max-width: 320px; overflow-y: auto; padding: 12px; position: relative; width: 100%; }
+.product-preview .product-card-photo { aspect-ratio: 1 / 1; flex-shrink: 0; margin: -12px -12px 10px; }
+.product-preview .product-card-photo img { object-fit: contain; }
+/* No popup as setas ficam sempre visíveis (no card só aparecem no hover). */
+.product-preview .photo-carousel-arrow { opacity: 1; z-index: 1; }
+.product-preview .photo-carousel-dots { z-index: 1; }
+.product-preview-close { align-items: center; background: var(--overlay); border: 0; border-radius: 50%; box-shadow: 0 1px 4px rgba(0, 0, 0, .18); color: var(--admin-copper); cursor: pointer; display: flex; height: 26px; justify-content: center; padding: 0; position: absolute; right: 8px; top: 8px; width: 26px; z-index: 2; }
+.product-preview-meta { align-items: center; display: flex; gap: 6px; }
+.product-preview-archived { background: var(--danger-soft); border-radius: 20px; color: var(--danger); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; font-weight: 700; padding: 2px 8px; text-transform: uppercase; }
+.product-preview h2 { margin: 2px 0 2px; }
+.product-preview > p.card-description { -webkit-box-orient: vertical; -webkit-line-clamp: 3; display: -webkit-box; font-size: 12px; line-clamp: 3; overflow: hidden; }
+.product-preview .price-highlight { font-family: var(--font-sans), Arial, sans-serif; margin-top: 4px; }
+
 .material-lines { display: grid; gap: 8px; }
-.material-lines-label { color: #8a7472; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; }
+.material-lines-label { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; }
 .material-line { align-items: center; display: grid; gap: 8px; grid-template-columns: 1fr 100px auto; }
-.material-line-header span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.material-line-header span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 /* Linha de produto do orçamento — thumbnail (pra reconhecer visualmente o
    produto escolhido), nome, custo, preço de venda e quantidade tudo na mesma
    linha; o campo de busca fica menor pra abrir espaço pras duas colunas
    numéricas ao lado (custo de fabricação vs. preço sugerido no Catálogo —
    antes só o preço aparecia, rotulado de "custo"). */
 .product-line { grid-template-columns: 40px minmax(0, 1fr) 76px 84px 70px auto; }
-.product-line-thumb { align-items: center; background: #f2e6da; border-radius: 8px; display: flex; height: 40px; justify-content: center; overflow: hidden; width: 40px; }
+.product-line-thumb { align-items: center; background: var(--sunk); border-radius: 8px; display: flex; height: 40px; justify-content: center; overflow: hidden; width: 40px; }
 .product-line-thumb img { display: block; height: 100%; object-fit: cover; width: 100%; }
-.product-line-thumb span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 15px; font-weight: 700; }
-.product-line select { font-size: 11px; min-height: 32px; padding: 6px 9px; }
+.product-line-thumb span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 16px; font-weight: 700; }
+.product-line select { font-size: 12px; min-height: 32px; padding: 6px 9px; }
 .product-picker { min-width: 0; }
-.product-picker input { font-size: 11px; min-height: 32px; padding: 6px 9px; }
-.client-suggestions li.no-suggestions { color: var(--calc-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 13px; padding: 9px 11px; }
+.product-picker input { font-size: 12px; min-height: 32px; padding: 6px 9px; }
+.client-suggestions li.no-suggestions { color: var(--calc-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 14px; padding: 9px 11px; }
 /* Custo/tempo na própria coluna, sem quebrar e centralizado — se não
    couber, corta com reticências em vez de virar 2 linhas ou empurrar
    quantidade/excluir. Recalculado a cada mudança de quantidade (mostra o
    total da linha, não o valor unitário). */
-.product-line-info { align-items: center; color: var(--admin-muted); display: flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; gap: 4px; justify-content: center; min-width: 0; overflow: hidden; text-align: center; white-space: nowrap; }
+.product-line-info { align-items: center; color: var(--admin-muted); display: flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; gap: 4px; justify-content: center; min-width: 0; overflow: hidden; text-align: center; white-space: nowrap; }
 .product-line-info .nav-icon { flex-shrink: 0; }
 /* Preço de venda (Catálogo) se destaca do custo de fabricação ao lado —
    mesma cor do preço final sugerido, pra reforçar que é a info que importa
@@ -1215,10 +1361,10 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .qty-stepper { align-items: stretch; display: flex; }
 .qty-stepper input { border-bottom-right-radius: 0; border-right: 0; border-top-right-radius: 0; min-height: 32px; padding: 6px 4px; text-align: center; width: 100%; }
 .qty-stepper-arrows { border: 1px solid var(--admin-border); display: flex; flex-direction: column; }
-.qty-stepper-arrows button { align-items: center; background: #faf3ec; border: 0; color: var(--admin-muted); cursor: pointer; display: flex; height: 16px; justify-content: center; padding: 0; width: 22px; }
+.qty-stepper-arrows button { align-items: center; background: var(--field-bg); border: 0; color: var(--admin-muted); cursor: pointer; display: flex; height: 16px; justify-content: center; padding: 0; width: 22px; }
 .qty-stepper-arrows button:first-child { border-bottom: 1px solid var(--admin-border); border-top-right-radius: 8px; }
 .qty-stepper-arrows button:last-child { border-bottom-right-radius: 8px; }
-.qty-stepper-arrows button:hover { background: #f2e6da; color: var(--admin-copper); }
+.qty-stepper-arrows button:hover { background: var(--sunk); color: var(--admin-copper); }
 .qty-stepper-arrows svg.nav-icon { height: 10px; width: 10px; }
 /* Linha de insumo do orçamento — precisa vir depois de ".material-line"
    (acima) pra realmente valer: com a mesma especificidade, a regra de cima
@@ -1228,17 +1374,17 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .supply-line { grid-template-columns: minmax(0, 1fr) 78px 56px auto; }
 .supply-line .supply-price { width: 100%; }
 .material-lines-actions { display: flex; justify-content: flex-end; }
-.product-card-prices { border-top: 1px solid #e8ddd7; display: grid; gap: 10px; grid-template-columns: 1fr 1fr; margin-top: 13px; padding-top: 11px; text-align: center; }
-.product-card-prices span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; }
-.product-card-prices strong { color: var(--admin-copper); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 17px; margin-top: 3px; }
-.catalog-preview { background: #f8ede0; border: 1px solid #e3cfc9; border-radius: 10px; display: grid; grid-template-columns: 1fr auto; margin-top: 4px; padding: 11px; }
-.catalog-preview span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; }
-.catalog-preview strong { color: var(--admin-copper); font-family: var(--font-sans), Arial, sans-serif; font-size: 13px; text-align: right; }
+.product-card-prices { border-top: 1px solid var(--admin-border); display: grid; gap: 10px; grid-template-columns: 1fr 1fr; margin-top: 13px; padding-top: 11px; text-align: center; }
+.product-card-prices span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; }
+.product-card-prices strong { color: var(--admin-copper); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 16px; margin-top: 3px; }
+.catalog-preview { background: var(--soft-warm); border: 1px solid var(--admin-border-strong); border-radius: 10px; display: grid; grid-template-columns: 1fr auto; margin-top: 4px; padding: 11px; }
+.catalog-preview span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; }
+.catalog-preview strong { color: var(--admin-copper); font-family: var(--font-sans), Arial, sans-serif; font-size: 14px; text-align: right; }
 
 .admin-auth-banner {
   align-items: center;
-  background: #fff8ef;
-  border: 1px solid #e8cdb3;
+  background: var(--notice-bg);
+  border: 1px solid var(--notice-border);
   border-radius: 14px;
   display: grid;
   gap: 10px;
@@ -1251,13 +1397,13 @@ button.new-quote-button { border: 0; cursor: pointer; }
   color: var(--admin-ink);
   display: block;
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .admin-auth-banner p {
   color: var(--admin-muted);
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   margin: 4px 0 0;
 }
 
@@ -1266,9 +1412,9 @@ button.new-quote-button { border: 0; cursor: pointer; }
 }
 
 .admin-auth-error {
-  color: #a95037;
+  color: var(--danger-strong);
   font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   grid-column: 2 / -1;
 }
 
@@ -1282,13 +1428,13 @@ button.new-quote-button { border: 0; cursor: pointer; }
   white-space: nowrap;
 }
 
-.project-tools button { background: #faf3ec; border: 1px solid var(--admin-border); border-radius: 9px; color: var(--admin-muted); cursor: pointer; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; min-height: 35px; padding: 8px 13px; }
-.project-tools button.selected { background: var(--admin-olive); border-color: var(--admin-olive); color: white; }
+.project-tools button { background: var(--field-bg); border: 1px solid var(--admin-border); border-radius: 9px; color: var(--admin-muted); cursor: pointer; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; min-height: 35px; padding: 8px 13px; }
+.project-tools button.selected { background: var(--pink-soft); border-color: var(--admin-copper); color: var(--admin-copper); font-weight: 700; }
 /* ".new-quote-button" nas outras páginas é sempre um <a>, mas no Catálogo é
    um <button> — essa regra genérica tem a mesma especificidade de
    "button.new-quote-button" e vinha depois no arquivo, então vencia e
    deixava o "+ Novo produto" bege em vez de vinho. */
-.project-tools button.new-quote-button { background: var(--admin-copper); color: white; }
+.project-tools button.new-quote-button { background: var(--admin-copper); color: var(--on-accent); }
 
 .operations-layout { align-items: start; display: grid; gap: 24px; grid-template-columns: 325px minmax(0, 1fr); }
 .operations-layout.list-only { grid-template-columns: minmax(0, 1fr); }
@@ -1297,17 +1443,17 @@ button.new-quote-button { border: 0; cursor: pointer; }
 /* Veio destacado de Produção ("Ver em Vendas") — chama atenção por alguns
    segundos e depois esmaece sozinho (ver setTimeout em sales/page.tsx). */
 .operation-card.highlight { border-color: var(--admin-copper); box-shadow: 0 0 0 3px rgba(96, 47, 50, .15); }
-.operation-card h2 { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 15px; margin: 11px 0 5px; }
-.operation-card > p { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; margin: 4px 0 0; }
-.operation-card-bottom { align-items: center; border-top: 1px solid #e8ddd7; display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between; margin-top: 13px; padding-top: 12px; }
-.operation-card-bottom strong { color: var(--admin-copper); font-family: var(--font-sans), Arial, sans-serif; font-size: 19px; }
-.operation-card-bottom span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; }
-.operation-card-bottom a { color: var(--admin-copper); font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; text-decoration: none; }
+.operation-card h2 { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 16px; margin: 11px 0 5px; }
+.operation-card > p { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; margin: 4px 0 0; }
+.operation-card-bottom { align-items: center; border-top: 1px solid var(--admin-border); display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between; margin-top: 13px; padding-top: 12px; }
+.operation-card-bottom strong { color: var(--admin-copper); font-family: var(--font-sans), Arial, sans-serif; font-size: 20px; }
+.operation-card-bottom span { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; }
+.operation-card-bottom a { color: var(--admin-copper); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; text-decoration: none; }
 
 .production-stats { display: grid; gap: 14px; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 20px; }
 .production-stats > div { background: var(--admin-paper); border: 1px solid var(--admin-border); border-radius: 14px; padding: 15px 17px; }
-.production-stats span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
-.production-stats strong { color: var(--admin-copper); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 25px; margin-top: 6px; }
+.production-stats span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+.production-stats strong { color: var(--admin-ink); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 28px; margin-top: 6px; }
 
 /* Board de Produção: pedido como raia horizontal, as 4 etapas como colunas
    verticais fixas — cada peça do pedido se move sozinha entre elas. */
@@ -1315,63 +1461,63 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .swimlanes { display: grid; grid-template-columns: 240px repeat(4, minmax(190px, 1fr)); min-width: 1040px; }
 
 .swim-head-cell { background: var(--admin-paper); border-bottom: 1px solid var(--admin-border); padding: 12px 14px; position: sticky; top: 0; z-index: 2; }
-.swim-order-col { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; border-right: 1px solid var(--admin-border); display: flex; align-items: center; }
-.swim-lane-col { align-items: center; border-right: 1px solid #efe6e1; display: flex; gap: 8px; }
+.swim-order-col { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; border-right: 1px solid var(--admin-border); display: flex; align-items: center; }
+.swim-lane-col { align-items: center; border-right: 1px solid var(--grid-line); display: flex; gap: 8px; }
 .swim-lane-col:last-child { border-right: none; }
 .swim-lane-col strong { display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; }
-.swim-lane-col small { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 9.5px; margin-top: 2px; }
+.swim-lane-col small { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; margin-top: 2px; }
 .swim-lane-col .material-badge { margin-left: auto; }
 
 .lane-dot { border-radius: 50%; flex-shrink: 0; height: 9px; width: 9px; }
 .lane-waiting { background: var(--admin-muted); }
 .lane-printing { background: var(--admin-copper); }
-.lane-finishing { background: #6a4a7a; }
-.lane-completed { background: #3f7d55; }
+.lane-finishing { background: var(--lane-finishing); }
+.lane-completed { background: var(--ok); }
 
 .swim-row { display: contents; }
-.swim-row > * { border-top: 1px solid #efe6e1; }
-.swim-row.done > * { background: #eef4f0; }
+.swim-row > * { border-top: 1px solid var(--grid-line); }
+.swim-row.done > * { background: var(--ok-row); }
 
 .swim-order-cell { border-right: 1px solid var(--admin-border); padding: 16px 14px; }
-.swim-order-cell h2 { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 13.5px; line-height: 1.35; margin: 8px 0 4px; }
-.job-due { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; margin: 5px 0 0; }
-.job-due.late { color: #a95037; }
+.swim-order-cell h2 { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 14px; line-height: 1.35; margin: 8px 0 4px; }
+.job-due { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; margin: 5px 0 0; }
+.job-due.late { color: var(--danger-strong); }
 
 .swim-progress { align-items: center; display: flex; gap: 8px; margin-top: 12px; }
 .swim-progress-track { background: var(--admin-border); border-radius: 3px; flex: 1; height: 5px; overflow: hidden; }
 .swim-progress-fill { background: var(--admin-copper); border-radius: 3px; height: 100%; transition: width .25s ease; }
-.swim-row.done .swim-progress-fill { background: #3f7d55; }
-.swim-progress span { color: var(--admin-muted); font-family: var(--font-mono); font-size: 10.5px; white-space: nowrap; }
-.swim-done-badge { color: #3f7d55; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; font-weight: 700; margin: 8px 0 0; }
+.swim-row.done .swim-progress-fill { background: var(--ok); }
+.swim-progress span { color: var(--admin-muted); font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+.swim-done-badge { color: var(--ok); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; font-weight: 700; margin: 8px 0 0; }
 
 .job-fields { display: grid; gap: 9px; margin-top: 12px; }
-.job-fields label, .job-notes { color: var(--admin-muted); display: grid; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; gap: 5px; letter-spacing: .06em; text-transform: uppercase; }
+.job-fields label, .job-notes { color: var(--admin-muted); display: grid; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; gap: 5px; letter-spacing: .06em; text-transform: uppercase; }
 .job-fields select, .job-fields input, .job-notes textarea { letter-spacing: normal; text-transform: none; width: 100%; }
 .job-notes { margin-top: 10px; }
 .job-notes textarea { min-height: 44px; resize: vertical; }
 
-.swim-lane-cell { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-right: 1px solid #efe6e1; }
+.swim-lane-cell { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-right: 1px solid var(--grid-line); }
 .swim-lane-cell:last-child { border-right: none; }
 .swim-empty-slot { border: 1px dashed var(--admin-border); border-radius: 8px; flex: 1; min-height: 38px; }
 
 .item-card { background: var(--admin-paper); border: 1px solid var(--admin-border); border-left: 3px solid var(--admin-muted); border-radius: 9px; box-shadow: 0 2px 5px rgba(80, 58, 40, .04); padding: 9px 10px; }
 .item-card.lane-waiting { border-left-color: var(--admin-muted); }
 .item-card.lane-printing { border-left-color: var(--admin-copper); }
-.item-card.lane-finishing { border-left-color: #6a4a7a; }
-.item-card.lane-completed { border-left-color: #3f7d55; }
+.item-card.lane-finishing { border-left-color: var(--lane-finishing); }
+.item-card.lane-completed { border-left-color: var(--ok); }
 .item-card-top { align-items: flex-start; display: flex; gap: 8px; }
 .item-card-photo { border: 1px solid var(--admin-border); border-radius: 6px; flex-shrink: 0; height: 34px; object-fit: cover; width: 34px; }
 .item-card-main { min-width: 0; }
 .item-card-name-row { align-items: baseline; display: flex; gap: 6px; justify-content: space-between; }
-.item-card-name { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 12.5px; font-weight: 600; line-height: 1.3; }
-.item-card-qty { color: var(--admin-muted); font-family: var(--font-mono); font-size: 11px; white-space: nowrap; }
-.item-card-meta { align-items: center; color: var(--admin-muted); display: flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; gap: 6px; margin-top: 3px; }
+.item-card-name { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 14px; font-weight: 600; line-height: 1.3; }
+.item-card-qty { color: var(--admin-muted); font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+.item-card-meta { align-items: center; color: var(--admin-muted); display: flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; gap: 6px; margin-top: 3px; }
 .item-card-meta span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .item-card-meta span:last-child { flex-shrink: 0; font-family: var(--font-mono); }
 .item-card-meta span:first-child:not(:last-child)::after { content: "·"; margin-left: 6px; }
 .item-card-controls { display: flex; gap: 6px; justify-content: space-between; margin-top: 8px; }
-.item-card-controls button { background: #f2e6da; border: 1px solid var(--admin-border); border-radius: 6px; color: var(--admin-ink); cursor: pointer; flex: 1; font-family: var(--font-mono); font-size: 13px; padding: 3px 0; }
-.item-card-controls button:hover:not(:disabled) { background: var(--admin-copper); border-color: var(--admin-copper); color: #fff; }
+.item-card-controls button { background: var(--sunk); border: 1px solid var(--admin-border); border-radius: 6px; color: var(--admin-ink); cursor: pointer; flex: 1; font-family: var(--font-mono); font-size: 14px; padding: 3px 0; }
+.item-card-controls button:hover:not(:disabled) { background: var(--admin-copper); border-color: var(--admin-copper); color: var(--on-accent); }
 .item-card-controls button:disabled { cursor: not-allowed; opacity: .35; }
 
 @media (max-width: 900px) {
@@ -1423,18 +1569,26 @@ button.new-quote-button { border: 0; cursor: pointer; }
 @media (max-width: 560px) {
   .admin-topbar { padding: 10px 16px; }
   .admin-brand { min-width: 0; }
-  .admin-brand strong { font-size: 15px; }
-  .admin-brand small { font-size: 7px; }
+  .admin-brand strong { font-size: 16px; }
+  .admin-brand small { display: none; }
   .admin-account { font-size: 0; }
   .admin-content { padding: 0 14px; }
   .preset-grid { grid-template-columns: 1fr; }
-  .library-heading { padding: 18px; }
   .admin-auth-banner { grid-template-columns: 1fr; }
   .channel-list { grid-template-columns: 1fr; }
   .library-heading .project-tools { align-items: stretch; flex-direction: column; }
   .project-tools input { width: 100%; }
   .project-card-details { align-items: flex-start; flex-direction: column; gap: 5px; }
   .product-grid { grid-template-columns: 1fr; }
+  /* Catálogo/Projetos no celular: 2 por linha em vez de uma foto por tela. */
+  .product-grid.product-grid-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .product-grid-compact .product-card-category { bottom: 6px; left: 6px; max-width: calc(100% - 12px); overflow: hidden; text-overflow: ellipsis; top: auto; white-space: nowrap; }
+  .product-grid-compact .product-card-photo-actions { right: 6px; top: 6px; }
+  .product-grid-compact .product-card h2 { font-size: 14px; }
+  .product-grid-compact .product-card-prices strong { font-size: 16px; }
+  .product-grid-compact .price-highlight { font-size: 16px !important; }
+  .product-grid-compact .product-card-stats { flex-direction: column; gap: 4px; }
+  .brand-tag { display: none; }
 }
 
 /* Orçamento em PDF (src/app/quotes/[id]/print) — documento pensado para o
@@ -1443,7 +1597,7 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .quote-print-toolbar { align-items: center; display: flex; justify-content: space-between; margin: 0 auto 18px; max-width: 780px; }
 .quote-print-toolbar a { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 13px; text-decoration: none; }
 .quote-print-toolbar a:hover { color: var(--admin-copper); }
-.quote-print-toolbar button { align-items: center; background: var(--admin-copper); border: 0; border-radius: 10px; color: white; cursor: pointer; display: inline-flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 13px; font-weight: 600; gap: 7px; padding: 10px 16px; }
+.quote-print-toolbar button { align-items: center; background: var(--admin-copper); border: 0; border-radius: 10px; color: var(--on-accent); cursor: pointer; display: inline-flex; font-family: var(--font-sans), Arial, sans-serif; font-size: 13px; font-weight: 600; gap: 7px; padding: 10px 16px; }
 .quote-doc-empty { background: var(--admin-paper); border-radius: 16px; margin: 0 auto; max-width: 780px; padding: 40px; text-align: center; }
 
 .quote-doc { background: var(--admin-paper); border-radius: 20px; box-shadow: 0 4px 24px rgba(60, 34, 37, .1); margin: 0 auto; max-width: 780px; padding: 52px 60px; }
@@ -1461,7 +1615,7 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .quote-doc-section-title { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .12em; margin: 0 0 10px; text-transform: uppercase; }
 .quote-doc-item h2 { font-size: 20px; margin: 0 0 6px; }
 .quote-doc-specs { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 13px; line-height: 1.6; }
-.quote-doc-notes { background: #faf3ec; border-radius: 10px; font-size: 13px; line-height: 1.55; margin-top: 12px; padding: 12px 14px; white-space: pre-wrap; }
+.quote-doc-notes { background: var(--field-bg); border-radius: 10px; font-size: 13px; line-height: 1.55; margin-top: 12px; padding: 12px 14px; white-space: pre-wrap; }
 /* Tabela "O que está incluso" — foto pequena (proporcional, bem menor que a
    exibição no catálogo) pra destacar visualmente qual produto é aquele,
    sem competir com o texto. Moldura própria (não só linhas entre itens),
@@ -1471,10 +1625,10 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .quote-doc-table td { padding: 9px 12px; vertical-align: middle; }
 .quote-doc-table-photo { width: 46px; }
 .quote-doc-table-photo img { border-radius: 8px; display: block; height: 42px; object-fit: cover; width: 42px; }
-.quote-doc-table-photo-empty { background: #f2e6da; border-radius: 8px; display: block; height: 42px; width: 42px; }
+.quote-doc-table-photo-empty { background: var(--sunk); border-radius: 8px; display: block; height: 42px; width: 42px; }
 .quote-doc-table-name { color: var(--admin-ink); font-size: 13px; }
 .quote-doc-table-qty { color: var(--admin-muted); font-family: var(--font-mono); font-size: 12px; text-align: right; white-space: nowrap; }
-.quote-doc-price { align-items: center; background: #faf3ec; border-radius: 16px; display: flex; justify-content: space-between; margin: 28px 0; padding: 22px 26px; }
+.quote-doc-price { align-items: center; background: var(--field-bg); border-radius: 16px; display: flex; justify-content: space-between; margin: 28px 0; padding: 22px 26px; }
 .quote-doc-price span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
 .quote-doc-price strong { color: var(--admin-copper); display: block; font-size: 34px; margin-top: 4px; }
 .quote-doc-terms { display: grid; gap: 18px; grid-template-columns: repeat(3, 1fr); }
@@ -1494,6 +1648,7 @@ button.new-quote-button { border: 0; cursor: pointer; }
 
 @media print {
   .quote-print-toolbar { display: none !important; }
+  .product-preview-backdrop { display: none !important; }
   .quote-print-page { background: white !important; padding: 0 !important; }
   .quote-doc { border-radius: 0; box-shadow: none; max-width: 100%; padding: 0; }
   @page { margin: 18mm; }

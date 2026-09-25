@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AdminHeader } from "@/components/AdminHeader";
 import { IconBookmark, IconChevronDown, IconChevronUp, IconClock, IconCopy, IconDownload, IconSave, IconShoppingBag, IconTrash } from "@/components/Icons";
+import { ProductPhotoLink } from "@/components/ProductPreview";
 import { calculateSuggestedPrice, markupPercentForFinalPrice, type PricingMethod } from "@/lib/costing";
 
 // Produto já cadastrado no Catálogo — custo e tempo de impressão vêm prontos
@@ -533,8 +534,6 @@ function OrcamentosForm() {
             <span>E-MAIL *</span>
             <input required type="email" value={clientEmail} onChange={(event) => setClientEmail(event.target.value)} placeholder="cliente@email.com" />
           </label>
-
-          <button className="quiet-button" onClick={() => { setName(""); setClient(""); setClientPhone(""); setClientEmail(""); setNotes(""); setProductLines([]); setCurrentQuoteId(null); }}>↻ Limpar Campos</button>
         </section>
 
         <div className="calculator-grid">
@@ -563,8 +562,10 @@ function OrcamentosForm() {
                     <div className="material-line product-line" key={index}>
                       <div className="product-line-thumb">
                         {product?.imageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element -- data URI local, next/image não otimiza isso
-                          <img src={product.imageUrl} alt={product.name} />
+                          <ProductPhotoLink productId={product.id} name={product.name} image={product.imageUrl}>
+                            {/* eslint-disable-next-line @next/next/no-img-element -- data URI local, next/image não otimiza isso */}
+                            <img src={product.imageUrl} alt={product.name} />
+                          </ProductPhotoLink>
                         ) : (
                           <span>{product?.name.slice(0, 1).toUpperCase() ?? "?"}</span>
                         )}
@@ -783,14 +784,10 @@ function OrcamentosForm() {
               <Cost label={`Insumos (${calc.insumosCount})`} value={calc.suppliesCost} />
               <hr />
               {/* Custo Base é só a base sobre a qual o markup/margem é aplicado — não
-                  é o que decide se o orçamento tá bom, por isso fica discreto aqui;
-                  quem decide é o Preço Final Sugerido, repetido em destaque abaixo. */}
+                  é o que decide se o orçamento tá bom, por isso fica discreto aqui.
+                  O Preço Final Sugerido aparece uma vez só, no topo deste painel. */}
               <Cost label="Custo Base" value={calc.costWithReserve} subtotal muted />
               <p className="summary-note">soma acima — base do cálculo, não o preço final</p>
-              <div className="cost-line final-highlight">
-                <span>Preço Final Sugerido</span>
-                <strong>{brl(calc.price)}</strong>
-              </div>
             </div>
             <div className="summary-card">
               <Info label="Método de Precificação" value={pricingMethod === "markup" ? "Markup" : "Margem Real"} />
@@ -809,6 +806,9 @@ function OrcamentosForm() {
             </div>
             <button className="report-button" onClick={generateReport}><IconDownload className="nav-icon" /> Gerar Orçamento em PDF</button>
             <button className="whatsapp-button" onClick={() => navigator.clipboard?.writeText(buildWhatsAppMessage())}><IconCopy className="nav-icon" /> Copiar Resumo para WhatsApp</button>
+            {/* Longe dos campos do cliente de propósito — ficava colado no e-mail,
+                fácil de apagar o orçamento inteiro com um clique sem querer. */}
+            <button type="button" className="clear-quote-button" onClick={() => { setName(""); setClient(""); setClientPhone(""); setClientEmail(""); setNotes(""); setProductLines([]); setCurrentQuoteId(null); }}>Limpar orçamento</button>
           </aside>
           {reportError ? <p className="admin-feedback feedback-error report-error">{reportError}</p> : null}
           </div>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { IconFileText } from "@/components/Icons";
+import { ProductPhotoLink } from "@/components/ProductPreview";
 
 type Customer = { id: string; name: string };
 type OrderQuote = { id: string; code: string | null };
@@ -25,7 +26,7 @@ type ProductionItem = {
   quantity: number;
   status: string;
   completedAt: string | null;
-  product?: { imageUrl: string; material: string; printTimeHours: number } | null;
+  product?: { id: string; imageUrl: string; material: string; printTimeHours: number } | null;
 };
 type Job = {
   id: string;
@@ -311,7 +312,12 @@ export default function ProductionPage() {
                           return (
                             <article className={`item-card lane-${column.id.toLowerCase()}`} key={item.id}>
                               <div className="item-card-top">
-                                {item.product?.imageUrl ? <img className="item-card-photo" src={item.product.imageUrl} alt="" /> : null}
+                                {item.product?.imageUrl ? (
+                                  <ProductPhotoLink productId={item.product.id} name={item.name} image={item.product.imageUrl}>
+                                    {/* eslint-disable-next-line @next/next/no-img-element -- data URI local, next/image não otimiza isso */}
+                                    <img className="item-card-photo" src={item.product.imageUrl} alt={item.name} />
+                                  </ProductPhotoLink>
+                                ) : null}
                                 <div className="item-card-main">
                                   <div className="item-card-name-row">
                                     <span className="item-card-name">{item.name}</span>

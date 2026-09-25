@@ -22,6 +22,7 @@ type CashEntry = {
 type Summary = { totalIn: number; totalOut: number; balance: number; receivable: number; projectedBalance: number };
 
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const neg = (value: number) => (value < 0 ? "negative" : undefined);
 // Data local, não UTC — perto da meia-noite no Brasil toISOString() já mostraria o dia seguinte.
 const todayLocal = () => { const now = new Date(); const pad = (v: number) => String(v).padStart(2, "0"); return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`; };
 const emptyEntry = { date: todayLocal(), category: "Venda", type: "IN" as "IN" | "OUT", description: "", status: "REALIZED" as "REALIZED" | "PLANNED", amount: "" };
@@ -79,6 +80,27 @@ export default function CashflowPage() {
     if (response.ok) reload();
   }
 
+  const today = todayLocal();
+  const isFuture = (entry: CashEntry) => entry.date.slice(0, 10) > today;
+  const pastEntries = entries.filter((entry) => !isFuture(entry)).sort((a, b) => b.date.localeCompare(a.date));
+  const futureEntries = entries.filter(isFuture).sort((a, b) => a.date.localeCompare(b.date));
+  const renderRow = (entry: CashEntry) => (
+    <tr key={entry.id}>
+      <td>{new Date(entry.date).toLocaleDateString("pt-BR")}</td>
+      <td>{entry.category}</td>
+      <td>{entry.description || "—"}</td>
+      <td>{entry.sourceType ? sourceLabel[entry.sourceType] ?? entry.sourceType : "Manual"}</td>
+      <td>{entry.status === "REALIZED" ? "Realizado" : "Previsto"}</td>
+      <td className={entry.type === "IN" ? "cash-in" : "cash-out"}>{entry.type === "IN" ? "+" : "-"}{brl(entry.amount)}</td>
+      <td>{entry.suggestedPrice != null ? brl(entry.suggestedPrice) : "—"}</td>
+      <td>{entry.cost != null ? brl(entry.cost) : "—"}</td>
+      <td>
+        {entry.sourceType === "PAYMENT" ? <button className="secondary-button" type="button" onClick={() => void reverse(entry)}>Estornar</button> : null}
+        {!entry.sourceType ? <button className="delete-button" onClick={() => void remove(entry)} aria-label="Excluir lançamento"><IconTrash className="nav-icon" /></button> : null}
+      </td>
+    </tr>
+  );
+
   return (
     <main className="admin-shell">
       <AdminHeader active="cashflow" />
@@ -94,14 +116,44 @@ export default function CashflowPage() {
         <section className="production-stats cashflow-stats">
           <div><span>Total Entradas</span><strong className="cash-in">{brl(summary.totalIn)}</strong></div>
           <div><span>Total Saídas</span><strong className="cash-out">{brl(summary.totalOut)}</strong></div>
-          <div><span>Saldo Caixa Real</span><strong>{brl(summary.balance)}</strong></div>
+          <div><span>Saldo Caixa Real</span><strong className={neg(summary.balance)}>{brl(summary.balance)}</strong></div>
           <div><span>Contas a Receber</span><strong>{brl(summary.receivable)}</strong></div>
-          <div><span>Projeção de Caixa</span><strong>{brl(summary.projectedBalance)}</strong></div>
+          <div><span>Projeção de Caixa</span><strong className={neg(summary.projectedBalance)}>{brl(summary.projectedBalance)}</strong></div>
         </section>
 
         {feedback ? <p className="admin-feedback">{feedback}</p> : null}
 
         <div className="costs-stack">
+          {/* Extrato primeiro (é o que mais se consulta): até hoje, do mais
+              recente pro mais antigo; os lançamentos futuros (custos fixos
+              projetados, recebimentos previstos) ficam separados embaixo, em
+              ordem de data — antes os de 2027 apareciam no topo. */}
+          <div className="scroll-table">
+            <table className="cash-table">
+              <thead>
+                <tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Origem</th><th>Status</th><th>Valor Venda</th><th>Preço Sugerido</th><th>Custo</th><th></th></tr>
+              </thead>
+              <tbody>
+                {pastEntries.map(renderRow)}
+                {pastEntries.length === 0 ? <tr><td colSpan={9} className="empty-note">Nenhum lançamento até hoje.</td></tr> : null}
+              </tbody>
+            </table>
+          </div>
+
+          {futureEntries.length ? (
+            <>
+              <h2 className="cash-section-title">Lançamentos futuros</h2>
+              <div className="scroll-table">
+                <table className="cash-table">
+                  <thead>
+                    <tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Origem</th><th>Status</th><th>Valor Venda</th><th>Preço Sugerido</th><th>Custo</th><th></th></tr>
+                  </thead>
+                  <tbody>{futureEntries.map(renderRow)}</tbody>
+                </table>
+              </div>
+            </>
+          ) : null}
+
           <form className="preset-form wide-form" onSubmit={submit}>
             <h2>Novo lançamento manual</h2>
             <div className="form-grid">
@@ -116,33 +168,6 @@ export default function CashflowPage() {
             </div>
             <button className="primary-button" type="submit">Registrar</button>
           </form>
-
-          <div className="scroll-table">
-            <table className="cash-table">
-              <thead>
-                <tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Origem</th><th>Status</th><th>Valor Venda</th><th>Preço Sugerido</th><th>Custo</th><th></th></tr>
-              </thead>
-              <tbody>
-                {entries.map((entry) => (
-                  <tr key={entry.id}>
-                    <td>{new Date(entry.date).toLocaleDateString("pt-BR")}</td>
-                    <td>{entry.category}</td>
-                    <td>{entry.description || "—"}</td>
-                    <td>{entry.sourceType ? sourceLabel[entry.sourceType] ?? entry.sourceType : "Manual"}</td>
-                    <td>{entry.status === "REALIZED" ? "Realizado" : "Previsto"}</td>
-                    <td className={entry.type === "IN" ? "cash-in" : "cash-out"}>{entry.type === "IN" ? "+" : "-"}{brl(entry.amount)}</td>
-                    <td>{entry.suggestedPrice != null ? brl(entry.suggestedPrice) : "—"}</td>
-                    <td>{entry.cost != null ? brl(entry.cost) : "—"}</td>
-                    <td>
-                      {entry.sourceType === "PAYMENT" ? <button className="secondary-button" type="button" onClick={() => void reverse(entry)}>Estornar</button> : null}
-                      {!entry.sourceType ? <button className="delete-button" onClick={() => void remove(entry)} aria-label="Excluir lançamento"><IconTrash className="nav-icon" /></button> : null}
-                    </td>
-                  </tr>
-                ))}
-                {entries.length === 0 ? <tr><td colSpan={9} className="empty-note">Nenhum lançamento ainda.</td></tr> : null}
-              </tbody>
-            </table>
-          </div>
         </div>
       </div>
     </main>

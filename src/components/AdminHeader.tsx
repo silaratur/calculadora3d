@@ -21,6 +21,7 @@ import {
   IconX,
 } from "@/components/Icons";
 import { canAccessPath } from "@/lib/roles";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type Section =
   | "dashboard"
@@ -136,8 +137,9 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
             ) : null}
           </div>
           <div className="admin-account">
-            {email ?? ""}
-            <button className="logout-button" onClick={logout} aria-label="Sair" title="Sair"><IconLogout className="nav-icon" /></button>
+            <span className="admin-account-email">{email ?? ""}</span>
+            <ThemeToggle />
+            <button className="logout-button" onClick={logout} aria-label="Sair" title={email ? `Sair (${email})` : "Sair"}><IconLogout className="nav-icon" /></button>
           </div>
         </>
       ) : null}

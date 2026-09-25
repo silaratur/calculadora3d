@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconClock, IconDownload, IconTrash, IconUser } from "@/components/Icons";
+import { ProductPhotoLink } from "@/components/ProductPreview";
 
 type Quote = {
   id: string;
@@ -52,11 +53,12 @@ function convertPreview(snapshotJson: string): { items: QuoteItem[]; marketplace
 // valor = maior primeiro, status = A-Z).
 const defaultSortDirection: Record<SortField, "asc" | "desc"> = { recent: "desc", client: "asc", value: "desc" };
 
-/** Foto do primeiro produto do Catálogo incluso no orçamento, se tiver — vira a miniatura do card. */
-function firstItemPhoto(snapshotJson: string): string | null {
+/** Primeiro produto do Catálogo com foto incluso no orçamento, se tiver — vira a miniatura do card. */
+function firstItemPhoto(snapshotJson: string): { id?: string; name?: string; imageUrl: string } | null {
   try {
-    const snapshot = JSON.parse(snapshotJson) as { products?: { imageUrl?: string }[] };
-    return snapshot.products?.find((item) => item.imageUrl)?.imageUrl ?? null;
+    const snapshot = JSON.parse(snapshotJson) as { products?: { id?: string; name?: string; imageUrl?: string }[] };
+    const item = snapshot.products?.find((entry) => entry.imageUrl);
+    return item?.imageUrl ? { id: item.id, name: item.name, imageUrl: item.imageUrl } : null;
   } catch {
     return null;
   }
@@ -277,8 +279,10 @@ export default function ProjectsPage() {
                   <article className="product-card" key={quote.id}>
                     <div className="product-card-photo">
                       {photo ? (
-                        // eslint-disable-next-line @next/next/no-img-element -- data URI local, next/image não otimiza isso
-                        <img src={photo} alt={quote.productName} />
+                        <ProductPhotoLink productId={photo.id} name={photo.name ?? quote.productName} image={photo.imageUrl}>
+                          {/* eslint-disable-next-line @next/next/no-img-element -- data URI local, next/image não otimiza isso */}
+                          <img src={photo.imageUrl} alt={photo.name ?? quote.productName} />
+                        </ProductPhotoLink>
                       ) : (
                         <span className="product-card-photo-placeholder">{quote.productName.slice(0, 1).toUpperCase()}</span>
                       )}

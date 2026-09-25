@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconDownload } from "@/components/Icons";
+import { ProductPhotoLink } from "@/components/ProductPreview";
 
 type QuoteRecord = {
   id: string;
@@ -27,7 +28,7 @@ type Snapshot = {
   calculations?: { printTime?: number };
 };
 
-type IncludedItem = { name: string; quantity: number; imageUrl?: string };
+type IncludedItem = { productId?: string; name: string; quantity: number; imageUrl?: string };
 
 type Settings = {
   companyName: string;
@@ -90,7 +91,7 @@ export default function QuotePrintPage() {
 
   const snapshot = parseSnapshot(quote.snapshotJson);
   const includedItems: IncludedItem[] = [
-    ...(snapshot.products ?? []).filter((item) => item.name).map((item) => ({ name: item.name, quantity: item.quantity, imageUrl: item.imageUrl })),
+    ...(snapshot.products ?? []).filter((item) => item.name).map((item) => ({ productId: item.id, name: item.name, quantity: item.quantity, imageUrl: item.imageUrl })),
     // Embalagem/caixa é custo interno, não um item que o cliente escolheu —
     // valor continua embutido no total, só não aparece na lista de itens.
     ...(snapshot.supplies ?? [])
@@ -153,8 +154,10 @@ export default function QuotePrintPage() {
                     <tr key={index}>
                       <td className="quote-doc-table-photo">
                         {item.imageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element -- data URI local, próprio para impressão/PDF
-                          <img src={item.imageUrl} alt={item.name} />
+                          <ProductPhotoLink productId={item.productId} name={item.name} image={item.imageUrl}>
+                            {/* eslint-disable-next-line @next/next/no-img-element -- data URI local, próprio para impressão/PDF */}
+                            <img src={item.imageUrl} alt={item.name} />
+                          </ProductPhotoLink>
                         ) : (
                           <span className="quote-doc-table-photo-empty" aria-hidden="true" />
                         )}

@@ -130,6 +130,8 @@ model Product {
   category             String
   description          String?
   imageUrl             String              @default("")
+  // Fotos adicionais (até 4, além da capa em imageUrl) — JSON array de data URIs.
+  extraImages          String              @default("[]")
   material             String
   weightGrams          Float
   volumeCm3            Float               @default(0)

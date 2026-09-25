@@ -27,12 +27,21 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+const themeScript = `try{if(localStorage.getItem("ac3d-theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
       className={`${sans.variable} ${mono.variable} h-full antialiased`}
+      // data-theme é gravado pelo script abaixo antes da hidratação.
+      suppressHydrationWarning
     >
+      <head>
+        {/* Aplica o tema salvo (ThemeToggle) antes de pintar — sem isso quem usa
+            o escuro veria a página clara piscar a cada navegação. */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

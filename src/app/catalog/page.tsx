@@ -6,6 +6,7 @@ import { AuthBanner } from "@/components/AuthBanner";
 import { IconClock, IconSave, IconShieldAlert, IconShoppingBag, IconTag, IconTrash, IconX } from "@/components/Icons";
 import { calculateMultiMaterialCost, calculatePieceCost, calculateSuggestedPrice, effectiveMonthlyFixedCost, fixedCostPerPiece, markupPercentForFinalPrice, type PricingMethod } from "@/lib/costing";
 import { resizeImage } from "@/lib/image";
+import { ProductPhotoCarousel, ProductPreviewModal, categoryColor, productImages } from "@/components/ProductPreview";
 
 type Material = { id: string; name: string; type: string; unitPrice: number; unitWeightGrams: number; costPerKg: number };
 type MaterialLine = { materialId: string; grams: number };
@@ -26,6 +27,7 @@ type Product = {
   category: string;
   description?: string;
   imageUrl: string;
+  extraImages?: string;
   weightGrams: number;
   printTimeHours: number;
   prepMinutes: number;
@@ -54,7 +56,8 @@ type Draft = {
   name: string;
   category: string;
   description: string;
-  imageUrl: string;
+  // images[0] é a capa (vai pra imageUrl, usada em Orçamentos/Produção).
+  images: string[];
   materialLines: DraftMaterialLine[];
   hours: string;
   minutes: string;
@@ -73,7 +76,7 @@ const emptyDraft: Draft = {
   name: "",
   category: "",
   description: "",
-  imageUrl: "",
+  images: [],
   materialLines: [],
   hours: "0",
   minutes: "0",
@@ -102,25 +105,10 @@ const defaultSortDirection: Record<"name" | "recent" | "category" | "sales" | "p
   price: "asc",
 };
 
-// Paleta fixa (cores da marca + tons próximos) — cada categoria sempre cai na
-// mesma cor, pra dar pra reconhecer categoria pela tarja sem ler o texto.
-// Preenchido sólido de propósito: sobre foto de produto (fundo branco/claro
-// na maioria das vezes) a tarja quase-branca de antes ficava invisível.
-const categoryColors = ["#602f32", "#777f5d", "#a3402a", "#8a5a2e", "#4c6b7a", "#8a4a4e", "#5f6549", "#a3743a"];
-// FNV-1a — espalha melhor que um hash ingênuo (soma/produto simples colidia
-// justamente nas categorias reais do catálogo: "NATAL" e "Organização" caindo
-// na mesma cor).
+const maxProductImages = 5;
+
 function normalizeCategory(value: string) {
   return value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-}
-
-function categoryColor(category: string) {
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < category.length; i += 1) {
-    hash ^= category.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return categoryColors[(hash >>> 0) % categoryColors.length];
 }
 
 export default function CatalogPage() {
@@ -144,6 +132,7 @@ export default function CatalogPage() {
   const [imageError, setImageError] = useState("");
   const [needsLogin, setNeedsLogin] = useState(false);
   const [categorySuggestionsOpen, setCategorySuggestionsOpen] = useState(false);
+  const [previewProduct, setPreviewProduct] = useState<Product | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const reload = () => setReloadToken((token) => token + 1);
 
@@ -318,14 +307,27 @@ export default function CatalogPage() {
   }
 
   async function handleImage(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const input = event.target;
+    const files = Array.from(input.files ?? []);
+    input.value = ""; // permite escolher o mesmo arquivo de novo depois de remover
+    if (!files.length) return;
     setImageError("");
+    const room = maxProductImages - draft.images.length;
+    if (files.length > room) setImageError(`Máximo de ${maxProductImages} fotos por produto — só as primeiras ${Math.max(room, 0)} foram adicionadas.`);
     try {
-      setDraft({ ...draft, imageUrl: await resizeImage(file) });
+      const resized = await Promise.all(files.slice(0, Math.max(room, 0)).map((file) => resizeImage(file)));
+      setDraft((current) => ({ ...current, images: [...current.images, ...resized].slice(0, maxProductImages) }));
     } catch {
       setImageError("Não foi possível processar essa imagem. Tente outro arquivo.");
     }
+  }
+
+  function removeImage(index: number) {
+    setDraft((current) => ({ ...current, images: current.images.filter((_, i) => i !== index) }));
+  }
+
+  function makeCover(index: number) {
+    setDraft((current) => ({ ...current, images: [current.images[index], ...current.images.filter((_, i) => i !== index)] }));
   }
 
   function sortArrow(value: "name" | "recent" | "category" | "sales" | "price") {
@@ -358,7 +360,7 @@ export default function CatalogPage() {
       name: product.name,
       category: product.category,
       description: product.description ?? "",
-      imageUrl: product.imageUrl ?? "",
+      images: productImages(product),
       materialLines: product.materials?.map((line) => ({ materialId: line.materialId, grams: String(line.grams).replace(".", ",") })) ?? [],
       hours: String(Math.floor(product.printTimeHours)),
       minutes: String(Math.round((product.printTimeHours % 1) * 60)),
@@ -387,7 +389,8 @@ export default function CatalogPage() {
       name: draft.name,
       category,
       description: draft.description,
-      imageUrl: draft.imageUrl,
+      imageUrl: draft.images[0] ?? "",
+      extraImages: draft.images.slice(1),
       weightGrams: totalWeightGrams,
       printTimeHours,
       prepMinutes: n(draft.prep),
@@ -500,8 +503,7 @@ export default function CatalogPage() {
                 <article className="product-card" key={product.id}>
                   <div className="product-card-photo">
                     {product.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- data URI local, next/image não otimiza isso
-                      <img src={product.imageUrl} alt={product.name} />
+                      <ProductPhotoCarousel images={productImages(product)} alt={product.name} onOpen={() => setPreviewProduct(product)} />
                     ) : (
                       <span className="product-card-photo-placeholder">{product.name.slice(0, 1).toUpperCase()}</span>
                     )}
@@ -569,16 +571,24 @@ export default function CatalogPage() {
                     </label>
                   </div>
                   <label className="notes-field">Descrição<textarea value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Aparece no card do catálogo" /></label>
-                  <div className="field-grid two">
-                    <label>Foto do produto<input type="file" accept="image/*" onChange={handleImage} /></label>
-                    {draft.imageUrl ? (
-                      <div className="image-preview">
-                        {/* eslint-disable-next-line @next/next/no-img-element -- data URI local, next/image não otimiza isso */}
-                        <img src={draft.imageUrl} alt="Prévia do produto" />
-                        <button type="button" className="secondary-button" onClick={() => setDraft({ ...draft, imageUrl: "" })}>Remover foto</button>
-                      </div>
-                    ) : null}
-                  </div>
+                  <label>
+                    Fotos do produto ({draft.images.length}/{maxProductImages}) — a primeira é a capa
+                    <input type="file" accept="image/*" multiple disabled={draft.images.length >= maxProductImages} onChange={handleImage} />
+                  </label>
+                  {draft.images.length ? (
+                    <div className="image-gallery">
+                      {draft.images.map((src, index) => (
+                        <div className={index === 0 ? "image-gallery-item cover" : "image-gallery-item"} key={index}>
+                          {/* eslint-disable-next-line @next/next/no-img-element -- data URI local, next/image não otimiza isso */}
+                          <img src={src} alt={`Foto ${index + 1} do produto`} />
+                          {index === 0 ? <span className="image-gallery-badge">Capa</span> : (
+                            <button type="button" className="image-gallery-cover" onClick={() => makeCover(index)}>Usar como capa</button>
+                          )}
+                          <button type="button" className="image-gallery-remove" onClick={() => removeImage(index)} aria-label={`Remover foto ${index + 1}`}><IconX className="nav-icon" /></button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                   {imageError ? <p className="admin-feedback">{imageError}</p> : null}
                 </section>
 
@@ -743,6 +753,9 @@ export default function CatalogPage() {
           </form>
         )}
       </div>
+      {previewProduct ? (
+        <ProductPreviewModal productId={previewProduct.id} fallbackName={previewProduct.name} fallbackImage={previewProduct.imageUrl} onClose={() => setPreviewProduct(null)} />
+      ) : null}
     </main>
   );
 }

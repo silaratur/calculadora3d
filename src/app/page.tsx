@@ -21,6 +21,8 @@ type DashboardData = {
 type Material = { id: string; name: string; stockGrams: number; lowStockThresholdGrams: number };
 
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+// Valor negativo (saldo, projeção, lucro) em vermelho — antes saía na mesma cor dos positivos.
+const neg = (value: number) => (value < 0 ? "negative" : undefined);
 
 export default function HomePage() {
   const [checking, setChecking] = useState(true);
@@ -103,17 +105,17 @@ export default function HomePage() {
           <>
             <section className="production-stats dashboard-stats">
               <div><span>Total Vendido</span><strong>{brl(data.totalSold)}</strong></div>
-              <div><span>Lucro Bruto</span><strong>{brl(data.grossProfit)}</strong></div>
+              <div><span>Lucro Bruto</span><strong className={neg(data.grossProfit)}>{brl(data.grossProfit)}</strong></div>
               <div><span>Ticket Médio</span><strong>{brl(data.ticketMedio)}</strong></div>
               <div><span>Nº Vendas</span><strong>{data.ordersCount}</strong></div>
-              <div><span>Saldo de Caixa</span><strong>{brl(data.cash.balance)}</strong></div>
+              <div><span>Saldo de Caixa</span><strong className={neg(data.cash.balance)}>{brl(data.cash.balance)}</strong></div>
               <div><span>A Receber</span><strong>{brl(data.cash.receivable)}</strong></div>
-              <div><span>Projeção de Caixa</span><strong>{brl(data.cash.projectedBalance)}</strong></div>
+              <div><span>Projeção de Caixa</span><strong className={neg(data.cash.projectedBalance)}>{brl(data.cash.projectedBalance)}</strong></div>
               <div><span>Pedidos em Produção</span><strong>{data.openProductionJobs}</strong></div>
               <div><span>Horas Pend. Produção</span><strong>{data.pendingProductionHours.toFixed(1)}h</strong></div>
               <div><span>Produtos Ativos</span><strong>{data.activeProducts}</strong></div>
               <div><span>Estoque Baixo</span><strong>{data.lowStockMaterials}</strong></div>
-              <div><span>Margem Líquida</span><strong>{data.marginPercent.toFixed(1)}%</strong></div>
+              <div><span>Margem Líquida</span><strong className={neg(data.marginPercent)}>{data.marginPercent.toFixed(1)}%</strong></div>
             </section>
 
             <div className="dashboard-alerts">
@@ -129,10 +131,10 @@ export default function HomePage() {
             </div>
 
             <section className="dashboard-shortcuts">
-              <a className="load-editor-button" href="/orcamentos">◇ Nova Precificação</a>
-              <a className="load-editor-button" href="/sales">▣ Registrar Venda</a>
-              <a className="load-editor-button" href="/production">◈ Ver Produção</a>
-              <a className="load-editor-button" href="/cashflow">◍ Fluxo de Caixa</a>
+              <a className="load-editor-button" href="/orcamentos">Nova Precificação</a>
+              <a className="load-editor-button" href="/sales">Registrar Venda</a>
+              <a className="load-editor-button" href="/production">Ver Produção</a>
+              <a className="load-editor-button" href="/cashflow">Fluxo de Caixa</a>
             </section>
           </>
         ) : (
