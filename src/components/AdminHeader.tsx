@@ -6,7 +6,6 @@ import {
   IconBook,
   IconCirclePlus,
   IconFileText,
-  IconFolder,
   IconGrid,
   IconHome,
   IconLogout,
@@ -38,20 +37,52 @@ type Section =
   | "settings"
   | "users";
 
-const links: { id: Section; href: string; label: string; icon: (props: { className?: string }) => React.ReactElement }[] = [
-  { id: "dashboard", href: "/", label: "Painel", icon: IconHome },
-  { id: "orcamentos", href: "/orcamentos", label: "Orçamentos", icon: IconFileText },
-  { id: "library", href: "/admin", label: "Biblioteca", icon: IconBook },
-  { id: "catalog", href: "/catalog", label: "Catálogo", icon: IconGrid },
-  { id: "customers", href: "/customers", label: "Clientes", icon: IconUser },
-  { id: "projects", href: "/projects", label: "Projetos", icon: IconFolder },
-  { id: "sales", href: "/sales", label: "Vendas", icon: IconTag },
-  { id: "production", href: "/production", label: "Produção", icon: IconPrinter },
-  { id: "costs", href: "/costs", label: "Custos", icon: IconCoins },
-  { id: "cashflow", href: "/cashflow", label: "Caixa", icon: IconWallet },
-  { id: "settings", href: "/settings", label: "Configurações", icon: IconSettings },
-  { id: "users", href: "/users", label: "Usuários", icon: IconUsers },
+type NavLink = {
+  id: Section;
+  /** Destino preferido e alternativas, na ordem — vale o primeiro que o perfil pode abrir. */
+  hrefs: string[];
+  label: string;
+  icon: (props: { className?: string }) => React.ReactElement;
+  /** Outras telas em que este item fica marcado como atual. */
+  alsoActive?: Section[];
+};
+
+// Menu agrupado pelas etapas do trabalho (fase 2 da reformulação), em vez de
+// 12 itens soltos em duas linhas. "Orçamentos" é a lista (Projetos) e também
+// fica marcado no editor; quem só pode usar o editor (perfil Calculadora) cai
+// direto nele.
+const home: NavLink = { id: "dashboard", hrefs: ["/"], label: "Hoje", icon: IconHome };
+const groups: { label: string; links: NavLink[] }[] = [
+  {
+    label: "Vender",
+    links: [
+      { id: "projects", hrefs: ["/projects", "/orcamentos"], label: "Orçamentos", icon: IconFileText, alsoActive: ["orcamentos", "calculator"] },
+      { id: "sales", hrefs: ["/sales"], label: "Vendas", icon: IconTag },
+      { id: "customers", hrefs: ["/customers"], label: "Clientes", icon: IconUser },
+    ],
+  },
+  {
+    label: "Produzir",
+    links: [
+      { id: "production", hrefs: ["/production"], label: "Produção", icon: IconPrinter },
+      { id: "catalog", hrefs: ["/catalog"], label: "Catálogo", icon: IconGrid },
+      { id: "library", hrefs: ["/admin"], label: "Biblioteca", icon: IconBook },
+    ],
+  },
+  {
+    label: "Dinheiro",
+    links: [
+      { id: "cashflow", hrefs: ["/cashflow"], label: "Caixa", icon: IconWallet },
+      { id: "costs", hrefs: ["/costs"], label: "Custos", icon: IconCoins },
+    ],
+  },
 ];
+const accountLinks: NavLink[] = [
+  { id: "settings", hrefs: ["/settings"], label: "Configurações", icon: IconSettings },
+  { id: "users", hrefs: ["/users"], label: "Usuários", icon: IconUsers },
+];
+// Barra inferior do celular: as telas de uso diário; o resto fica em "Mais".
+const tabIds: Section[] = ["dashboard", "projects", "production", "catalog"];
 
 export function AdminHeader({ active, badges }: { active: Section; badges?: Partial<Record<Section, number>> }) {
   // Enquanto não confirma sessão válida (ou se não tiver), nenhuma opção de
@@ -62,10 +93,8 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
   const [status, setStatus] = useState<"checking" | "authenticated" | "unauthenticated">("checking");
   const [email, setEmail] = useState<string | null>(null);
   const [role, setRole] = useState<string>("ADMIN");
-  // Em telas estreitas o menu inteiro (12 links) não cabe numa linha — em vez
-  // de quebrar em várias linhas e o cabeçalho (sticky) tomar a tela toda como
-  // um "frame", ele vira um painel recolhível aberto por este botão.
-  const [menuOpen, setMenuOpen] = useState(false);
+  // Painel "Mais" do celular (tudo que não cabe nas 4 abas da barra inferior).
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,10 +110,25 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setMoreOpen(false); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [moreOpen]);
+
   // Mesma regra do proxy (src/lib/roles.ts) — um perfil restrito não vê no
   // menu nem o link de uma área que, se clicasse, o proxy mandaria de volta.
-  const visibleLinks = links.filter((link) => canAccessPath(role, link.href));
+  const hrefFor = (link: NavLink) => link.hrefs.find((href) => canAccessPath(role, href)) ?? null;
+  const isActive = (link: NavLink) => link.id === active || Boolean(link.alsoActive?.includes(active));
   const canUseOrcamentos = canAccessPath(role, "/orcamentos");
+  const visibleGroups = groups
+    .map((group) => ({ ...group, links: group.links.filter((link) => hrefFor(link)) }))
+    .filter((group) => group.links.length);
+  const visibleAccount = accountLinks.filter((link) => hrefFor(link));
+  const allVisible = [home, ...visibleGroups.flatMap((group) => group.links), ...visibleAccount].filter((link) => hrefFor(link));
+  const tabs = tabIds.map((id) => allVisible.find((link) => link.id === id)).filter((link): link is NavLink => Boolean(link));
+  const moreHasActive = !tabs.some(isActive);
 
   async function logout() {
     await fetch("/api/logout", { method: "POST" });
@@ -95,54 +139,120 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
     window.location.href = "/";
   }
 
-  return (
-    <header className="admin-topbar">
-      <Link className="admin-brand" href="/">
-        <span className="brand-mark" role="img" aria-label="AC3D" />
-        <span>
-          <span className="admin-brand-title"><strong>AC3D</strong><span className="brand-tag">PRECIFICAÇÃO</span></span>
-          <small>PAINEL DE PRECIFICAÇÃO & LOGÍSTICA</small>
-        </span>
+  const brand = (
+    <Link className="admin-brand" href="/">
+      <span className="brand-mark" role="img" aria-label="AC3D" />
+      <span className="admin-brand-title"><strong>AC3D</strong></span>
+    </Link>
+  );
+
+  function renderLink(link: NavLink, onNavigate?: () => void) {
+    const href = hrefFor(link);
+    if (!href) return null;
+    const Icon = link.icon;
+    const badge = badges?.[link.id];
+    return (
+      <Link key={link.id} className={isActive(link) ? "active" : undefined} href={href} onClick={onNavigate} aria-current={isActive(link) ? "page" : undefined}>
+        <Icon className="nav-icon" />
+        <span>{link.label}</span>
+        {badge ? <b>{badge}</b> : null}
       </Link>
-      {status === "authenticated" ? (
-        <>
-          <button
-            className="mobile-menu-toggle"
-            type="button"
-            onClick={() => setMenuOpen((open) => !open)}
-            aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
-            aria-expanded={menuOpen}
-          >
-            {menuOpen ? <IconX className="nav-icon" /> : <IconMenu className="nav-icon" />}
-          </button>
-          {menuOpen ? <button className="mobile-menu-backdrop" type="button" aria-label="Fechar menu" onClick={() => setMenuOpen(false)} /> : null}
-          <div className={menuOpen ? "admin-nav-panel open" : "admin-nav-panel"}>
-            <nav className="admin-nav" aria-label="Navegação principal">
-              {visibleLinks.map((link) => {
-                const badge = badges?.[link.id];
-                const Icon = link.icon;
-                return (
-                  <Link key={link.id} className={link.id === active ? "active" : undefined} href={link.href} onClick={() => setMenuOpen(false)}>
-                    <Icon className="nav-icon" />
-                    {link.label}
-                    {badge ? <b>{badge}</b> : null}
-                  </Link>
-                );
-              })}
-            </nav>
-            {canUseOrcamentos ? (
-              <Link className="new-order-cta" href="/orcamentos" onClick={() => setMenuOpen(false)}>
-                <IconCirclePlus className="nav-icon" /> Novo Orçamento
-              </Link>
-            ) : null}
+    );
+  }
+
+  function renderGroups(onNavigate?: () => void) {
+    return (
+      <>
+        {hrefFor(home) ? <div className="nav-group">{renderLink(home, onNavigate)}</div> : null}
+        {visibleGroups.map((group) => (
+          <div className="nav-group" key={group.label}>
+            <span className="nav-group-label">{group.label}</span>
+            {group.links.map((link) => renderLink(link, onNavigate))}
           </div>
+        ))}
+      </>
+    );
+  }
+
+  const newQuote = canUseOrcamentos ? (
+    <Link className="new-order-cta" href="/orcamentos" onClick={() => setMoreOpen(false)}>
+      <IconCirclePlus className="nav-icon" /> Novo orçamento
+    </Link>
+  ) : null;
+
+  const logoutButton = (
+    <button className="logout-button" onClick={logout} aria-label="Sair" title={email ? `Sair (${email})` : "Sair"}><IconLogout className="nav-icon" /></button>
+  );
+
+  if (status === "checking") {
+    // Reserva o lugar da barra lateral enquanto confere a sessão — sem isso o
+    // conteúdo "pulava" pro lado a cada troca de tela quando o menu aparecia.
+    return (
+      <>
+        <aside className="app-sidebar" aria-hidden="true">{brand}</aside>
+        <header className="app-mobilebar">{brand}</header>
+      </>
+    );
+  }
+  if (status !== "authenticated") {
+    // Sem sessão (tela de login): só a marca, sem menu.
+    return <header className="app-mobilebar app-bare">{brand}</header>;
+  }
+
+  return (
+    <>
+      {/* Computador: barra lateral fixa */}
+      <aside className="app-sidebar" aria-label="Menu principal">
+        {brand}
+        {newQuote}
+        <nav className="app-nav">{renderGroups()}</nav>
+        <div className="app-sidebar-footer">
+          {visibleAccount.length ? <nav className="app-nav"><div className="nav-group">{visibleAccount.map((link) => renderLink(link))}</div></nav> : null}
           <div className="admin-account">
-            <span className="admin-account-email">{email ?? ""}</span>
+            <span className="admin-account-email" title={email ?? ""}>{email ?? ""}</span>
             <ThemeToggle />
-            <button className="logout-button" onClick={logout} aria-label="Sair" title={email ? `Sair (${email})` : "Sair"}><IconLogout className="nav-icon" /></button>
+            {logoutButton}
           </div>
-        </>
+        </div>
+      </aside>
+
+      {/* Celular: barra superior compacta + abas embaixo */}
+      <header className="app-mobilebar">
+        {brand}
+        <div className="admin-account">
+          <ThemeToggle />
+          {logoutButton}
+        </div>
+      </header>
+      <nav className="app-tabbar" aria-label="Menu principal">
+        {tabs.map((link) => renderLink(link))}
+        <button type="button" className={moreHasActive ? "active" : undefined} onClick={() => setMoreOpen(true)} aria-expanded={moreOpen}>
+          <IconMenu className="nav-icon" />
+          <span>Mais</span>
+        </button>
+      </nav>
+      {moreOpen ? (
+        <div className="app-more" role="dialog" aria-modal="true" aria-label="Todas as telas">
+          <button className="app-more-backdrop" type="button" aria-label="Fechar menu" onClick={() => setMoreOpen(false)} />
+          <div className="app-more-sheet">
+            <div className="app-more-head">
+              <strong>Menu</strong>
+              <button type="button" className="theme-toggle" onClick={() => setMoreOpen(false)} aria-label="Fechar menu"><IconX className="nav-icon" /></button>
+            </div>
+            {newQuote}
+            <nav className="app-nav">
+              {renderGroups(() => setMoreOpen(false))}
+              {visibleAccount.length ? (
+                <div className="nav-group">
+                  <span className="nav-group-label">Conta</span>
+                  {visibleAccount.map((link) => renderLink(link, () => setMoreOpen(false)))}
+                </div>
+              ) : null}
+            </nav>
+            {email ? <p className="app-more-email">{email}</p> : null}
+          </div>
+        </div>
       ) : null}
-    </header>
+    </>
   );
 }

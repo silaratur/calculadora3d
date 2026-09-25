@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { nextSharedCode } from "@/lib/codes";
 import { calculateOrderMetrics } from "@/lib/costing";
 import { buildProductionItemDrafts } from "@/lib/production";
 
@@ -35,31 +36,12 @@ const statusUpdateSchema = z.object({
   plannedProductionDate: z.coerce.date().nullable().optional(),
   expectedPaymentDate: z.coerce.date().nullable().optional(),
   notes: z.string().optional(),
+  // Registrar (true) ou desfazer (false) a entrega ao cliente.
+  delivered: z.boolean().optional(),
 });
 
 async function authenticated() {
   return Boolean(await getCurrentUser());
-}
-
-/** AAAAMMDD no fuso local — evitar UTC aqui importa: perto da meia-noite no
- * Brasil (~21h em UTC-3) `toISOString()` já mostraria o dia seguinte. */
-function localDateKey(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}${month}${day}`;
-}
-
-/** PED-AAAAMMDD-0001, sequencial por dia — não colide como o Math.random() antigo. */
-async function nextOrderNumber() {
-  const prefix = `PED-${localDateKey(new Date())}`;
-  const last = await prisma.salesOrder.findFirst({
-    where: { orderNumber: { startsWith: `${prefix}-` } },
-    orderBy: { orderNumber: "desc" },
-    select: { orderNumber: true },
-  });
-  const lastSeq = last ? Number(last.orderNumber.split("-").pop()) || 0 : 0;
-  return `${prefix}-${String(lastSeq + 1).padStart(4, "0")}`;
 }
 
 type OrderInput = z.infer<typeof orderSchema>;
@@ -70,7 +52,7 @@ type OrderInput = z.infer<typeof orderSchema>;
  * sem ele, editar uma venda avulsa (sem produto do catálogo, então sem preço
  * pra puxar) zerava o valor sempre que o formulário não reenviava unitPrice.
  */
-async function resolveOrderPricing(data: OrderInput, existing?: { unitPrice: number; unitCostSnapshot: number } | null) {
+async function resolveOrderPricing(data: OrderInput, existing?: { unitPrice: number; unitCostSnapshot: number; printTimeHours: number } | null) {
   const product = data.productId ? await prisma.product.findUnique({ where: { id: data.productId } }) : null;
   if (data.productId && !product) return { error: "Produto não encontrado" as const };
 
@@ -84,7 +66,9 @@ async function resolveOrderPricing(data: OrderInput, existing?: { unitPrice: num
   // depois não reescreve o histórico de vendas já feitas.
   const unitCostSnapshot = product?.cost ?? existing?.unitCostSnapshot ?? 0;
   const unitPrice = data.unitPrice ?? product?.price ?? existing?.unitPrice ?? 0;
-  const printTimeHours = product?.printTimeHours ?? 0;
+  // Venda de kit (vinda de orçamento com várias peças) não tem produto único:
+  // mantém o tempo congelado — antes a edição zerava o tempo de produção.
+  const printTimeHours = product?.printTimeHours ?? existing?.printTimeHours ?? 0;
   const marketplaceFee = data.marketplaceFee ?? (channel ? unitPrice * channel.commissionRate : 0);
 
   const metrics = calculateOrderMetrics({
@@ -109,8 +93,31 @@ async function resolveOrderPricing(data: OrderInput, existing?: { unitPrice: num
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!(await authenticated())) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  // ?id= devolve a venda completa pra página da venda (/sales/[id]).
+  const id = new URL(request.url).searchParams.get("id");
+  if (id) {
+    const order = await prisma.salesOrder.findUnique({
+      where: { id },
+      include: {
+        customer: true,
+        marketplace: true,
+        quote: { select: { id: true, code: true, revision: true, createdAt: true } },
+        payments: { orderBy: { date: "asc" } },
+        production: {
+          include: {
+            items: {
+              orderBy: { createdAt: "asc" },
+              include: { product: { select: { id: true, imageUrl: true, material: true, printTimeHours: true } } },
+            },
+          },
+        },
+      },
+    });
+    if (!order) return NextResponse.json({ error: "Venda não encontrada" }, { status: 404 });
+    return NextResponse.json(order);
+  }
   return NextResponse.json(
     await prisma.salesOrder.findMany({
       include: { customer: true, product: true, marketplace: true, production: true },
@@ -170,7 +177,7 @@ export async function POST(request: Request) {
       const order = await prisma.salesOrder.create({
         data: {
           ...orderData,
-          orderNumber: await nextOrderNumber(),
+          orderNumber: await nextSharedCode(),
           production: {
             create: {
               plannedMinutes: Math.round(metrics.totalPrintHours * 60),
@@ -203,7 +210,17 @@ export async function PUT(request: Request) {
   if (!isFullEdit) {
     const parsed = statusUpdateSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-    return NextResponse.json(await prisma.salesOrder.update({ where: { id }, data: parsed.data }));
+    const { delivered, ...fields } = parsed.data;
+    const current = await prisma.salesOrder.findUnique({ where: { id }, select: { status: true } });
+    if (!current) return NextResponse.json({ error: "Venda não encontrada" }, { status: 404 });
+    // Etapas da venda: em produção → aguardando entrega → entregue. Só entrega
+    // depois que a produção terminou; voltar a produção desfaz a entrega.
+    const finalStatus = fields.status ?? current.status;
+    if (delivered && finalStatus !== "COMPLETED") {
+      return NextResponse.json({ error: "Só dá pra registrar a entrega depois que todas as peças estiverem concluídas na Produção." }, { status: 400 });
+    }
+    const deliveredAt = delivered === true ? new Date() : delivered === false || finalStatus !== "COMPLETED" ? null : undefined;
+    return NextResponse.json(await prisma.salesOrder.update({ where: { id }, data: { ...fields, ...(deliveredAt !== undefined ? { deliveredAt } : {}) } }));
   }
 
   const parsed = orderSchema.safeParse(body);

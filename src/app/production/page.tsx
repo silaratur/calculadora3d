@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { IconFileText } from "@/components/Icons";
 import { ProductPhotoLink } from "@/components/ProductPreview";
+import { displayNumber } from "@/lib/sales";
 
 type Customer = { id: string; name: string };
 type OrderQuote = { id: string; code: string | null };
@@ -63,6 +64,8 @@ export default function ProductionPage() {
   const [feedback, setFeedback] = useState("");
   const [needsLogin, setNeedsLogin] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  // Aba escolhida na lista do celular; null = primeira etapa que tem peça.
+  const [mobileLane, setMobileLane] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const reload = () => setReloadToken((token) => token + 1);
 
@@ -117,7 +120,7 @@ export default function ProductionPage() {
       reload();
       return;
     }
-    setFeedback(`${job.order.orderNumber} atualizado.`);
+    setFeedback(`${displayNumber(job.order.orderNumber)} atualizado.`);
   }
 
   async function moveItem(job: Job, item: ProductionItem, direction: 1 | -1) {
@@ -139,7 +142,7 @@ export default function ProductionPage() {
       reload();
       return;
     }
-    setFeedback(`${item.name} (${job.order.orderNumber}) → ${target.label}.`);
+    setFeedback(`${item.name} (${displayNumber(job.order.orderNumber)}) → ${target.label}.`);
   }
 
   const visible = useMemo(() => (showCompleted ? jobs : jobs.filter((job) => !jobDone(job))), [jobs, showCompleted]);
@@ -166,6 +169,31 @@ export default function ProductionPage() {
     });
     return map;
   }, [jobs]);
+
+  // Regra da bancada: uma impressora só imprime uma peça de cada vez — sem
+  // impressora escolhida no pedido não dá pra checar isso, então trava o avanço
+  // pra Imprimindo (em vez de deixar ir, o servidor recusar e a peça "piscar").
+  function advanceBlock(job: Job, item: ProductionItem) {
+    const index = STATUSES.findIndex((column) => column.id === item.status);
+    const nextStatus = STATUSES[index + 1]?.id;
+    const printerName = job.printerName.trim();
+    const needsPrinterFirst = nextStatus === "PRINTING" && !printerName;
+    const busyWith = nextStatus === "PRINTING" && printerName ? printerInUse.get(printerName) : undefined;
+    const printerBusy = Boolean(busyWith && busyWith.itemId !== item.id);
+    const reason = needsPrinterFirst
+      ? "Escolha a impressora deste pedido antes de mover para Imprimindo."
+      : printerBusy && busyWith
+        ? `A impressora "${printerName}" já está imprimindo "${busyWith.itemName}" (pedido ${busyWith.orderNumber}).`
+        : null;
+    return { needsPrinterFirst, blocked: needsPrinterFirst || printerBusy, reason };
+  }
+
+  const activeMobileLane = mobileLane ?? STATUSES.find((column) => (laneCounts[column.id] ?? 0) > 0)?.id ?? "WAITING";
+  const mobileItems = visible.flatMap((job) =>
+    job.items
+      .filter((item) => item.status === activeMobileLane && (showCompleted || item.status !== "COMPLETED"))
+      .map((item) => ({ job, item })),
+  );
 
   const open = jobs.filter((job) => !jobDone(job));
   const plannedMinutes = open.reduce((total, job) => total + job.plannedMinutes, 0);
@@ -207,8 +235,71 @@ export default function ProductionPage() {
           <button className={showCompleted ? "selected" : ""} onClick={() => setShowCompleted(!showCompleted)} type="button">
             {showCompleted ? "Ocultar concluídos" : "Mostrar concluídos"}
           </button>
-          <a className="new-quote-button" href="/sales">＋ Novo pedido</a>
+          <Link className="new-quote-button" href="/sales">＋ Novo pedido</Link>
         </div>
+
+        {/* Celular (fase 2): o quadro de 5 colunas não cabe em 390px — vira uma
+            lista por etapa, com um botão largo que diz para onde a peça vai. */}
+        <section className="production-mobile" aria-label="Peças por etapa">
+          <div className="production-mobile-tabs" role="tablist">
+            {STATUSES.filter((column) => showCompleted || column.id !== "COMPLETED").map((column) => (
+              <button
+                key={column.id}
+                type="button"
+                role="tab"
+                aria-selected={activeMobileLane === column.id}
+                className={activeMobileLane === column.id ? "selected" : undefined}
+                onClick={() => setMobileLane(column.id)}
+              >
+                {column.label} <b>{laneCounts[column.id] ?? 0}</b>
+              </button>
+            ))}
+          </div>
+          {mobileItems.length === 0 ? <p className="today-empty">Nenhuma peça em {STATUSES.find((column) => column.id === activeMobileLane)?.label ?? "esta etapa"}.</p> : null}
+          {mobileItems.map(({ job, item }) => {
+            const index = STATUSES.findIndex((column) => column.id === item.status);
+            const next = STATUSES[index + 1];
+            const minutes = item.product ? Math.round(item.product.printTimeHours * item.quantity * 60) : 0;
+            const block = advanceBlock(job, item);
+            return (
+              <article className={`production-mobile-card lane-${item.status.toLowerCase()}`} key={item.id}>
+                <div className="production-mobile-top">
+                  {item.product?.imageUrl ? (
+                    <ProductPhotoLink productId={item.product.id} name={item.name} image={item.product.imageUrl}>
+                      {/* eslint-disable-next-line @next/next/no-img-element -- data URI local, next/image não otimiza isso */}
+                      <img src={item.product.imageUrl} alt={item.name} />
+                    </ProductPhotoLink>
+                  ) : <span className="production-mobile-photo-empty" aria-hidden="true" />}
+                  <div>
+                    <strong>{item.name}{item.quantity > 1 ? ` ×${item.quantity}` : ""}</strong>
+                    <small>{displayNumber(job.order.orderNumber)} · {job.order.customer?.name || "Cliente não informado"}</small>
+                    <small>{[item.product?.material, minutes ? hours(minutes) : null, job.priority === "URGENT" ? "urgente" : job.priority === "HIGH" ? "prioridade alta" : null].filter(Boolean).join(" · ")}</small>
+                  </div>
+                </div>
+                {block.needsPrinterFirst ? (
+                  <label className="production-mobile-printer">
+                    Impressora do pedido
+                    <select value={job.printerName} onChange={(event) => void updateJob(job, { printerName: event.target.value })}>
+                      <option value="">Escolha a impressora</option>
+                      {printers.map((printer) => <option key={printer.id} value={printer.model}>{printer.model}</option>)}
+                    </select>
+                  </label>
+                ) : null}
+                {next && item.status !== "COMPLETED" ? (
+                  <button type="button" className="primary-button production-mobile-advance" disabled={block.blocked} onClick={() => void moveItem(job, item, 1)}>
+                    {next.id === "COMPLETED" ? "Concluir peça" : `Mover para ${next.label}`}
+                  </button>
+                ) : null}
+                {block.reason && !block.needsPrinterFirst ? <p className="production-mobile-reason">{block.reason}</p> : null}
+                {index > 0 && item.status !== "COMPLETED" ? (
+                  <button type="button" className="production-mobile-back" onClick={() => void moveItem(job, item, -1)}>
+                    Voltar para {STATUSES[index - 1].label}
+                  </button>
+                ) : null}
+              </article>
+            );
+          })}
+        </section>
 
         <div className="swimlanes-scroll">
           <div className="swimlanes">
@@ -235,7 +326,7 @@ export default function ProductionPage() {
               return (
                 <div className={`swim-row${isDone ? " done" : ""}`} key={job.id}>
                   <div className="swim-order-cell">
-                    <a className="material-badge" href={`/sales?highlight=${job.order.id}`} title="Ver o pedido completo em Vendas">{job.order.orderNumber}</a>
+                    <Link className="material-badge" href={`/sales/${job.order.id}`} title="Abrir a venda">{displayNumber(job.order.orderNumber)}</Link>
                     {job.order.quote?.id ? (
                       <a className="job-quote-link" href={`/quotes/${job.order.quote.id}/print`} target="_blank" rel="noreferrer" title="Abrir o orçamento original">
                         <IconFileText className="nav-icon" /> {job.order.quote.code ?? "Ver orçamento"}
@@ -300,15 +391,7 @@ export default function ProductionPage() {
                         {itemsHere.map((item) => {
                           const isCompleted = item.status === "COMPLETED";
                           const minutes = item.product ? Math.round(item.product.printTimeHours * item.quantity * 60) : 0;
-                          // Regra da bancada: uma impressora só imprime uma peça de cada
-                          // vez — sem impressora escolhida no pedido não dá pra checar
-                          // isso, então trava o avanço pra Imprimindo aqui (em vez de
-                          // deixar ir, o servidor recusar, e a peça "piscar" e voltar).
-                          const nextStatus = STATUSES[columnIndex + 1]?.id;
-                          const printerName = job.printerName.trim();
-                          const needsPrinterFirst = nextStatus === "PRINTING" && !printerName;
-                          const busyWith = nextStatus === "PRINTING" && printerName ? printerInUse.get(printerName) : undefined;
-                          const printerBusy = Boolean(busyWith && busyWith.itemId !== item.id);
+                          const block = advanceBlock(job, item);
                           return (
                             <article className={`item-card lane-${column.id.toLowerCase()}`} key={item.id}>
                               <div className="item-card-top">
@@ -335,14 +418,8 @@ export default function ProductionPage() {
                                 <button type="button" disabled={columnIndex === 0 || isCompleted} onClick={() => void moveItem(job, item, -1)} aria-label={`Voltar ${item.name}`}>‹</button>
                                 <button
                                   type="button"
-                                  disabled={columnIndex === STATUSES.length - 1 || needsPrinterFirst || printerBusy}
-                                  title={
-                                    needsPrinterFirst
-                                      ? "Atribua uma impressora a este pedido antes de mover para Imprimindo"
-                                      : printerBusy && busyWith
-                                        ? `Impressora "${printerName}" já está imprimindo "${busyWith.itemName}" (pedido ${busyWith.orderNumber})`
-                                        : undefined
-                                  }
+                                  disabled={columnIndex === STATUSES.length - 1 || block.blocked}
+                                  title={block.reason ?? undefined}
                                   onClick={() => void moveItem(job, item, 1)}
                                   aria-label={`Avançar ${item.name}`}
                                 >

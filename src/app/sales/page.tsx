@@ -5,6 +5,7 @@ import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconTrash } from "@/components/Icons";
 import { assessMargin, assessProfitPerHour, calculateOrderMetrics } from "@/lib/costing";
+import { displayNumber, saleStage, saleStageLabel, type SaleStage } from "@/lib/sales";
 
 type Customer = { id: string; name: string };
 type Product = { id: string; sku: string; name: string; cost: number; price: number; printTimeHours: number; active: boolean };
@@ -23,6 +24,8 @@ type Order = {
   paymentMethod: string;
   unitPrice: number;
   unitCostSnapshot: number;
+  printTimeHours: number;
+  quoteId: string | null;
   discountPerUnit: number;
   marketplaceFee: number;
   shippingCost: number;
@@ -33,6 +36,7 @@ type Order = {
   plannedProductionDate: string | null;
   expectedPaymentDate: string | null;
   createdAt: string;
+  deliveredAt: string | null;
   customer?: Customer | null;
   product?: Product | null;
 };
@@ -59,9 +63,8 @@ const emptyForm = {
 };
 
 const paymentMethods = ["PIX", "Cartão de Crédito", "Cartão de Débito", "Dinheiro", "Boleto"];
-const productionStatuses = ["PENDING", "IN_PROGRESS", "COMPLETED"];
+const stages: SaleStage[] = ["PRODUCING", "AWAITING_DELIVERY", "DELIVERED"];
 const financialStatuses = ["PENDING", "PARTIAL", "PAID"];
-const statusLabel: Record<string, string> = { PENDING: "Falta produzir", IN_PROGRESS: "Em produção", COMPLETED: "Produzido" };
 const paymentLabel: Record<string, string> = { PENDING: "Falta receber", PARTIAL: "Parcialmente recebido", PAID: "Recebido" };
 
 export default function SalesPage() {
@@ -73,9 +76,8 @@ export default function SalesPage() {
   const [form, setForm] = useState(emptyForm);
   const [feedback, setFeedback] = useState("");
   const [search, setSearch] = useState("");
-  // Ao carregar a tela, esconde os já produzidos por padrão — só quem ainda
-  // está na fila (falta produzir/em produção) precisa de atenção aqui. O
-  // usuário pode trocar pra "Produzido" ou "Todos" no filtro quando quiser.
+  // Ao carregar a tela, esconde as já entregues por padrão — quem ainda está
+  // em produção ou aguardando entrega é o que precisa de atenção aqui.
   const [statusFilter, setStatusFilter] = useState("active");
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -130,27 +132,44 @@ export default function SalesPage() {
 
   const product = products.find((item) => item.id === form.productId);
   const channel = channels.find((item) => item.id === form.channelId);
+  const editingOrder = orders.find((order) => order.id === editingId) ?? null;
   const quantity = n(form.quantity);
   // Venda avulsa (sem produto do catálogo) não tem de onde puxar o preço —
   // usa o que foi digitado no campo "Preço unitário".
   const unitPrice = product?.price ?? n(form.unitPrice);
-  const marketplaceFee = channel ? unitPrice * channel.commissionRate + channel.adsRate * unitPrice : 0;
+  // Custo e tempo por unidade — mesma regra do servidor ao salvar
+  // (resolveOrderPricing): produto do Catálogo escolhido → custo e tempo do
+  // Catálogo; sem produto (kit vindo de orçamento, venda avulsa) → o que ficou
+  // congelado na venda quando o orçamento foi aprovado. Antes caía em 0 e o
+  // "lucro" saía igual ao faturamento.
+  const unitCost = product?.cost ?? editingOrder?.unitCostSnapshot ?? 0;
+  const printTimeHours = product?.printTimeHours ?? editingOrder?.printTimeHours ?? 0;
+  const costSource = product ? "Catálogo" : editingOrder?.quoteId ? "orçamento aprovado" : "venda registrada";
+  // Taxas do canal por unidade: comissão + anúncios sobre o preço + taxa fixa
+  // (a taxa fixa ficava de fora).
+  const marketplaceFee = channel ? unitPrice * (channel.commissionRate + channel.adsRate) + channel.fixedFee : 0;
 
   const metrics = useMemo(
     () =>
       calculateOrderMetrics({
         quantity,
         unitPrice,
-        unitCost: product?.cost ?? 0,
+        unitCost,
         discountPerUnit: n(form.discountPerUnit),
         marketplaceFee,
         shippingCost: n(form.shippingCost),
-        printTimeHours: product?.printTimeHours ?? 0,
+        printTimeHours,
       }),
-    [quantity, unitPrice, product, form.discountPerUnit, marketplaceFee, form.shippingCost],
+    [quantity, unitPrice, unitCost, printTimeHours, form.discountPerUnit, marketplaceFee, form.shippingCost],
   );
-  const marginAssessment = assessMargin(metrics.marginPercent, settings.defaultMarkup);
-  const hourAssessment = assessProfitPerHour(metrics.profitPerHour, settings.laborRate);
+  // A configuração guarda o markup padrão (sobre o custo); a simulação mede
+  // margem (sobre o faturamento). Markup 60% = margem 37,5% — comparar os dois
+  // direto dizia "na meta" com a meta errada.
+  const targetMarginPercent = (settings.defaultMarkup / (100 + settings.defaultMarkup)) * 100;
+  const marginAssessment = assessMargin(metrics.marginPercent, targetMarginPercent);
+  const hourAssessment = metrics.totalPrintHours > 0
+    ? assessProfitPerHour(metrics.profitPerHour, settings.laborRate)
+    : { level: "warning" as const, message: "Sem tempo de produção cadastrado para esta venda — não dá pra calcular o lucro por hora." };
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -253,6 +272,18 @@ export default function SalesPage() {
     reload();
   }
 
+  async function registerDelivery(order: Order) {
+    const response = await fetch(`/api/orders?id=${encodeURIComponent(order.id)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ delivered: true }),
+    });
+    const body = await response.json().catch(() => null);
+    if (!response.ok) { setFeedback(typeof body?.error === "string" ? body.error : "Não foi possível registrar a entrega."); return; }
+    setOrders((current) => current.map((item) => (item.id === order.id ? { ...item, deliveredAt: body.deliveredAt } : item)));
+    setFeedback(`Entrega de ${displayNumber(order.orderNumber)} registrada.`);
+  }
+
   const filtered = useMemo(
     () =>
       orders.filter((order) => {
@@ -261,8 +292,9 @@ export default function SalesPage() {
         if (order.id === highlightId) return true;
         const text = `${order.orderNumber} ${order.productName} ${order.customer?.name ?? ""}`.toLowerCase();
         if (!text.includes(search.toLowerCase())) return false;
-        if (statusFilter === "active" && order.status === "COMPLETED") return false;
-        if (statusFilter !== "all" && statusFilter !== "active" && order.status !== statusFilter) return false;
+        const stage = saleStage(order);
+        if (statusFilter === "active" && stage === "DELIVERED") return false;
+        if (statusFilter !== "all" && statusFilter !== "active" && stage !== statusFilter) return false;
         if (paymentFilter !== "all" && order.paymentStatus !== paymentFilter) return false;
         return true;
       }),
@@ -276,10 +308,10 @@ export default function SalesPage() {
         {needsLogin ? <AuthBanner message="Entre novamente para ver e registrar pedidos." /> : null}
         <section className="library-heading">
           <div>
-            <h1>Vendas & Pedidos</h1>
-            <p>Registre pedidos aprovados e acompanhe pagamentos.</p>
+            <h1>Vendas</h1>
+            <p>Orçamentos aprovados: produção, entrega e recebimentos.</p>
           </div>
-          <span className="material-badge">{orders.length} pedidos</span>
+          <span className="material-badge">{orders.length} vendas</span>
         </section>
 
         {feedback && !editingId ? <p className="admin-feedback">{feedback}</p> : null}
@@ -328,8 +360,9 @@ export default function SalesPage() {
                   <div><span>Lucro Total</span><strong>{brl(metrics.profitTotal)}</strong></div>
                   <div><span>Lucro / Unid.</span><strong>{brl(metrics.profitPerUnit)}</strong></div>
                   <div><span>Lucro / Hora</span><strong>{brl(metrics.profitPerHour)}</strong></div>
-                  <div><span>Tempo de Produção</span><strong>{metrics.totalPrintHours.toFixed(1)}h</strong></div>
+                  <div><span>Tempo de Produção</span><strong>{metrics.totalPrintHours.toFixed(1).replace(".", ",")}h</strong></div>
                 </div>
+                <p className="sim-source">Custo {brl(unitCost)} e tempo {printTimeHours.toFixed(1).replace(".", ",")}h por unidade, do {costSource}.</p>
                 <p className={`sim-alert sim-${marginAssessment.level}`}>{marginAssessment.message}</p>
                 <p className={`sim-alert sim-${hourAssessment.level}`}>{hourAssessment.message}</p>
               </div>
@@ -347,9 +380,9 @@ export default function SalesPage() {
             <div className="catalog-filters">
               <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por código, produto ou cliente..." />
               <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                <option value="active">Em produção e a produzir</option>
-                <option value="all">Todos status de produção</option>
-                {productionStatuses.map((item) => <option key={item} value={item}>{statusLabel[item]}</option>)}
+                <option value="active">Em produção e aguardando entrega</option>
+                <option value="all">Todas as etapas</option>
+                {stages.map((item) => <option key={item} value={item}>{saleStageLabel[item]}</option>)}
               </select>
               <select value={paymentFilter} onChange={(event) => setPaymentFilter(event.target.value)}>
                 <option value="all">Todos status financeiros</option>
@@ -360,12 +393,14 @@ export default function SalesPage() {
             {filtered.map((order) => {
               const pending = order.totalAmount - order.paidAmount;
               const expanded = expandedOrder === order.id;
+              const stage = saleStage(order);
               return (
                 <article className={`operation-card${order.id === highlightId ? " highlight" : ""}`} id={`order-${order.id}`} key={order.id}>
                   <div className="card-top">
-                    <span className="material-badge">{order.orderNumber}</span>
+                    <a className="material-badge" href={`/sales/${order.id}`} title="Abrir a venda">{displayNumber(order.orderNumber)}</a>
                     <span className="card-actions">
-                      <span className="project-status">{statusLabel[order.status] ?? order.status}</span>
+                      <span className={`sale-stage stage-${stage.toLowerCase()}`}>{saleStageLabel[stage]}</span>
+                      {stage === "AWAITING_DELIVERY" ? <button className="edit-button sale-deliver-button" type="button" onClick={() => void registerDelivery(order)}>Registrar entrega</button> : null}
                       <button className="edit-button" onClick={() => edit(order)} disabled={order.paidAmount > 0} title={order.paidAmount > 0 ? "Pedido já recebeu pagamento — não pode ser editado" : undefined}>Editar</button>
                       <button className="edit-button" type="button" onClick={() => { setExpandedOrder(expanded ? null : order.id); setReceiptAmount(""); setFeedback(""); if (expanded) setOrderPayments([]); }}>
                         {expanded ? "Fechar" : order.paidAmount > 0 ? "Recebimentos" : "Receber"}
@@ -373,13 +408,13 @@ export default function SalesPage() {
                       <button className="delete-button" onClick={() => archive(order.id)} aria-label={`Excluir ${order.orderNumber}`}><IconTrash className="nav-icon" /></button>
                     </span>
                   </div>
-                  <h2>{order.productName}</h2>
+                  <h2><a className="sale-title-link" href={`/sales/${order.id}`}>{order.productName}</a></h2>
                   <p>{order.customer?.name || "Cliente não informado"} · {order.quantity} unidade(s) · {order.channel} · {order.paymentMethod}</p>
                   <div className="operation-card-bottom">
                     <strong>{brl(order.totalAmount)}</strong>
                     <span>{paymentLabel[order.paymentStatus] ?? order.paymentStatus} {order.paidAmount > 0 ? `· ${brl(order.paidAmount)} recebido` : ""}</span>
-                    <span>Entrega: {dateValue(order.dueDate) || "sem prazo"}</span>
-                    <a href="/production">Acompanhar produção</a>
+                    <span>{order.deliveredAt ? `Entregue em ${new Date(order.deliveredAt).toLocaleDateString("pt-BR")}` : `Prazo: ${order.dueDate ? new Date(order.dueDate).toLocaleDateString("pt-BR") : "sem prazo"}`}</span>
+                    <a href={`/sales/${order.id}`}>Abrir venda</a>
                   </div>
 
                   {expanded ? (
@@ -424,7 +459,7 @@ export default function SalesPage() {
                 </article>
               );
             })}
-            {filtered.length === 0 ? <div className="empty-note">Nenhum pedido encontrado.</div> : null}
+            {filtered.length === 0 ? <div className="empty-note">Nenhuma venda encontrada.</div> : null}
           </section>
         </div>
       </div>

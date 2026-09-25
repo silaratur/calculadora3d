@@ -3,28 +3,11 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { buildProductionItemDrafts } from "@/lib/production";
+import { orderNumberForQuote } from "@/lib/codes";
+import { quoteRealCost } from "@/lib/quotes";
 
 async function authenticated() {
   return Boolean(await getCurrentUser());
-}
-
-/** AAAAMMDD-0001, sequencial por dia, no fuso local. */
-function localDateKey(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}${month}${day}`;
-}
-
-async function nextOrderNumber() {
-  const prefix = `PED-${localDateKey(new Date())}`;
-  const last = await prisma.salesOrder.findFirst({
-    where: { orderNumber: { startsWith: `${prefix}-` } },
-    orderBy: { orderNumber: "desc" },
-    select: { orderNumber: true },
-  });
-  const lastSeq = last ? Number(last.orderNumber.split("-").pop()) || 0 : 0;
-  return `${prefix}-${String(lastSeq + 1).padStart(4, "0")}`;
 }
 
 // Dados que só a venda tem e o orçamento não sabia na hora de ser feito —
@@ -59,7 +42,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const existingOrder = await prisma.salesOrder.findUnique({ where: { quoteId: quote.id }, select: { orderNumber: true } });
   if (existingOrder) {
     await prisma.quote.update({ where: { id: quote.id }, data: { status: "CONVERTED" } });
-    return NextResponse.json({ error: `Este orçamento já tem o pedido ${existingOrder.orderNumber} em Vendas — o status dele foi corrigido.` }, { status: 409 });
+    return NextResponse.json({ error: `Este orçamento já virou a venda ${existingOrder.orderNumber} — o status dele foi corrigido.` }, { status: 409 });
   }
 
   let plannedMinutes = 0;
@@ -102,7 +85,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const [order] = await prisma.$transaction([
     prisma.salesOrder.create({
       data: {
-        orderNumber: await nextOrderNumber(),
+        // A venda herda o número do orçamento (numeração unificada, src/lib/codes.ts).
+        orderNumber: await orderNumberForQuote(quote.code),
         quoteId: quote.id,
         customerId: matchedCustomer?.id ?? null,
         productId: quote.productId,
@@ -111,7 +95,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         channelId: channel?.id ?? null,
         channel: channel?.name ?? marketplaceName,
         unitPrice: quote.finalPrice,
-        unitCostSnapshot: quote.baseCost,
+        // Custo REAL (custo do Catálogo + insumos), não o baseCost — que soma os preços de venda.
+        unitCostSnapshot: quoteRealCost(quote.snapshotJson) ?? quote.baseCost,
         printTimeHours,
         totalAmount: quote.finalPrice,
         shippingCost: parsed.data.shippingCost ?? 0,

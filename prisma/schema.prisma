@@ -226,9 +226,31 @@ model Quote {
   // Motivo informado ao arquivar (aba "Não Executados" em Projetos) — por
   // que esse orçamento não virou venda.
   archiveReason String?     @default("")
+  // Revisão atual (1 = versão original). Cada vez que preço ou itens mudam, a
+  // versão anterior vai pra QuoteRevision e este número sobe. Só uso interno —
+  // o PDF do cliente não mostra.
+  revision      Int         @default(1)
+  revisions     QuoteRevision[]
   order         SalesOrder?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+}
+
+/// Versões anteriores de um orçamento (histórico das "n alterações" da negociação).
+model QuoteRevision {
+  id           String   @id @default(cuid())
+  quoteId      String
+  quote        Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  number       Int
+  productName  String
+  baseCost     Float
+  finalPrice   Float
+  margin       Float
+  snapshotJson String
+  notes        String   @default("")
+  createdAt    DateTime @default(now())
+
+  @@unique([quoteId, number])
 }
 
 model SalesOrder {
@@ -267,6 +289,9 @@ model SalesOrder {
   expectedPaymentDate   DateTime?
 
   notes      String         @default("")
+  // Entrega ao cliente. Etapa da venda: em produção → aguardando entrega
+  // (produção concluída, deliveredAt vazio) → entregue (deliveredAt preenchido).
+  deliveredAt DateTime?
   production ProductionJob?
   payments   Payment[]
   createdAt  DateTime       @default(now())

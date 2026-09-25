@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { AdminHeader } from "@/components/AdminHeader";
 import { IconBookmark, IconChevronDown, IconChevronUp, IconClock, IconCopy, IconDownload, IconSave, IconShoppingBag, IconTrash } from "@/components/Icons";
 import { ProductPhotoLink } from "@/components/ProductPreview";
+import { quoteStatusLabel } from "@/lib/quotes";
+import { QuoteRevisionView } from "@/components/QuoteRevisionView";
 import { calculateSuggestedPrice, markupPercentForFinalPrice, type PricingMethod } from "@/lib/costing";
 
 // Produto já cadastrado no Catálogo — custo e tempo de impressão vêm prontos
@@ -31,6 +33,10 @@ type QuoteSnapshot = {
   marketplace?: Marketplace;
   pricingMethod?: PricingMethod;
 };
+
+type QuoteRevisionEntry = { id: string; number: number; finalPrice: number; baseCost: number; productName: string; snapshotJson: string; notes: string; createdAt: string };
+// Estado do orçamento aberto no editor (ciclo da negociação, ver src/lib/quotes.ts).
+type QuoteMeta = { status: string; revision: number; code: string | null; archiveReason: string | null; revisions: QuoteRevisionEntry[]; order: { id: string; orderNumber: string } | null };
 
 const demoSupplies: Supply[] = [{ id: "bag", name: "Embalagem simples", category: "Embalagem & Caixas", unitCost: 0.35 }];
 const defaultMarketplace: Marketplace = { id: "direct", name: "Venda Direta", commissionRate: 0, fixedFee: 0, adsRate: 0 };
@@ -90,6 +96,12 @@ function OrcamentosForm() {
   // primeiro "Salvar" cria o registro, pra próximos saves atualizarem esse
   // mesmo orçamento em vez de criar um novo a cada clique.
   const [currentQuoteId, setCurrentQuoteId] = useState<string | null>(null);
+  const [quoteMeta, setQuoteMeta] = useState<QuoteMeta | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [restoredFrom, setRestoredFrom] = useState<number | null>(null);
+  const [viewingRevision, setViewingRevision] = useState<QuoteRevisionEntry | null>(null);
+  // Orçamento aprovado já virou venda: só leitura (a API também recusa).
+  const readOnly = quoteMeta?.status === "CONVERTED";
 
   const searchParams = useSearchParams();
   // Vindo de "Carregar no Editor" (?quoteId=...): os valores do orçamento
@@ -139,29 +151,33 @@ function OrcamentosForm() {
     };
   }, [quoteId]);
 
+  /** Preenche o editor com uma versão do orçamento (a atual ou uma revisão antiga). */
+  function applyVersion(productName: string, versionNotes: string, snapshotJson: string) {
+    setName(productName);
+    setNotes(versionNotes);
+    let s: QuoteSnapshot = {};
+    try { s = JSON.parse(snapshotJson) as QuoteSnapshot; } catch { s = {}; }
+    setProductLines((s.products ?? []).map((item) => ({ productId: item.id, quantity: String(item.quantity ?? 1) })));
+    if (s.markup !== undefined) setMarkup(s.markup);
+    if (s.discount !== undefined) setDiscount(s.discount);
+    if (s.marketplace?.id) setMarketplaceId(s.marketplace.id);
+    if (s.pricingMethod) setPricingMethod(s.pricingMethod);
+    setSupplyLines((s.supplies ?? []).map((item) => ({ supplyId: item.id, quantity: String(item.quantity ?? 1), unitCost: String(item.unitCost ?? 0).replace(".", ",") })));
+    setCustomExtras(s.customExtras ?? []);
+  }
+
   useEffect(() => {
     if (!quoteId) return;
     async function loadQuote() {
       setCurrentQuoteId(quoteId);
       const response = await fetch(`/api/quotes/${quoteId}`);
       if (!response.ok) return;
-      const quote = (await response.json()) as { productName: string; customerName: string; customerPhone: string; customerEmail: string; notes: string; snapshotJson: string };
-      setName(quote.productName);
+      const quote = (await response.json()) as { productName: string; customerName: string; customerPhone: string; customerEmail: string; notes: string; snapshotJson: string } & QuoteMeta;
       setClient(quote.customerName);
       setClientPhone(quote.customerPhone);
       setClientEmail(quote.customerEmail);
-      setNotes(quote.notes);
-      let s: QuoteSnapshot = {};
-      try { s = JSON.parse(quote.snapshotJson) as QuoteSnapshot; } catch { s = {}; }
-      if (s.products) setProductLines(s.products.map((item) => ({ productId: item.id, quantity: String(item.quantity ?? 1) })));
-      if (s.markup !== undefined) setMarkup(s.markup);
-      if (s.discount !== undefined) setDiscount(s.discount);
-      if (s.marketplace?.id) setMarketplaceId(s.marketplace.id);
-      if (s.pricingMethod) setPricingMethod(s.pricingMethod);
-      if (s.supplies) {
-        setSupplyLines(s.supplies.map((item) => ({ supplyId: item.id, quantity: String(item.quantity ?? 1), unitCost: String(item.unitCost ?? 0).replace(".", ",") })));
-      }
-      if (s.customExtras) setCustomExtras(s.customExtras);
+      applyVersion(quote.productName, quote.notes, quote.snapshotJson);
+      setQuoteMeta({ status: quote.status, revision: quote.revision, code: quote.code, archiveReason: quote.archiveReason, revisions: quote.revisions ?? [], order: quote.order ?? null });
     }
     void loadQuote();
   }, [quoteId]);
@@ -327,7 +343,31 @@ function OrcamentosForm() {
     }
   }
 
+  // Restaurar só preenche o editor — vira a próxima revisão quando você salvar.
+  function restoreRevision(revision: QuoteRevisionEntry) {
+    applyVersion(revision.productName, revision.notes, revision.snapshotJson);
+    setRestoredFrom(revision.number);
+    setHistoryOpen(false);
+  }
+
+  // Aprovado não muda: copia o conteúdo pra um orçamento novo (outro número).
+  function duplicateAsNew() {
+    setCurrentQuoteId(null);
+    setQuoteMeta(null);
+    setRestoredFrom(null);
+    window.history.replaceState(null, "", "/orcamentos");
+  }
+
+  async function reopenQuote() {
+    if (!currentQuoteId) return;
+    const response = await fetch(`/api/quotes/${currentQuoteId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "reopen" }) });
+    if (!response.ok) { setReportError("Não foi possível reabrir o orçamento."); return; }
+    setQuoteMeta((meta) => (meta ? { ...meta, status: "DRAFT", archiveReason: "" } : meta));
+  }
+
   async function saveQuote(): Promise<{ id: string } | null> {
+    // Aprovado é só leitura: o PDF/WhatsApp usam a versão salva, sem regravar.
+    if (readOnly && currentQuoteId) return { id: currentQuoteId };
     await ensureCustomerRegistered();
     // Nome dos insumos vai junto no snapshot (não só o id) — o orçamento em
     // PDF (src/app/quotes/[id]/print) lista "o que está incluso" sem precisar
@@ -487,6 +527,54 @@ function OrcamentosForm() {
     <main className="calculator-shell">
       <AdminHeader active="orcamentos" />
       <div className="calculator-content">
+        {quoteMeta ? (
+          <section className={`quote-status-bar status-${quoteMeta.status.toLowerCase()}`}>
+            <div className="quote-status-main">
+              <span className="quote-status-chip">{quoteStatusLabel[quoteMeta.status] ?? quoteMeta.status}</span>
+              <strong>{quoteMeta.code ? `#${quoteMeta.code.replace(/^ORC-/, "")}` : "Orçamento"}</strong>
+              {quoteMeta.status !== "CONVERTED" ? <span className="quote-status-rev">Revisão {quoteMeta.revision}</span> : null}
+              {restoredFrom ? <span className="quote-status-note">Conteúdo da revisão {restoredFrom} carregado — salve pra ele virar a revisão {quoteMeta.revision + 1}.</span> : null}
+              {quoteMeta.status === "CONVERTED" ? (
+                <span className="quote-status-note">
+                  Aprovado e convertido em venda{quoteMeta.order ? <> — <a href={`/sales/${quoteMeta.order.id}`}>ver venda #{quoteMeta.order.orderNumber.replace(/^PED-/, "")}</a></> : null}. Só leitura.
+                </span>
+              ) : null}
+              {quoteMeta.status === "ARCHIVED" ? <span className="quote-status-note">Reprovado{quoteMeta.archiveReason ? `: ${quoteMeta.archiveReason}` : ""}.</span> : null}
+            </div>
+            <div className="quote-status-actions">
+              {quoteMeta.revisions.length && quoteMeta.status !== "CONVERTED" ? (
+                <button type="button" className="secondary-button" onClick={() => setHistoryOpen((open) => !open)} aria-expanded={historyOpen}>
+                  Histórico ({quoteMeta.revisions.length})
+                </button>
+              ) : null}
+              {quoteMeta.status === "ARCHIVED" ? <button type="button" className="secondary-button" onClick={() => void reopenQuote()}>Reabrir orçamento</button> : null}
+              {quoteMeta.status === "CONVERTED" ? <button type="button" className="primary-button" onClick={duplicateAsNew}>Duplicar como novo orçamento</button> : null}
+            </div>
+            {historyOpen ? (
+              <ol className="quote-history">
+                <li className="current"><span>Revisão {quoteMeta.revision} (atual)</span><span className="num">{brl(calc.price)}</span><span /></li>
+                {quoteMeta.revisions.map((revision) => (
+                  <li key={revision.id}>
+                    <span>Revisão {revision.number} · {new Date(revision.createdAt).toLocaleDateString("pt-BR")}</span>
+                    <span className="num">{brl(revision.finalPrice)}</span>
+                    <span className="quote-history-actions">
+                      <button type="button" className="edit-button" onClick={() => setViewingRevision(revision)}>Ver</button>
+                      <button type="button" className="edit-button" onClick={() => restoreRevision(revision)}>Restaurar</button>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            ) : null}
+          </section>
+        ) : null}
+        {viewingRevision ? (
+          <QuoteRevisionView
+            revision={viewingRevision}
+            onClose={() => setViewingRevision(null)}
+            onRestore={() => { restoreRevision(viewingRevision); setViewingRevision(null); }}
+          />
+        ) : null}
+        <fieldset className="readonly-fieldset" disabled={readOnly}>
         <section className="project-header">
           <label className="field-span-full"><span>NOME DO ORÇAMENTO (PRODUTO / KIT / VARIAÇÃO) *</span><input required value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex: Porta Guardanapos Árvore de Natal" /></label>
 
@@ -535,9 +623,10 @@ function OrcamentosForm() {
             <input required type="email" value={clientEmail} onChange={(event) => setClientEmail(event.target.value)} placeholder="cliente@email.com" />
           </label>
         </section>
+        </fieldset>
 
         <div className="calculator-grid">
-          <div className="calculator-main">
+          <fieldset className="readonly-fieldset calculator-main" disabled={readOnly}>
             <section className="calc-section">
               <div className="section-heading-row"><Title text="PRODUTOS DO CATÁLOGO" /><span className="section-total">TOTAL PRODUTOS <strong>{brl(calc.productsCost)}</strong></span></div>
               <div className="field-row library-row">
@@ -747,7 +836,7 @@ function OrcamentosForm() {
             <section className="calc-section">
               <label className="notes-field">OBSERVAÇÕES & ESPECIFICAÇÕES DO PROJETO (IMPRESSO NO PDF)<textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Ex: Impresso em layer height 0.2mm, preenchimento 15% gyroid..." /></label>
             </section>
-          </div>
+          </fieldset>
 
           <div className="price-summary-col">
           <aside className="price-summary">
@@ -761,9 +850,10 @@ function OrcamentosForm() {
                 defaultValue={calc.price.toFixed(2).replace(".", ",")}
                 onBlur={(event) => applyFinalPrice(event.target.value)}
                 aria-label="Digitar o preço final e calcular a margem"
+                disabled={readOnly}
               />
             </div>
-            <button className="saved-tag" onClick={save}><IconSave className="nav-icon" /> Salvar</button>
+            {readOnly ? null : <button className="saved-tag" onClick={save}><IconSave className="nav-icon" /> Salvar</button>}
             <small className="price-final-hint">Digite um preço pra calcular a margem automaticamente</small>
             <hr />
             <div className="summary-title"><span>Composição de Custos</span><strong>Custo Total: {brl(calc.costWithReserve)}</strong></div>
@@ -808,7 +898,7 @@ function OrcamentosForm() {
             <button className="whatsapp-button" onClick={() => navigator.clipboard?.writeText(buildWhatsAppMessage())}><IconCopy className="nav-icon" /> Copiar Resumo para WhatsApp</button>
             {/* Longe dos campos do cliente de propósito — ficava colado no e-mail,
                 fácil de apagar o orçamento inteiro com um clique sem querer. */}
-            <button type="button" className="clear-quote-button" onClick={() => { setName(""); setClient(""); setClientPhone(""); setClientEmail(""); setNotes(""); setProductLines([]); setCurrentQuoteId(null); }}>Limpar orçamento</button>
+            <button type="button" className="clear-quote-button" onClick={() => { setName(""); setClient(""); setClientPhone(""); setClientEmail(""); setNotes(""); setProductLines([]); setCurrentQuoteId(null); setQuoteMeta(null); setRestoredFrom(null); }}>Limpar orçamento</button>
           </aside>
           {reportError ? <p className="admin-feedback feedback-error report-error">{reportError}</p> : null}
           </div>

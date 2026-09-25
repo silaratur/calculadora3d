@@ -17,7 +17,7 @@ export const ROLE_OPTIONS: { value: Role; label: string; description: string }[]
   { value: "CALCULATOR", label: "Gerador de Calculadora", description: "Só acessa a Calculadora e Orçamentos." },
   { value: "PRODUCTION", label: "Operador de Produção", description: "Só acessa a fila de Produção — sem dados financeiros ou de clientes." },
   { value: "SALES", label: "Vendas/Atendimento", description: "Clientes, Vendas (com recebimentos), Projetos, Calculadora e Orçamentos." },
-  { value: "FINANCE", label: "Financeiro", description: "Custos, Caixa e Vendas (a tela de recebimentos fica dentro de Vendas, então também dá pra editar pedido ali)." },
+  { value: "FINANCE", label: "Financeiro", description: "Custos, Caixa, Vendas (com recebimentos, então também edita venda ali) e a lista de Orçamentos, só para consulta." },
   { value: "VIEWER", label: "Leitura", description: "Só o Painel, sem poder editar nada — pra acompanhar sem risco. Não combina com outros perfis." },
 ];
 
@@ -67,13 +67,16 @@ const UNIVERSAL_PATHS = ["/"];
 
 const ROLE_ALLOWED_PREFIXES: Record<Exclude<Role, "ADMIN">, string[]> = {
   CATALOG: ["/catalog"],
-  CALCULATOR: ["/calculator", "/orcamentos"],
+  // /quotes = orçamento em PDF (/quotes/[id]/print) — quem gera ou consulta
+  // orçamento precisa conseguir abrir o PDF dele.
+  CALCULATOR: ["/calculator", "/orcamentos", "/quotes"],
   PRODUCTION: ["/production"],
-  SALES: ["/customers", "/sales", "/projects", "/calculator", "/orcamentos"],
+  SALES: ["/customers", "/sales", "/projects", "/calculator", "/orcamentos", "/quotes"],
   // Recebimentos viraram uma ação dentro do card do pedido em Vendas (não uma
   // tela própria) — dar Financeiro sem Vendas deixaria sem como registrar um
   // recebimento; a contrapartida é que esse perfil também edita pedidos.
-  FINANCE: ["/costs", "/cashflow", "/sales"],
+  // Também vê a lista de orçamentos (em aberto = receita potencial), sem editar.
+  FINANCE: ["/costs", "/cashflow", "/sales", "/projects", "/quotes"],
   VIEWER: [],
 };
 

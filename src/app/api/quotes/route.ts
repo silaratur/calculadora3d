@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { nextSharedCode } from "@/lib/codes";
 
 export const quoteSchema = z.object({
   productId: z.string().optional().nullable(),
@@ -22,36 +23,18 @@ export const quoteSchema = z.object({
 
 async function authenticated() { return Boolean(await getCurrentUser()); }
 
-/** AAAAMMDD no fuso local — perto da meia-noite no Brasil toISOString() já mostraria o dia seguinte. */
-function localDateKey(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}${month}${day}`;
-}
-
-/** ORC-AAAAMMDD-0001, sequencial por dia — mesmo esquema do PED-... em /api/orders. */
-async function nextQuoteCode() {
-  const prefix = `ORC-${localDateKey(new Date())}`;
-  const last = await prisma.quote.findFirst({
-    where: { code: { startsWith: `${prefix}-` } },
-    orderBy: { code: "desc" },
-    select: { code: true },
-  });
-  const lastSeq = last?.code ? Number(last.code.split("-").pop()) || 0 : 0;
-  return `${prefix}-${String(lastSeq + 1).padStart(4, "0")}`;
-}
-
 export async function GET(request: Request) {
   if (!(await authenticated())) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   // Por padrão só orçamentos válidos (não arquivados); ?status=ARCHIVED
-  // traz só os arquivados, pra aba "Não Executados" em Projetos.
+  // traz só os reprovados (aba "Reprovados" em Orçamentos).
   const archived = new URL(request.url).searchParams.get("status") === "ARCHIVED";
   return NextResponse.json(
     await prisma.quote.findMany({
       where: archived ? { status: "ARCHIVED" } : { status: { not: "ARCHIVED" } },
       orderBy: { updatedAt: "desc" },
-      take: 100,
+      take: 500,
+      // venda que nasceu do orçamento aprovado — pro link "ver venda" no card
+      include: { order: { select: { id: true, orderNumber: true } } },
     }),
   );
 }
@@ -70,7 +53,7 @@ export async function POST(request: Request) {
   // aqui tentamos de novo com o próximo (mesmo padrão de /api/orders).
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
-      const quote = await prisma.quote.create({ data: { ...data, code: await nextQuoteCode() } });
+      const quote = await prisma.quote.create({ data: { ...data, code: await nextSharedCode() } });
       return NextResponse.json(quote, { status: 201 });
     } catch (error) {
       const isUniqueClash = typeof error === "object" && error !== null && "code" in error && error.code === "P2002";
@@ -86,6 +69,9 @@ export async function DELETE(request: Request) {
   if (!id) return NextResponse.json({ error: "ID obrigatório" }, { status: 400 });
   const body = (await request.json().catch(() => ({}))) as { reason?: unknown };
   const reason = typeof body.reason === "string" ? body.reason.trim() : "";
+  const existing = await prisma.quote.findUnique({ where: { id }, select: { status: true } });
+  if (!existing) return NextResponse.json({ error: "Orçamento não encontrado" }, { status: 404 });
+  if (existing.status === "CONVERTED") return NextResponse.json({ error: "Orçamento aprovado já virou venda — não pode ser reprovado." }, { status: 409 });
   await prisma.quote.update({ where: { id }, data: { status: "ARCHIVED", archiveReason: reason } });
   return NextResponse.json({ success: true });
 }

@@ -81,7 +81,9 @@ export async function PUT(request: Request) {
         completedAt: rollup === "COMPLETED" ? (existing.job.completedAt ?? new Date()) : existing.job.completedAt,
       },
     });
-    await tx.salesOrder.update({ where: { id: existing.job.orderId }, data: { status: jobToOrderStatus[rollup] } });
+    // Produção voltou de "concluído" (peça refeita) → a entrega registrada deixa de valer.
+    const orderStatus = jobToOrderStatus[rollup];
+    await tx.salesOrder.update({ where: { id: existing.job.orderId }, data: { status: orderStatus, ...(orderStatus !== "COMPLETED" ? { deliveredAt: null } : {}) } });
 
     return updated;
   });

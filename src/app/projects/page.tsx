@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
+import { quoteStatusLabel } from "@/lib/quotes";
+import { canAccessPath } from "@/lib/roles";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconClock, IconDownload, IconTrash, IconUser } from "@/components/Icons";
 import { ProductPhotoLink } from "@/components/ProductPreview";
@@ -22,8 +24,10 @@ type Quote = {
   snapshotJson: string;
   createdAt: string;
   updatedAt: string;
+  validUntil: string | null;
+  revision: number;
+  order: { id: string; orderNumber: string } | null;
 };
-type Competitor = { id: string; productName: string; competitor: string; channel: string; price: number; url: string; checkedAt: string };
 type SortField = "recent" | "client" | "value";
 type QuoteItem = { name: string; quantity: number };
 type ConvertForm = { shippingPaid: boolean; shippingCost: string; paymentMethod: string; plannedProductionDate: string; expectedPaymentDate: string };
@@ -32,7 +36,19 @@ const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency"
 const n = (value: string) => Number(value.replace(",", ".")) || 0;
 const paymentMethods = ["PIX", "Cartão de Crédito", "Cartão de Débito", "Dinheiro", "Boleto"];
 const emptyConvertForm: ConvertForm = { shippingPaid: false, shippingCost: "0", paymentMethod: "PIX", plannedProductionDate: "", expectedPaymentDate: "" };
-const statusLabel: Record<string, string> = { DRAFT: "Orçamento", CONVERTED: "Convertido em venda", ARCHIVED: "Arquivado" };
+// Número exibido sem o prefixo dos códigos antigos (ORC-/PED-): orçamento e venda compartilham a numeração.
+const displayCode = (code: string | null | undefined) => (code ? `#${code.replace(/^(ORC|PED)-/, "")}` : "—");
+
+/** "vence em 3 dias" / "vence hoje" / "vencido há 2 dias" — só pra orçamento em aberto com validade. */
+function validityLabel(validUntil: string | null) {
+  if (!validUntil) return null;
+  const due = new Date(validUntil);
+  const today = new Date();
+  const days = Math.round((Date.UTC(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate()) - Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) / 86400000);
+  if (days < 0) return { text: days === -1 ? "vencido ontem" : `vencido há ${-days} dias`, late: true };
+  if (days === 0) return { text: "vence hoje", late: false };
+  return { text: days === 1 ? "vence amanhã" : `vence em ${days} dias`, late: false };
+}
 const statusBadgeColor: Record<string, string> = { DRAFT: "#8a4a4e", CONVERTED: "#777f5d", ARCHIVED: "#602f32" };
 
 /** Itens, canal e desconto do orçamento — mostrados como leitura no popup de conversão, nenhum deles editável ali. */
@@ -67,9 +83,8 @@ function firstItemPhoto(snapshotJson: string): { id?: string; name?: string; ima
 export default function ProjectsPage() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [archivedQuotes, setArchivedQuotes] = useState<Quote[]>([]);
-  const [competitors, setCompetitors] = useState<Competitor[]>([]);
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"quotes" | "converted" | "archived" | "competitors">("quotes");
+  const [tab, setTab] = useState<"quotes" | "converted" | "archived">("quotes");
   const [needsLogin, setNeedsLogin] = useState(false);
   const [feedback, setFeedback] = useState("");
   // Orçamento em processo de virar pedido — abre o popup de conversão, que já
@@ -99,17 +114,15 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     async function load() {
-      const [quoteResponse, archivedResponse, competitorResponse, sessionResponse] = await Promise.all([
+      const [quoteResponse, archivedResponse, sessionResponse] = await Promise.all([
         fetch("/api/quotes"),
         fetch("/api/quotes?status=ARCHIVED"),
-        fetch("/api/competitors"),
         fetch("/api/session"),
       ]);
       if (quoteResponse.status === 401) { setNeedsLogin(true); return; }
       setNeedsLogin(false);
       if (quoteResponse.ok) setQuotes((await quoteResponse.json()) as Quote[]);
       if (archivedResponse.ok) setArchivedQuotes((await archivedResponse.json()) as Quote[]);
-      if (competitorResponse.ok) setCompetitors((await competitorResponse.json()) as Competitor[]);
       if (sessionResponse.ok) { const session = (await sessionResponse.json()) as { role?: string }; setRole(session.role ?? ""); }
     }
     void load();
@@ -133,14 +146,16 @@ export default function ProjectsPage() {
   const filteredConvertedQuotes = useMemo(() => sortQuotes(quotes.filter((quote) => quote.status === "CONVERTED" && matchesSearch(quote))), [quotes, search, sortBy, sortDirection]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const filteredArchivedQuotes = useMemo(() => sortQuotes(archivedQuotes.filter(matchesSearch)), [archivedQuotes, search, sortBy, sortDirection]);
-  const filteredCompetitors = useMemo(() => competitors.filter((item) => `${item.productName} ${item.competitor} ${item.channel}`.toLowerCase().includes(search.toLowerCase())), [competitors, search]);
 
   const activeQuoteList = tab === "archived" ? filteredArchivedQuotes : tab === "converted" ? filteredConvertedQuotes : filteredQuotes;
   const totalPages = Math.max(1, Math.ceil(activeQuoteList.length / itemsPerPage));
   const currentPage = Math.min(page, totalPages);
   const paginatedQuotes = activeQuoteList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  function selectTab(value: "quotes" | "converted" | "archived" | "competitors") {
+  // Financeiro vê a lista (receita potencial) mas não edita — sem acesso ao editor.
+  const canEdit = role !== "" && canAccessPath(role, "/orcamentos");
+
+  function selectTab(value: "quotes" | "converted" | "archived") {
     setTab(value);
     setPage(1);
   }
@@ -173,6 +188,14 @@ export default function ProjectsPage() {
     });
     setArchiveTarget(null);
     setArchiveReason("");
+    reload();
+  }
+
+  // Cliente voltou: o reprovado volta pra "Em aberto".
+  async function reopen(quote: Quote) {
+    const response = await fetch(`/api/quotes/${quote.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "reopen" }) });
+    if (!response.ok) { setFeedback("Não foi possível reabrir este orçamento."); return; }
+    setFeedback(`${displayCode(quote.code)} reaberto — está de novo em "Em aberto".`);
     reload();
   }
 
@@ -220,41 +243,38 @@ export default function ProjectsPage() {
     });
     const body = await response.json().catch(() => null);
     setConverting(false);
-    if (!response.ok) { setFeedback(typeof body?.error === "string" ? body.error : "Não foi possível converter este orçamento."); return; }
-    // Rastreabilidade: o pedido já nasce ligado ao orçamento (quoteId) — a
-    // volta pro orçamento fica no botão "Editar" do card. Ao confirmar, leva
-    // direto pra Vendas já com o pedido novo em destaque.
+    if (!response.ok) { setFeedback(typeof body?.error === "string" ? body.error : "Não foi possível aprovar este orçamento."); return; }
+    // A venda nasce ligada ao orçamento (quoteId) e com o mesmo número — ao
+    // aprovar, abre direto a página da venda nova.
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-    window.location.href = `/sales?highlight=${body.order.id}`;
+    window.location.href = `/sales/${body.order.id}`;
   }
 
   return (
     <main className="admin-shell">
-      <AdminHeader active="projects" badges={{ projects: quotes.length }} />
+      <AdminHeader active="projects" badges={{ projects: quotes.filter((quote) => quote.status === "DRAFT").length || undefined }} />
       <div className="admin-content">
-        {needsLogin ? <AuthBanner message="Entre novamente para ver orçamentos e preços de concorrência." /> : null}
+        {needsLogin ? <AuthBanner message="Entre novamente para ver os orçamentos." /> : null}
         <section className="library-heading">
           <div>
-            <h1>Projetos & Orçamentos Salvos</h1>
-            <p>Consulte, compare e arquive os orçamentos gerados em Orçamentos.</p>
+            <h1>Orçamentos</h1>
+            <p>Em aberto enquanto negocia; aprovado vira venda; reprovado guarda o motivo.</p>
           </div>
           <div className="project-tools">
-            <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por nome, cliente, código ou canal..." />
-            <a className="new-quote-button" href="/orcamentos">＋ Novo</a>
+            <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por nome, cliente ou número..." />
+            <a className="new-quote-button" href="/orcamentos">＋ Novo orçamento</a>
           </div>
         </section>
 
         <div className="project-tabs">
-          <button className={tab === "quotes" ? "selected" : ""} onClick={() => selectTab("quotes")}>Orçamentos ({filteredQuotes.length})</button>
-          <button className={tab === "converted" ? "selected" : ""} onClick={() => selectTab("converted")}>Convertidos em Venda ({filteredConvertedQuotes.length})</button>
-          <button className={tab === "archived" ? "selected" : ""} onClick={() => selectTab("archived")}>Não Executados ({filteredArchivedQuotes.length})</button>
-          <button className={tab === "competitors" ? "selected" : ""} onClick={() => selectTab("competitors")}>Concorrência ({filteredCompetitors.length})</button>
+          <button className={tab === "quotes" ? "selected" : ""} onClick={() => selectTab("quotes")}>Em aberto ({filteredQuotes.length})</button>
+          <button className={tab === "converted" ? "selected" : ""} onClick={() => selectTab("converted")}>Aprovados ({filteredConvertedQuotes.length})</button>
+          <button className={tab === "archived" ? "selected" : ""} onClick={() => selectTab("archived")}>Reprovados ({filteredArchivedQuotes.length})</button>
         </div>
 
         {feedback ? <p className="admin-feedback">{feedback}</p> : null}
 
-        {tab === "quotes" || tab === "converted" || tab === "archived" ? (
-          <>
+        <>
             <div className="catalog-filters">
               <strong>{activeQuoteList.length} orçamento{activeQuoteList.length === 1 ? "" : "s"}</strong>
               <div className="catalog-sort">
@@ -275,6 +295,8 @@ export default function ProjectsPage() {
               {paginatedQuotes.map((quote) => {
                 const photo = firstItemPhoto(quote.snapshotJson);
                 const archived = quote.status === "ARCHIVED";
+                const approved = quote.status === "CONVERTED";
+                const validity = quote.status === "DRAFT" ? validityLabel(quote.validUntil) : null;
                 return (
                   <article className="product-card" key={quote.id}>
                     <div className="product-card-photo">
@@ -287,22 +309,30 @@ export default function ProjectsPage() {
                         <span className="product-card-photo-placeholder">{quote.productName.slice(0, 1).toUpperCase()}</span>
                       )}
                       <span className="product-card-category" style={{ background: statusBadgeColor[quote.status] ?? "#8a4a4e" }}>
-                        {archived ? "Não executado" : statusLabel[quote.status] ?? quote.status}
+                        {quoteStatusLabel[quote.status] ?? quote.status}
                       </span>
-                      {!archived ? (
+                      {!canEdit ? null : approved ? (
+                        <span className="product-card-photo-actions">
+                          <a className="edit-button" href={`/orcamentos?quoteId=${quote.id}`}>Ver</a>
+                        </span>
+                      ) : !archived ? (
                         <span className="product-card-photo-actions">
                           <a className="edit-button" href={`/orcamentos?quoteId=${quote.id}`}>Editar</a>
-                          <button type="button" className="delete-button" onClick={() => requestArchive(quote)} aria-label={`Excluir ${quote.productName}`}><IconTrash className="nav-icon" /></button>
+                          <button type="button" className="delete-button" onClick={() => requestArchive(quote)} aria-label={`Reprovar ${quote.productName}`} title="Reprovar"><IconTrash className="nav-icon" /></button>
                         </span>
                       ) : role === "ADMIN" ? (
-                        // Excluir de verdade só existe aqui (Não Executados) e só pra admin —
-                        // arquivar (acima) qualquer um pode; apagar definitivo é irreversível.
+                        // Excluir de verdade só existe aqui (Reprovados) e só pra admin —
+                        // reprovar (acima) qualquer um pode; apagar definitivo é irreversível.
                         <span className="product-card-photo-actions">
                           <button type="button" className="delete-button" onClick={() => requestDelete(quote)} aria-label={`Excluir definitivamente ${quote.productName}`}><IconTrash className="nav-icon" /></button>
                         </span>
                       ) : null}
                     </div>
-                    <span className="material-badge">{quote.code ?? "—"}</span>
+                    <span className="quote-card-meta">
+                      <span className="material-badge">{displayCode(quote.code)}</span>
+                      {quote.revision > 1 ? <span className="quote-card-rev">Rev. {quote.revision}</span> : null}
+                      {validity ? <span className={validity.late ? "quote-card-validity late" : "quote-card-validity"}>{validity.text}</span> : null}
+                    </span>
                     <h2>{quote.productName}</h2>
                     <div className="product-card-prices">
                       <div><span>Custo</span><strong>{brl(quote.baseCost)}</strong></div>
@@ -315,9 +345,11 @@ export default function ProjectsPage() {
                     {archived && quote.archiveReason ? <p className="project-card-archive-reason">Motivo: {quote.archiveReason}</p> : null}
                     <div className="quote-card-actions">
                       <a href={`/quotes/${quote.id}/print`} target="_blank" rel="noreferrer"><IconDownload className="nav-icon" /> PDF</a>
-                      {!archived && quote.status !== "CONVERTED" ? (
-                        <button type="button" onClick={() => openConvert(quote)}>Converter</button>
+                      {quote.status === "DRAFT" && canEdit ? (
+                        <button type="button" onClick={() => openConvert(quote)}>Aprovar</button>
                       ) : null}
+                      {approved && quote.order ? <a className="quote-card-sale" href={`/sales/${quote.order.id}`}>Ver venda</a> : null}
+                      {archived && canEdit ? <button type="button" onClick={() => void reopen(quote)}>Reabrir</button> : null}
                     </div>
                   </article>
                 );
@@ -326,45 +358,25 @@ export default function ProjectsPage() {
             {activeQuoteList.length === 0 ? (
               <div className="empty-note">
                 {tab === "archived"
-                  ? "Nenhum orçamento arquivado ainda."
+                  ? "Nenhum orçamento reprovado."
                   : tab === "converted"
-                    ? "Nenhum orçamento convertido em venda ainda."
-                    : "Nenhum orçamento salvo ainda. Gere um em Orçamentos."}
+                    ? "Nenhum orçamento aprovado ainda."
+                    : "Nenhum orçamento em aberto. Crie um em “Novo orçamento”."}
               </div>
             ) : null}
             <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
           </>
-        ) : (
-          <div className="project-list">
-            {filteredCompetitors.length ? filteredCompetitors.map((item) => (
-              <article className="project-card competitor-card" key={item.id}>
-                <div className="project-card-top">
-                  <span className="material-badge">CONCORRÊNCIA</span>
-                  <span>{new Date(item.checkedAt).toLocaleDateString("pt-BR")}</span>
-                </div>
-                <div className="project-card-heading">
-                  <div>
-                    <h2>{item.productName}</h2>
-                    <p>{item.competitor} · {item.channel || "Canal não informado"}</p>
-                  </div>
-                  <strong>{brl(item.price)}</strong>
-                </div>
-                {item.url ? <a href={item.url} target="_blank" rel="noreferrer">Abrir anúncio</a> : null}
-              </article>
-            )) : <div className="empty-note">Nenhum preço de concorrência cadastrado ainda.</div>}
-          </div>
-        )}
       </div>
 
       {archiveTarget ? (
         <div className="modal-backdrop" onClick={cancelArchive}>
           <div className="modal-card" onClick={(event) => event.stopPropagation()}>
-            <h2>Arquivar orçamento</h2>
+            <h2>Reprovar orçamento</h2>
             <p>
               <strong>{archiveTarget.productName}</strong> — {archiveTarget.customerName || "Cliente não informado"}
             </p>
             <label>
-              Por que este orçamento não vai ser executado?
+              Por que o cliente não fechou?
               <textarea
                 value={archiveReason}
                 onChange={(event) => setArchiveReason(event.target.value)}
@@ -374,7 +386,7 @@ export default function ProjectsPage() {
             </label>
             <div className="form-actions">
               <button className="secondary-button" type="button" onClick={cancelArchive}>Cancelar</button>
-              <button className="primary-button" type="button" disabled={!archiveReason.trim()} onClick={confirmArchive}>Arquivar</button>
+              <button className="primary-button" type="button" disabled={!archiveReason.trim()} onClick={confirmArchive}>Reprovar</button>
             </div>
           </div>
         </div>
@@ -387,7 +399,7 @@ export default function ProjectsPage() {
             <p>
               <strong>{deleteTarget.productName}</strong> — {deleteTarget.customerName || "Cliente não informado"}
             </p>
-            <p className="modal-warning">Essa ação não pode ser desfeita. O orçamento será apagado por completo, junto com o motivo de arquivamento.</p>
+            <p className="modal-warning">Essa ação não pode ser desfeita. O orçamento será apagado por completo, junto com o motivo e o histórico de revisões.</p>
             <div className="form-actions">
               <button className="secondary-button" type="button" onClick={cancelDelete}>Cancelar</button>
               <button className="primary-button modal-danger" type="button" disabled={deleting} onClick={confirmDelete}>{deleting ? "Excluindo..." : "Excluir definitivamente"}</button>
@@ -399,9 +411,9 @@ export default function ProjectsPage() {
       {convertTarget ? (
         <div className="modal-backdrop" onClick={cancelConvert}>
           <div className="modal-card modal-card-wide" onClick={(event) => event.stopPropagation()}>
-            <h2>Converter em Venda</h2>
+            <h2>Aprovar orçamento</h2>
             <p>
-              <strong>{convertTarget.code ?? convertTarget.productName}</strong> — {convertTarget.productName}
+              O cliente fechou: <strong>{displayCode(convertTarget.code)}</strong> — {convertTarget.productName} vira uma venda com o mesmo número e as peças entram na fila de Produção.
             </p>
 
             {(() => {
@@ -468,7 +480,7 @@ export default function ProjectsPage() {
             {feedback ? <p className="admin-feedback">{feedback}</p> : null}
             <div className="form-actions">
               <button className="secondary-button" type="button" onClick={cancelConvert}>Cancelar</button>
-              <button className="primary-button" type="button" disabled={converting} onClick={confirmConvert}>{converting ? "Convertendo..." : "Confirmar e criar pedido"}</button>
+              <button className="primary-button" type="button" disabled={converting} onClick={confirmConvert}>{converting ? "Aprovando..." : "Aprovar e criar venda"}</button>
             </div>
           </div>
         </div>

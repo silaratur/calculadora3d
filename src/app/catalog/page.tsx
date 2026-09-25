@@ -6,6 +6,7 @@ import { AuthBanner } from "@/components/AuthBanner";
 import { IconClock, IconSave, IconShieldAlert, IconShoppingBag, IconTag, IconTrash, IconX } from "@/components/Icons";
 import { calculateMultiMaterialCost, calculatePieceCost, calculateSuggestedPrice, effectiveMonthlyFixedCost, fixedCostPerPiece, markupPercentForFinalPrice, type PricingMethod } from "@/lib/costing";
 import { resizeImage } from "@/lib/image";
+import { CompetitorPrices } from "@/components/CompetitorPrices";
 import { ProductPhotoCarousel, ProductPreviewModal, categoryColor, productImages } from "@/components/ProductPreview";
 
 type Material = { id: string; name: string; type: string; unitPrice: number; unitWeightGrams: number; costPerKg: number };
@@ -121,6 +122,8 @@ export default function CatalogPage() {
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [view, setView] = useState<"list" | "form">("list");
+  // Preços da concorrência (antes em Projetos) moram numa aba daqui.
+  const [listTab, setListTab] = useState<"products" | "competitors">("products");
   const [search, setSearch] = useState("");
   const [searchSuggestionsOpen, setSearchSuggestionsOpen] = useState(false);
   const [category, setCategory] = useState("all");
@@ -477,6 +480,14 @@ export default function CatalogPage() {
               </div>
             </section>
 
+            <div className="project-tabs">
+              <button type="button" className={listTab === "products" ? "selected" : ""} onClick={() => setListTab("products")}>Produtos ({products.length})</button>
+              <button type="button" className={listTab === "competitors" ? "selected" : ""} onClick={() => setListTab("competitors")}>Concorrência</button>
+            </div>
+
+            {listTab === "competitors" ? <CompetitorPrices search={search} /> : (
+            <>
+
             <div className="catalog-filters">
               <strong>{filtered.length} produtos</strong>
               <div className="catalog-sort">
@@ -528,6 +539,8 @@ export default function CatalogPage() {
             </div>
             {filtered.length === 0 ? <div className="empty-note">Nenhum produto encontrado ainda. Clique em “＋ Novo produto”.</div> : null}
             <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
+            </>
+            )}
           </>
         ) : (
           <form onSubmit={save}>
