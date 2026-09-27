@@ -6,10 +6,11 @@ import { AuthBanner } from "@/components/AuthBanner";
 import { IconClock, IconSave, IconShieldAlert, IconShoppingBag, IconTag, IconTrash, IconX } from "@/components/Icons";
 import { calculateMultiMaterialCost, calculatePieceCost, calculateSuggestedPrice, effectiveMonthlyFixedCost, fixedCostPerPiece, markupPercentForFinalPrice, type PricingMethod } from "@/lib/costing";
 import { resizeImage } from "@/lib/image";
+import { libraryColors, sameColor, swatch } from "@/lib/filament-colors";
 import { CompetitorPrices } from "@/components/CompetitorPrices";
 import { ProductPhotoCarousel, ProductPreviewModal, categoryColor, productImages } from "@/components/ProductPreview";
 
-type Material = { id: string; name: string; type: string; unitPrice: number; unitWeightGrams: number; costPerKg: number };
+type Material = { id: string; name: string; type: string; color?: string; stockGrams?: number; unitPrice: number; unitWeightGrams: number; costPerKg: number };
 type MaterialLine = { materialId: string; grams: number };
 // No formulário o peso fica como texto (não número) igual ao resto do app —
 // se o valor ligado ao <input> for number, digitar "64,9" perde a vírgula no
@@ -75,7 +76,7 @@ type Draft = {
   discount: string;
   active: boolean;
   showInStore: boolean;
-  colors: string;
+  colors: string[];
   personalizable: boolean;
 };
 
@@ -97,20 +98,19 @@ const emptyDraft: Draft = {
   discount: "0",
   active: true,
   showInStore: false,
-  colors: "",
+  colors: [],
   personalizable: false,
 };
 
-/** Cores do produto: JSON no banco, texto separado por vírgula no formulário. */
-function colorsToText(raw: string | undefined) {
+/** Cores do produto: JSON no banco, lista marcada nos checkboxes do formulário. */
+function parseColors(raw: string | undefined) {
   try {
     const parsed: unknown = JSON.parse(raw || "[]");
-    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string").join(", ") : "";
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
   } catch {
-    return "";
+    return [];
   }
 }
-const textToColors = (text: string) => [...new Set(text.split(",").map((item) => item.trim()).filter(Boolean))].slice(0, 12);
 
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const n = (value: string) => Number(value.replace(",", ".")) || 0;
@@ -202,6 +202,13 @@ export default function CatalogPage() {
   }, [reloadToken]);
 
   const categories = useMemo(() => ["all", ...Array.from(new Set(products.map((product) => product.category)))], [products]);
+  // Cores dos filamentos com estoque + cores já salvas no produto que saíram da
+  // Biblioteca (continuam aparecendo marcadas para não sumirem ao salvar).
+  const libraryColorOptions = useMemo(() => libraryColors(materials), [materials]);
+  const colorOptions = useMemo(
+    () => [...libraryColorOptions, ...draft.colors.filter((color) => !libraryColorOptions.some((item) => sameColor(item, color)))],
+    [libraryColorOptions, draft.colors],
+  );
   const existingCategories = useMemo(() => Array.from(new Set(products.map((product) => product.category))).sort(), [products]);
   // Campo vazio mostra todas as categorias; digitando, filtra ignorando
   // maiúsculas e acentos ("decor" acha "Decoração").
@@ -398,7 +405,7 @@ export default function CatalogPage() {
       discount: String(product.discountPerUnit ?? 0),
       active: product.active,
       showInStore: product.showInStore ?? false,
-      colors: colorsToText(product.colors),
+      colors: parseColors(product.colors),
       personalizable: product.personalizable ?? false,
     });
     setFeedback("");
@@ -436,7 +443,7 @@ export default function CatalogPage() {
       marketplaceChannelId: draft.marketplaceId === "direct" ? null : draft.marketplaceId,
       active: draft.active,
       showInStore: draft.showInStore,
-      colors: textToColors(draft.colors),
+      colors: draft.colors.slice(0, 12),
       personalizable: draft.personalizable,
       cost: cost.total,
       price: suggestedPrice,
@@ -615,7 +622,33 @@ export default function CatalogPage() {
                     <input type="checkbox" checked={draft.showInStore} onChange={(event) => setDraft({ ...draft, showInStore: event.target.checked })} />
                     Mostrar na loja (ac3d.silaratur.cloud) — nome, descrição, fotos e preço ficam públicos
                   </label>
-                  <label>Cores disponíveis na loja<input value={draft.colors} onChange={(event) => setDraft({ ...draft, colors: event.target.value })} placeholder="Branco, Bege, Vermelho — separe por vírgula; vazio = sem escolha de cor" /></label>
+                  <fieldset className="color-options">
+                    <legend>
+                      Cores disponíveis na loja — nenhuma marcada = sem escolha de cor
+                      {colorOptions.length ? (
+                        <button type="button" className="link-button" onClick={() => setDraft({ ...draft, colors: draft.colors.length === colorOptions.length ? [] : colorOptions })}>
+                          {draft.colors.length === colorOptions.length ? "Desmarcar todas" : "Marcar todas"}
+                        </button>
+                      ) : null}
+                    </legend>
+                    {colorOptions.map((color) => {
+                      const checked = draft.colors.some((item) => sameColor(item, color));
+                      const inLibrary = libraryColorOptions.some((item) => sameColor(item, color));
+                      return (
+                        <label key={color} className="color-option" title={inLibrary ? undefined : "Cor salva no produto que não está mais na Biblioteca"}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => setDraft({ ...draft, colors: checked ? draft.colors.filter((item) => !sameColor(item, color)) : colorOptions.filter((item) => item === color || draft.colors.some((picked) => sameColor(picked, item))) })}
+                          />
+                          <span className="color-dot" style={{ background: swatch(color) }} aria-hidden="true" />
+                          {color}
+                          {inLibrary ? null : <small>(fora da Biblioteca)</small>}
+                        </label>
+                      );
+                    })}
+                    {!colorOptions.length ? <p className="admin-feedback">Cadastre filamentos com cor e estoque na Biblioteca para escolher as cores aqui.</p> : null}
+                  </fieldset>
                   <label className="checkbox-field">
                     <input type="checkbox" checked={draft.personalizable} onChange={(event) => setDraft({ ...draft, personalizable: event.target.checked })} />
                     Aceita personalização na loja (nome ou frase escrita pelo cliente)

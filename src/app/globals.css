@@ -1861,3 +1861,13 @@ a.material-badge { text-decoration: none; }
 .revision-notes { background: var(--field-bg); border-radius: 10px; color: var(--admin-ink) !important; font-family: var(--font-sans), Arial, sans-serif; font-size: 14px !important; margin: 0 !important; padding: 10px 12px; white-space: pre-wrap; }
 .revision-view-hint { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px !important; margin: -6px 0 0 !important; }
 @media (max-width: 560px) { .revision-table th:nth-child(3), .revision-table td:nth-child(3) { display: none; } }
+
+/* Catálogo: cores da loja escolhidas entre os filamentos da Biblioteca. */
+.color-options { border: 1px solid var(--admin-border, #e6ddd2); border-radius: 10px; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; min-width: 0; padding: 10px 12px 12px; }
+.color-options legend { align-items: center; display: flex; gap: 12px; padding: 0 4px; }
+.color-options .link-button { background: none; border: 0; color: var(--admin-copper); cursor: pointer; font: inherit; font-size: 13px; padding: 0; text-decoration: underline; }
+.color-option { align-items: center; border: 1px solid var(--admin-border, #e6ddd2); border-radius: 999px; cursor: pointer; display: inline-flex; flex-direction: row !important; gap: 6px !important; padding: 5px 10px 5px 8px; }
+.color-option:has(input:checked) { background: color-mix(in srgb, var(--admin-copper) 8%, transparent); border-color: var(--admin-copper); }
+.color-option input[type="checkbox"] { accent-color: var(--admin-copper); height: 15px; margin: 0; width: 15px; }
+.color-option small { color: #9b8b86; }
+.color-dot { border: 1px solid rgba(0, 0, 0, .18); border-radius: 50%; display: inline-block; flex: 0 0 16px; height: 16px; width: 16px; }
