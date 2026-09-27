@@ -1,0 +1,37 @@
+-- Capas do Catálogo trocadas pelas fotos de estúdio (public/catalogo/<SKU>.webp,
+-- recortadas das artes em public/Highsfield). Só troca a capa (imageUrl); as fotos
+-- extras ficam como estão. O deploy faz backup do banco antes de migrar.
+UPDATE "Product" SET "imageUrl" = '/catalogo/A.001.webp' WHERE "sku" = 'A.001';
+UPDATE "Product" SET "imageUrl" = '/catalogo/B.001.webp' WHERE "sku" = 'B.001';
+UPDATE "Product" SET "imageUrl" = '/catalogo/B.002.webp' WHERE "sku" = 'B.002';
+UPDATE "Product" SET "imageUrl" = '/catalogo/B.003.webp' WHERE "sku" = 'B.003';
+UPDATE "Product" SET "imageUrl" = '/catalogo/B.004.webp' WHERE "sku" = 'B.004';
+UPDATE "Product" SET "imageUrl" = '/catalogo/B.005.webp' WHERE "sku" = 'B.005';
+UPDATE "Product" SET "imageUrl" = '/catalogo/B.006.webp' WHERE "sku" = 'B.006';
+UPDATE "Product" SET "imageUrl" = '/catalogo/B.007.webp' WHERE "sku" = 'B.007';
+UPDATE "Product" SET "imageUrl" = '/catalogo/B.008.webp' WHERE "sku" = 'B.008';
+UPDATE "Product" SET "imageUrl" = '/catalogo/B.009.webp' WHERE "sku" = 'B.009';
+UPDATE "Product" SET "imageUrl" = '/catalogo/B.010.webp' WHERE "sku" = 'B.010';
+UPDATE "Product" SET "imageUrl" = '/catalogo/B.011.webp' WHERE "sku" = 'B.011';
+UPDATE "Product" SET "imageUrl" = '/catalogo/B.012.webp' WHERE "sku" = 'B.012';
+UPDATE "Product" SET "imageUrl" = '/catalogo/B.013.webp' WHERE "sku" = 'B.013';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.001.webp' WHERE "sku" = 'D.001';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.002.webp' WHERE "sku" = 'D.002';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.003.webp' WHERE "sku" = 'D.003';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.004.webp' WHERE "sku" = 'D.004';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.005.webp' WHERE "sku" = 'D.005';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.006.webp' WHERE "sku" = 'D.006';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.007.webp' WHERE "sku" = 'D.007';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.008.webp' WHERE "sku" = 'D.008';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.009.webp' WHERE "sku" = 'D.009';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.010.webp' WHERE "sku" = 'D.010';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.011.webp' WHERE "sku" = 'D.011';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.012.webp' WHERE "sku" = 'D.012';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.013.webp' WHERE "sku" = 'D.013';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.014.webp' WHERE "sku" = 'D.014';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.015.webp' WHERE "sku" = 'D.015';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.016.webp' WHERE "sku" = 'D.016';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.017.webp' WHERE "sku" = 'D.017';
+UPDATE "Product" SET "imageUrl" = '/catalogo/D.018.webp' WHERE "sku" = 'D.018';
+UPDATE "Product" SET "imageUrl" = '/catalogo/N.001.webp' WHERE "sku" = 'N.001';
+UPDATE "Product" SET "imageUrl" = '/catalogo/U.001.webp' WHERE "sku" = 'U.001';

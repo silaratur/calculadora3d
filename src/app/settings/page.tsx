@@ -5,16 +5,29 @@ import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconTrash } from "@/components/Icons";
 
-type Settings = { energyRate: number; defaultPowerWatts: number; laborRate: number; monthlyRent: number; monthlySubscriptions: number; monthlyMaintenance: number; monthlyOtherCosts: number; monthlyPieces: number; defaultMarkup: number; defaultLossRate: number; companyName: string; companyContact: string; quoteValidityDays: number; quoteDeliveryText: string; quoteWarrantyText: string; quotePaymentText: string };
+type Settings = { energyRate: number; defaultPowerWatts: number; laborRate: number; monthlyRent: number; monthlySubscriptions: number; monthlyMaintenance: number; monthlyOtherCosts: number; monthlyPieces: number; defaultMarkup: number; defaultLossRate: number; companyName: string; companyContact: string; quoteValidityDays: number; quoteDeliveryText: string; quoteWarrantyText: string; quotePaymentText: string; storeProductionDays: number; storeQtyDiscounts: string };
+type Tier = { minQty: string; percent: string };
 type Marketplace = { id: string; name: string; commissionRate: number; fixedFee: number; adsRate: number; notes: string };
 
-const emptySettings: Settings = { energyRate: 0.85, defaultPowerWatts: 250, laborRate: 25, monthlyRent: 0, monthlySubscriptions: 50, monthlyMaintenance: 40, monthlyOtherCosts: 0, monthlyPieces: 60, defaultMarkup: 40, defaultLossRate: 5, companyName: "AC3D", companyContact: "", quoteValidityDays: 7, quoteDeliveryText: "", quoteWarrantyText: "", quotePaymentText: "" };
+const emptySettings: Settings = { energyRate: 0.85, defaultPowerWatts: 250, laborRate: 25, monthlyRent: 0, monthlySubscriptions: 50, monthlyMaintenance: 40, monthlyOtherCosts: 0, monthlyPieces: 60, defaultMarkup: 40, defaultLossRate: 5, companyName: "AC3D", companyContact: "", quoteValidityDays: 7, quoteDeliveryText: "", quoteWarrantyText: "", quotePaymentText: "", storeProductionDays: 10, storeQtyDiscounts: "[]" };
+
+/** storeQtyDiscounts vem do banco como JSON; na tela vira linhas editáveis. */
+function parseTiers(raw: string): Tier[] {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((tier: { minQty?: number; percent?: number }) => ({ minQty: String(tier.minQty ?? ""), percent: String(tier.percent ?? "") }));
+  } catch {
+    return [];
+  }
+}
 const emptyChannel = { name: "", commissionRate: "0", fixedFee: "0", adsRate: "0", notes: "" };
 const money = (value: number) => `R$ ${value.toFixed(2).replace(".", ",")}`;
 const numberValue = (value: string) => { const clean = value.replace(/R\$\s?/g, "").replace(/\s/g, ""); return Number(clean.includes(",") ? clean.replace(/\./g, "").replace(",", ".") : clean) || 0; };
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings>(emptySettings);
+  const [tiers, setTiers] = useState<Tier[]>([]);
   const [channel, setChannel] = useState(emptyChannel);
   const [channels, setChannels] = useState<Marketplace[]>([]);
   const [editingChannelId, setEditingChannelId] = useState<string | null>(null);
@@ -26,7 +39,11 @@ export default function SettingsPage() {
       const [settingsResponse, channelsResponse] = await Promise.all([fetch("/api/settings"), fetch("/api/marketplaces")]);
       if (settingsResponse.status === 401) { setNeedsLogin(true); return; }
       setNeedsLogin(false);
-      if (settingsResponse.ok) setSettings((await settingsResponse.json()) as Settings);
+      if (settingsResponse.ok) {
+        const loaded = (await settingsResponse.json()) as Settings;
+        setSettings(loaded);
+        setTiers(parseTiers(loaded.storeQtyDiscounts));
+      }
       if (channelsResponse.ok) setChannels((await channelsResponse.json()) as Marketplace[]);
     }
     void load();
@@ -34,7 +51,11 @@ export default function SettingsPage() {
 
   async function saveSettings(event: FormEvent) {
     event.preventDefault();
-    const response = await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settings) });
+    // Linhas vazias/incompletas são ignoradas em vez de bloquear o salvamento.
+    const storeQtyDiscounts = tiers
+      .map((tier) => ({ minQty: Math.round(numberValue(tier.minQty)), percent: numberValue(tier.percent) }))
+      .filter((tier) => tier.minQty >= 2 && tier.percent > 0);
+    const response = await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...settings, storeQtyDiscounts }) });
     setFeedback(response.ok ? "Configurações salvas." : "Não foi possível salvar as configurações.");
   }
 
@@ -115,6 +136,20 @@ export default function SettingsPage() {
               <label>Prazo de produção/entrega<textarea value={settings.quoteDeliveryText} onChange={(event) => setSettings({ ...settings, quoteDeliveryText: event.target.value })} placeholder="Ex: 5 a 10 dias úteis após a confirmação do pagamento." /></label>
               <label>Forma de pagamento<textarea value={settings.quotePaymentText} onChange={(event) => setSettings({ ...settings, quotePaymentText: event.target.value })} placeholder="Ex: 50% de sinal para iniciar a produção e 50% na entrega." /></label>
               <label>Garantia do produto<textarea value={settings.quoteWarrantyText} onChange={(event) => setSettings({ ...settings, quoteWarrantyText: event.target.value })} placeholder="Ex: 30 dias contra defeitos de fabricação a partir da entrega." /></label>
+            </div>
+            <div className="settings-group">
+              <h3>Loja online (ac3d.silaratur.cloud)</h3>
+              <p className="settings-intro">Prazo, pagamento e garantia acima também aparecem na loja. O prazo em dias úteis calcula a data-limite das vitrines sazonais (ex: &quot;Peça até 28/09 para o Dia das Crianças&quot;).</p>
+              <label>Prazo de produção (dias úteis)<input inputMode="numeric" value={settings.storeProductionDays} onChange={(event) => setSettings({ ...settings, storeProductionDays: Math.round(numberValue(event.target.value)) })} /></label>
+              <span className="settings-subtitle">Desconto por quantidade (vale por produto, somando as cores)</span>
+              {tiers.map((tier, index) => (
+                <div className="form-grid three" key={index}>
+                  <label>A partir de (un.)<input inputMode="numeric" value={tier.minQty} onChange={(event) => setTiers(tiers.map((item, i) => (i === index ? { ...item, minQty: event.target.value } : item)))} placeholder="10" /></label>
+                  <label>Desconto (%)<input inputMode="decimal" value={tier.percent} onChange={(event) => setTiers(tiers.map((item, i) => (i === index ? { ...item, percent: event.target.value } : item)))} placeholder="10" /></label>
+                  <button type="button" className="quiet-button" onClick={() => setTiers(tiers.filter((_, i) => i !== index))} aria-label={`Remover faixa ${index + 1}`}><IconTrash className="nav-icon" /> Remover</button>
+                </div>
+              ))}
+              {tiers.length < 5 ? <button type="button" className="quiet-button" onClick={() => setTiers([...tiers, { minQty: "", percent: "" }])}>+ Adicionar faixa</button> : null}
             </div>
             <button className="primary-button" type="submit">Salvar configurações</button>
           </form>

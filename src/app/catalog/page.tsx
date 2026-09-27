@@ -49,6 +49,7 @@ type Product = {
   marketplaceChannelId: string | null;
   active: boolean;
   showInStore: boolean;
+  colors?: string;
   materials: MaterialLine[];
   salesCount: number;
   createdAt: string;
@@ -73,6 +74,7 @@ type Draft = {
   discount: string;
   active: boolean;
   showInStore: boolean;
+  colors: string;
 };
 
 const emptyDraft: Draft = {
@@ -93,7 +95,19 @@ const emptyDraft: Draft = {
   discount: "0",
   active: true,
   showInStore: false,
+  colors: "",
 };
+
+/** Cores do produto: JSON no banco, texto separado por vírgula no formulário. */
+function colorsToText(raw: string | undefined) {
+  try {
+    const parsed: unknown = JSON.parse(raw || "[]");
+    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string").join(", ") : "";
+  } catch {
+    return "";
+  }
+}
+const textToColors = (text: string) => [...new Set(text.split(",").map((item) => item.trim()).filter(Boolean))].slice(0, 12);
 
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const n = (value: string) => Number(value.replace(",", ".")) || 0;
@@ -380,6 +394,7 @@ export default function CatalogPage() {
       discount: String(product.discountPerUnit ?? 0),
       active: product.active,
       showInStore: product.showInStore ?? false,
+      colors: colorsToText(product.colors),
     });
     setFeedback("");
     setView("form");
@@ -416,6 +431,7 @@ export default function CatalogPage() {
       marketplaceChannelId: draft.marketplaceId === "direct" ? null : draft.marketplaceId,
       active: draft.active,
       showInStore: draft.showInStore,
+      colors: textToColors(draft.colors),
       cost: cost.total,
       price: suggestedPrice,
     };
@@ -593,6 +609,7 @@ export default function CatalogPage() {
                     <input type="checkbox" checked={draft.showInStore} onChange={(event) => setDraft({ ...draft, showInStore: event.target.checked })} />
                     Mostrar na loja (ac3d.silaratur.cloud) — nome, descrição, fotos e preço ficam públicos
                   </label>
+                  <label>Cores disponíveis na loja<input value={draft.colors} onChange={(event) => setDraft({ ...draft, colors: event.target.value })} placeholder="Branco, Bege, Vermelho — separe por vírgula; vazio = sem escolha de cor" /></label>
                   <label>
                     Fotos do produto ({draft.images.length}/{maxProductImages}) — a primeira é a capa
                     <input type="file" accept="image/*" multiple disabled={draft.images.length >= maxProductImages} onChange={handleImage} />

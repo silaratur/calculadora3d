@@ -20,6 +20,9 @@ const settingsSchema = z.object({
   quoteDeliveryText: z.string().max(400).optional(),
   quoteWarrantyText: z.string().max(400).optional(),
   quotePaymentText: z.string().max(400).optional(),
+  storeProductionDays: z.number().int().min(1).max(60).optional(),
+  // Faixas de desconto por quantidade da loja; gravadas como JSON, da menor para a maior.
+  storeQtyDiscounts: z.array(z.object({ minQty: z.number().int().min(2), percent: z.number().min(1).max(90) })).max(5).optional(),
 });
 
 async function authenticated() { return Boolean(await getCurrentUser()); }
@@ -34,6 +37,11 @@ export async function PUT(request: Request) {
   if (!(await authenticated())) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   const parsed = settingsSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  const settings = await prisma.pricingSettings.upsert({ where: { id: "default" }, update: parsed.data, create: { id: "default", ...parsed.data } });
+  const { storeQtyDiscounts, ...rest } = parsed.data;
+  const data = {
+    ...rest,
+    ...(storeQtyDiscounts ? { storeQtyDiscounts: JSON.stringify([...storeQtyDiscounts].sort((a, b) => a.minQty - b.minQty)) } : {}),
+  };
+  const settings = await prisma.pricingSettings.upsert({ where: { id: "default" }, update: data, create: { id: "default", ...data } });
   return NextResponse.json(settings);
 }

@@ -58,6 +58,10 @@ model PricingSettings {
   quoteDeliveryText    String   @default("5 a 10 dias úteis após a confirmação do pagamento, conforme a fila de produção.")
   quoteWarrantyText    String   @default("30 dias contra defeitos de fabricação a partir da entrega. Não cobre uso inadequado, quedas, exposição a calor excessivo ou desgaste natural da peça.")
   quotePaymentText     String   @default("50% de sinal para iniciar a produção e 50% na entrega ou retirada.")
+  // Loja online (ac3d.silaratur.cloud): prazo usado nas datas-limite das
+  // vitrines sazonais e descontos por quantidade (JSON [{minQty, percent}]).
+  storeProductionDays  Int      @default(10)
+  storeQtyDiscounts    String   @default("[]")
   updatedAt            DateTime @updatedAt
 }
 
@@ -146,6 +150,8 @@ model Product {
   // Vitrine pública (loja ac3d.silaratur.cloud) — só aparece lá se estiver
   // ativo E marcado aqui; a API pública nunca expõe custos.
   showInStore          Boolean             @default(false)
+  // Cores em que a peça pode ser impressa, oferecidas na loja (JSON array de nomes).
+  colors               String              @default("[]")
   // Campos do Catálogo Novo (src/app/catalog-new) — só populados por ele;
   // produtos criados no Catálogo atual ficam com os padrões (0/nenhum).
   prepMinutes          Float               @default(0)

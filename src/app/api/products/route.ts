@@ -27,6 +27,7 @@ const productSchema = z.object({
   price: z.number().min(0),
   active: z.boolean().optional(),
   showInStore: z.boolean().optional(),
+  colors: z.array(z.string().trim().min(1).max(30)).max(12).optional(),
   // Campos do formulário atual (src/app/catalog) — produtos antigos, criados
   // antes dele existir, ficam com tudo no padrão (0/nenhum).
   prepMinutes: z.number().min(0).optional(),
@@ -159,6 +160,7 @@ export async function POST(request: Request) {
     price: data.price,
     active: data.active ?? true,
     showInStore: data.showInStore ?? false,
+    colors: JSON.stringify(data.colors ?? []),
     prepMinutes: data.prepMinutes ?? 0,
     cleanupMinutes: data.cleanupMinutes ?? 0,
     energyCost: data.energyCost ?? 0,
@@ -233,6 +235,7 @@ export async function PUT(request: Request) {
         active: data.active ?? true,
         // Só reescreve se veio no corpo — formulários antigos não tiram o produto da loja.
         ...(data.showInStore !== undefined ? { showInStore: data.showInStore } : {}),
+        ...(data.colors ? { colors: JSON.stringify(data.colors) } : {}),
         prepMinutes: data.prepMinutes ?? 0,
         cleanupMinutes: data.cleanupMinutes ?? 0,
         energyCost: data.energyCost ?? 0,

@@ -20,12 +20,15 @@ export async function GET() {
   const products = await prisma.product.findMany({
     where: { active: true, showInStore: true },
     orderBy: { createdAt: "desc" },
-    select: { id: true, sku: true, name: true, category: true, description: true, price: true, imageUrl: true, extraImages: true, createdAt: true, updatedAt: true },
+    select: { id: true, sku: true, name: true, category: true, description: true, price: true, imageUrl: true, extraImages: true, colors: true, createdAt: true, updatedAt: true },
   });
 
   const body = products.map((product) => {
     const version = product.updatedAt.getTime();
-    const imageCount = (product.imageUrl ? 1 : 0) + parseExtraImages(product.extraImages).length;
+    // Mesma ordem da rota de imagem (capa, depois extras). Foto em data URI vai
+    // pela rota que decodifica; foto que já é arquivo (ex.: /catalogo/D.001.webp)
+    // vai direto, sem passar pelo banco a cada visualização.
+    const sources = [product.imageUrl, ...parseExtraImages(product.extraImages)].filter(Boolean);
     return {
       id: product.id,
       sku: product.sku,
@@ -33,9 +36,10 @@ export async function GET() {
       category: product.category,
       description: product.description ?? "",
       price: product.price,
+      colors: parseExtraImages(product.colors),
       // Usado pela loja para a seção de lançamentos.
       createdAt: product.createdAt.toISOString(),
-      images: Array.from({ length: imageCount }, (_, index) => `/api/public/products/${product.id}/image/${index}?v=${version}`),
+      images: sources.map((src, index) => (src.startsWith("data:") ? `/api/public/products/${product.id}/image/${index}?v=${version}` : src)),
     };
   });
 
@@ -46,6 +50,7 @@ export function OPTIONS() {
   return new Response(null, { status: 204, headers: corsHeaders });
 }
 
+/** JSON array de textos (fotos extras, cores) — tolera valor corrompido. */
 export function parseExtraImages(raw: string): string[] {
   try {
     const parsed: unknown = JSON.parse(raw);

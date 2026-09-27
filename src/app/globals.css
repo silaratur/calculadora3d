@@ -1077,6 +1077,15 @@ a.material-badge:hover { text-decoration: underline; }
   margin: -3px 0 4px;
 }
 
+/* Subtítulo dentro de um grupo (ex: faixas de desconto da loja). */
+.settings-subtitle {
+  color: var(--admin-ink);
+  font-family: var(--font-sans), Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
 .settings-group {
   border-top: 1px solid var(--admin-border);
   display: grid;
