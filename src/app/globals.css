@@ -419,15 +419,19 @@ textarea:focus {
 }
 
 .brand-mark {
-  /* a logo (public/Logo.jpeg) tem bastante respiro ao redor do monograma
-     "AC" e o texto "{3D STUDIO}" embaixo — background-size dá zoom pra
-     caber só o monograma no círculo pequeno do cabeçalho. */
-  background: url("/Logo.jpeg") 55% 40% / 175% no-repeat;
+  /* Só o monograma "AC" da logo (public/logo-ac3d-monograma.png, fundo
+     transparente) — o cubo e "{3D STUDIO}" ficariam ilegíveis em 42px. */
+  background: #f7f1e9 url("/logo-ac3d-monograma.png") center / 70% no-repeat;
   border: 1px solid var(--logo-ring);
   border-radius: 50%;
   flex-shrink: 0;
   height: 42px;
   width: 42px;
+}
+
+:root[data-theme="dark"] .brand-mark {
+  background-color: transparent;
+  background-image: url("/logo-ac3d-monograma-claro.png");
 }
 
 .nav-icon {
@@ -1598,7 +1602,7 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .quote-doc { background: var(--admin-paper); border-radius: 20px; box-shadow: 0 4px 24px rgba(60, 34, 37, .1); margin: 0 auto; max-width: 780px; padding: 52px 60px; }
 .quote-doc-header { align-items: flex-start; display: flex; justify-content: space-between; gap: 20px; }
 .quote-doc-brand { align-items: center; display: flex; gap: 14px; }
-.quote-doc-logo { border-radius: 14px; flex-shrink: 0; height: 64px; object-fit: cover; width: 64px; }
+.quote-doc-logo { flex-shrink: 0; height: 64px; object-fit: contain; width: 64px; }
 .quote-doc-brand strong { display: block; font-size: 17px; letter-spacing: .08em; }
 .quote-doc-brand span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; margin-top: 2px; }
 .quote-doc-meta { text-align: right; }

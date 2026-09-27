@@ -117,7 +117,7 @@ export default function QuotePrintPage() {
         <header className="quote-doc-header">
           <div className="quote-doc-brand">
             {/* eslint-disable-next-line @next/next/no-img-element -- arquivo estático em public/, formato fixo para o documento */}
-            <img className="quote-doc-logo" src="/Logo.jpeg" alt={settings.companyName} />
+            <img className="quote-doc-logo" src="/logo-ac3d.png" alt={settings.companyName} />
             <div>
               <strong>{settings.companyName || "AC3D"}</strong>
               <span>Orçamento de produto/serviço em impressão 3D</span>

@@ -143,6 +143,9 @@ model Product {
   cost                 Float
   price                Float
   active               Boolean             @default(true)
+  // Vitrine pública (loja ac3d.silaratur.cloud) — só aparece lá se estiver
+  // ativo E marcado aqui; a API pública nunca expõe custos.
+  showInStore          Boolean             @default(false)
   // Campos do Catálogo Novo (src/app/catalog-new) — só populados por ele;
   // produtos criados no Catálogo atual ficam com os padrões (0/nenhum).
   prepMinutes          Float               @default(0)

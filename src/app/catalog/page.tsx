@@ -48,6 +48,7 @@ type Product = {
   discountPerUnit: number;
   marketplaceChannelId: string | null;
   active: boolean;
+  showInStore: boolean;
   materials: MaterialLine[];
   salesCount: number;
   createdAt: string;
@@ -71,6 +72,7 @@ type Draft = {
   marketplaceId: string;
   discount: string;
   active: boolean;
+  showInStore: boolean;
 };
 
 const emptyDraft: Draft = {
@@ -90,6 +92,7 @@ const emptyDraft: Draft = {
   marketplaceId: "direct",
   discount: "0",
   active: true,
+  showInStore: false,
 };
 
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -376,6 +379,7 @@ export default function CatalogPage() {
       marketplaceId: product.marketplaceChannelId ?? "direct",
       discount: String(product.discountPerUnit ?? 0),
       active: product.active,
+      showInStore: product.showInStore ?? false,
     });
     setFeedback("");
     setView("form");
@@ -411,6 +415,7 @@ export default function CatalogPage() {
       discountPerUnit: n(draft.discount),
       marketplaceChannelId: draft.marketplaceId === "direct" ? null : draft.marketplaceId,
       active: draft.active,
+      showInStore: draft.showInStore,
       cost: cost.total,
       price: suggestedPrice,
     };
@@ -584,6 +589,10 @@ export default function CatalogPage() {
                     </label>
                   </div>
                   <label className="notes-field">Descrição<textarea value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Aparece no card do catálogo" /></label>
+                  <label className="checkbox-field">
+                    <input type="checkbox" checked={draft.showInStore} onChange={(event) => setDraft({ ...draft, showInStore: event.target.checked })} />
+                    Mostrar na loja (ac3d.silaratur.cloud) — nome, descrição, fotos e preço ficam públicos
+                  </label>
                   <label>
                     Fotos do produto ({draft.images.length}/{maxProductImages}) — a primeira é a capa
                     <input type="file" accept="image/*" multiple disabled={draft.images.length >= maxProductImages} onChange={handleImage} />
