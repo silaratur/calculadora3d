@@ -20,7 +20,7 @@ export async function GET() {
   const products = await prisma.product.findMany({
     where: { active: true, showInStore: true },
     orderBy: { createdAt: "desc" },
-    select: { id: true, sku: true, name: true, category: true, description: true, price: true, imageUrl: true, extraImages: true, updatedAt: true },
+    select: { id: true, sku: true, name: true, category: true, description: true, price: true, imageUrl: true, extraImages: true, createdAt: true, updatedAt: true },
   });
 
   const body = products.map((product) => {
@@ -33,6 +33,8 @@ export async function GET() {
       category: product.category,
       description: product.description ?? "",
       price: product.price,
+      // Usado pela loja para a seção de lançamentos.
+      createdAt: product.createdAt.toISOString(),
       images: Array.from({ length: imageCount }, (_, index) => `/api/public/products/${product.id}/image/${index}?v=${version}`),
     };
   });
