@@ -16,7 +16,7 @@ type MaterialLine = { materialId: string; grams: number };
 // meio da digitação porque o value volta arredondado a cada tecla.
 type DraftMaterialLine = { materialId: string; grams: string };
 type Printer = { id: string; model: string; purchasePrice: number; powerWatts: number; usefulLifeHours: number; maintenancePerHour: number };
-type PricingSettings = { energyRate: number; defaultPowerWatts: number; laborRate: number; defaultMarkup: number; defaultLossRate: number; monthlyRent: number; monthlySubscriptions: number; monthlyMaintenance: number; monthlyOtherCosts: number; monthlyPieces: number };
+type PricingSettings = { energyRate: number; defaultPowerWatts: number; laborRate: number; defaultMarkup: number; defaultLossRate: number; monthlyRent: number; monthlySubscriptions: number; monthlyMaintenance: number; monthlyOtherCosts: number; monthlyPieces: number; roundPricesTo90?: boolean };
 type Marketplace = { id: string; name: string; commissionRate: number; fixedFee: number; adsRate: number };
 const defaultMarketplace: Marketplace = { id: "direct", name: "Venda Direta", commissionRate: 0, fixedFee: 0, adsRate: 0 };
 const markupPresets = ["10", "25", "50", "65", "100", "150", "200"];
@@ -50,6 +50,7 @@ type Product = {
   active: boolean;
   showInStore: boolean;
   colors?: string;
+  personalizable?: boolean;
   materials: MaterialLine[];
   salesCount: number;
   createdAt: string;
@@ -75,6 +76,7 @@ type Draft = {
   active: boolean;
   showInStore: boolean;
   colors: string;
+  personalizable: boolean;
 };
 
 const emptyDraft: Draft = {
@@ -96,6 +98,7 @@ const emptyDraft: Draft = {
   active: true,
   showInStore: false,
   colors: "",
+  personalizable: false,
 };
 
 /** Cores do produto: JSON no banco, texto separado por vírgula no formulário. */
@@ -271,6 +274,7 @@ export default function CatalogPage() {
     channel: marketplace,
     discountPerUnit: n(draft.discount),
     method: draft.pricingMethod,
+    roundTo90: settings.roundPricesTo90 ?? false,
   });
   const suggestedPrice = pricing.final;
   const costSegments = [
@@ -395,6 +399,7 @@ export default function CatalogPage() {
       active: product.active,
       showInStore: product.showInStore ?? false,
       colors: colorsToText(product.colors),
+      personalizable: product.personalizable ?? false,
     });
     setFeedback("");
     setView("form");
@@ -432,6 +437,7 @@ export default function CatalogPage() {
       active: draft.active,
       showInStore: draft.showInStore,
       colors: textToColors(draft.colors),
+      personalizable: draft.personalizable,
       cost: cost.total,
       price: suggestedPrice,
     };
@@ -610,6 +616,10 @@ export default function CatalogPage() {
                     Mostrar na loja (ac3d.silaratur.cloud) — nome, descrição, fotos e preço ficam públicos
                   </label>
                   <label>Cores disponíveis na loja<input value={draft.colors} onChange={(event) => setDraft({ ...draft, colors: event.target.value })} placeholder="Branco, Bege, Vermelho — separe por vírgula; vazio = sem escolha de cor" /></label>
+                  <label className="checkbox-field">
+                    <input type="checkbox" checked={draft.personalizable} onChange={(event) => setDraft({ ...draft, personalizable: event.target.checked })} />
+                    Aceita personalização na loja (nome ou frase escrita pelo cliente)
+                  </label>
                   <label>
                     Fotos do produto ({draft.images.length}/{maxProductImages}) — a primeira é a capa
                     <input type="file" accept="image/*" multiple disabled={draft.images.length >= maxProductImages} onChange={handleImage} />
@@ -738,7 +748,9 @@ export default function CatalogPage() {
                   />
                 </div>
                 <button className="saved-tag" type="submit"><IconSave className="nav-icon" /> {editingId ? "Atualizar" : "Salvar"}</button>
-                <small className="price-final-hint">Digite um preço pra calcular a margem automaticamente</small>
+                <small className="price-final-hint">
+                  Digite um preço pra calcular a margem automaticamente{settings.roundPricesTo90 ? " — arredondado para terminar em ,90 (Configurações)" : ""}
+                </small>
                 <hr />
                 <div className="summary-title"><span>Composição de Custos</span><strong>Custo Total: {brl(cost.total)}</strong></div>
                 <div className="cost-bar">

@@ -22,6 +22,12 @@ const settingsSchema = z.object({
   quotePaymentText: z.string().max(400).optional(),
   storeProductionDays: z.number().int().min(1).max(60).optional(),
   // Faixas de desconto por quantidade da loja; gravadas como JSON, da menor para a maior.
+  roundPricesTo90: z.boolean().optional(),
+  storeFreeShippingMin: z.number().min(0).optional(),
+  storeShippingText: z.string().max(200).optional(),
+  // Cupom: letras/números, sem espaço (é o que o cliente digita na sacola).
+  storeCouponCode: z.string().trim().max(30).regex(/^[A-Za-z0-9_-]*$/).optional(),
+  storeCouponPercent: z.number().min(0).max(90).optional(),
   storeQtyDiscounts: z.array(z.object({ minQty: z.number().int().min(2), percent: z.number().min(1).max(90) })).max(5).optional(),
 });
 

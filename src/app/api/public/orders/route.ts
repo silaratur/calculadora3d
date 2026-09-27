@@ -1,0 +1,160 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { nextSharedCode } from "@/lib/codes";
+import { prisma } from "@/lib/prisma";
+
+/**
+ * Pedido feito na loja (ac3d.silaratur.cloud) vira um Orçamento "Em aberto"
+ * aqui, com o mesmo código ORC do dia — o cliente manda esse número no
+ * WhatsApp e o pedido já está no sistema.
+ *
+ * Só o servidor da loja chama isto (cabeçalho x-store-key = STORE_API_KEY nos
+ * dois .env); o navegador do cliente nunca fala direto com esta rota. Preços,
+ * descontos e cupom são recalculados aqui a partir do Catálogo — o que vem da
+ * loja é só SKU, quantidade, cor e personalização.
+ */
+const itemSchema = z.object({
+  sku: z.string().trim().min(1).max(20),
+  qty: z.number().int().min(1).max(999),
+  color: z.string().trim().max(30).optional(),
+  personalization: z.string().trim().max(60).optional(),
+});
+
+const orderSchema = z.object({
+  kind: z.enum(["cart", "custom"]).default("cart"),
+  customerName: z.string().trim().max(80).optional(),
+  customerPhone: z.string().trim().max(30).optional(),
+  notes: z.string().trim().max(1000).optional(),
+  coupon: z.string().trim().max(30).optional(),
+  items: z.array(itemSchema).max(50).default([]),
+  custom: z
+    .object({
+      occasion: z.string().trim().min(2).max(60),
+      eventDate: z.string().trim().max(20).optional(),
+      quantity: z.number().int().min(1).max(100000).optional(),
+      details: z.string().trim().max(1000).optional(),
+    })
+    .optional(),
+});
+
+const cents = (value: number) => Math.round(value * 100) / 100;
+
+function discountFor(qty: number, raw: string) {
+  try {
+    const tiers = JSON.parse(raw) as { minQty: number; percent: number }[];
+    return tiers.reduce((best, tier) => (qty >= tier.minQty ? Math.max(best, tier.percent) : best), 0);
+  } catch {
+    return 0;
+  }
+}
+
+async function createQuote(data: Parameters<typeof prisma.quote.create>[0]["data"]) {
+  // Mesmo tratamento de /api/quotes: código sequencial do dia, com nova tentativa se colidir.
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await prisma.quote.create({ data: { ...data, code: await nextSharedCode() } });
+    } catch (error) {
+      const isUniqueClash = typeof error === "object" && error !== null && "code" in error && error.code === "P2002";
+      if (!isUniqueClash || attempt === 2) throw error;
+    }
+  }
+  throw new Error("Não foi possível gerar o código do orçamento");
+}
+
+export async function POST(request: Request) {
+  const key = process.env.STORE_API_KEY;
+  if (!key) return NextResponse.json({ error: "Integração com a loja desativada" }, { status: 503 });
+  if (request.headers.get("x-store-key") !== key) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+
+  const parsed = orderSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  const order = parsed.data;
+
+  const settings = await prisma.pricingSettings.upsert({ where: { id: "default" }, update: {}, create: {} });
+  const validUntil = new Date(Date.now() + settings.quoteValidityDays * 24 * 60 * 60 * 1000);
+  const received = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const customer = { customerName: order.customerName ?? "", customerPhone: order.customerPhone ?? "", customerEmail: "" };
+
+  if (order.kind === "custom") {
+    if (!order.custom) return NextResponse.json({ error: "Detalhes da encomenda obrigatórios" }, { status: 400 });
+    const { occasion, eventDate, quantity, details } = order.custom;
+    const notes = [
+      `Encomenda pela loja (festas e empresas) em ${received}.`,
+      `Ocasião: ${occasion}`,
+      eventDate ? `Data do evento: ${eventDate}` : "",
+      quantity ? `Quantidade: ${quantity}` : "",
+      details ? `Detalhes: ${details}` : "",
+      order.notes ? `Observações: ${order.notes}` : "",
+    ].filter(Boolean).join("\n");
+    const quote = await createQuote({
+      productName: `Encomenda: ${occasion}${quantity ? ` (${quantity} un.)` : ""}`,
+      ...customer,
+      status: "DRAFT",
+      baseCost: 0,
+      finalPrice: 0,
+      margin: 0,
+      snapshotJson: JSON.stringify({ origin: "loja-encomenda", request: order.custom }),
+      notes,
+      validUntil,
+    });
+    return NextResponse.json({ code: quote.code }, { status: 201 });
+  }
+
+  if (!order.items.length) return NextResponse.json({ error: "Sacola vazia" }, { status: 400 });
+  const products = await prisma.product.findMany({
+    where: { sku: { in: order.items.map((item) => item.sku) }, active: true, showInStore: true },
+  });
+  const bySku = new Map(products.map((product) => [product.sku, product]));
+  const lines = order.items.filter((item) => bySku.has(item.sku));
+  if (!lines.length) return NextResponse.json({ error: "Nenhuma peça da sacola está disponível" }, { status: 400 });
+
+  // Desconto por quantidade conta a peça inteira (todas as cores juntas), igual à loja.
+  const qtyBySku = new Map<string, number>();
+  for (const line of lines) qtyBySku.set(line.sku, (qtyBySku.get(line.sku) ?? 0) + line.qty);
+
+  const priced = lines.map((line) => {
+    const product = bySku.get(line.sku)!;
+    const percent = discountFor(qtyBySku.get(line.sku) ?? 0, settings.storeQtyDiscounts);
+    const unit = cents(product.price * (1 - percent / 100));
+    return { ...line, product, percent, unit, total: cents(unit * line.qty) };
+  });
+  const subtotal = cents(priced.reduce((sum, line) => sum + line.product.price * line.qty, 0));
+  const afterTiers = cents(priced.reduce((sum, line) => sum + line.total, 0));
+  const couponOk = Boolean(order.coupon) && Boolean(settings.storeCouponCode) && settings.storeCouponPercent > 0 && order.coupon!.toUpperCase() === settings.storeCouponCode.toUpperCase();
+  const couponPercent = couponOk ? settings.storeCouponPercent : 0;
+  const total = cents(afterTiers * (1 - couponPercent / 100));
+  const baseCost = cents(priced.reduce((sum, line) => sum + line.product.cost * line.qty, 0));
+
+  // Uma linha por produto no snapshot (formato da tela de Orçamentos); cor e
+  // personalização de cada linha da sacola vão nas observações.
+  const snapshotProducts = [...qtyBySku.entries()].map(([sku, quantity]) => {
+    const product = bySku.get(sku)!;
+    return { id: product.id, name: product.name, quantity, unitCost: product.cost, printTimeHours: product.printTimeHours, imageUrl: product.imageUrl.startsWith("data:") ? undefined : product.imageUrl };
+  });
+  const notes = [
+    `Pedido pela loja em ${received}.`,
+    ...priced.map((line) => `• ${line.qty}x ${line.product.name} (${line.sku})${line.color ? ` — cor ${line.color}` : ""}${line.personalization ? ` — personalização: "${line.personalization}"` : ""} — ${line.unit.toFixed(2).replace(".", ",")}/un.${line.percent ? ` (-${line.percent}%)` : ""}`),
+    couponOk ? `Cupom ${settings.storeCouponCode} (-${couponPercent}%)` : "",
+    order.notes ? `Observações do cliente: ${order.notes}` : "",
+  ].filter(Boolean).join("\n");
+
+  const first = priced[0].product.name;
+  const quote = await createQuote({
+    productId: snapshotProducts.length === 1 ? snapshotProducts[0].id : null,
+    productName: snapshotProducts.length === 1 ? first : `${first} + ${snapshotProducts.length - 1} ${snapshotProducts.length === 2 ? "item" : "itens"}`,
+    ...customer,
+    status: "DRAFT",
+    baseCost,
+    finalPrice: total,
+    margin: cents(total - baseCost),
+    snapshotJson: JSON.stringify({
+      origin: "loja",
+      products: snapshotProducts,
+      calculations: { price: total, subtotal, afterTiers, couponPercent, costWithReserve: baseCost, profit: cents(total - baseCost) },
+      storeLines: priced.map((line) => ({ sku: line.sku, qty: line.qty, color: line.color ?? "", personalization: line.personalization ?? "", unit: line.unit, percent: line.percent })),
+    }),
+    notes,
+    validUntil,
+  });
+  return NextResponse.json({ code: quote.code, total, subtotal, couponPercent }, { status: 201 });
+}

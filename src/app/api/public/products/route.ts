@@ -16,12 +16,27 @@ export const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, OPTIONS",
 };
 
+/** Quantas peças da loja ganham a tarja "Mais vendido". */
+const BEST_SELLERS = 3;
+
 export async function GET() {
-  const products = await prisma.product.findMany({
-    where: { active: true, showInStore: true },
-    orderBy: { createdAt: "desc" },
-    select: { id: true, sku: true, name: true, category: true, description: true, price: true, imageUrl: true, extraImages: true, colors: true, createdAt: true, updatedAt: true },
-  });
+  const [products, sales] = await Promise.all([
+    prisma.product.findMany({
+      where: { active: true, showInStore: true },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, sku: true, name: true, category: true, description: true, price: true, imageUrl: true, extraImages: true, colors: true, personalizable: true, createdAt: true, updatedAt: true },
+    }),
+    // Só o ranking sai daqui — as quantidades vendidas não são públicas.
+    prisma.salesOrder.groupBy({ by: ["productId"], _sum: { quantity: true }, where: { productId: { not: null } } }),
+  ]);
+  const storeIds = new Set(products.map((product) => product.id));
+  const bestSellers = new Set(
+    sales
+      .filter((row) => row.productId && storeIds.has(row.productId) && (row._sum.quantity ?? 0) > 0)
+      .sort((a, b) => (b._sum.quantity ?? 0) - (a._sum.quantity ?? 0))
+      .slice(0, BEST_SELLERS)
+      .map((row) => row.productId),
+  );
 
   const body = products.map((product) => {
     const version = product.updatedAt.getTime();
@@ -37,6 +52,8 @@ export async function GET() {
       description: product.description ?? "",
       price: product.price,
       colors: parseExtraImages(product.colors),
+      personalizable: product.personalizable,
+      bestSeller: bestSellers.has(product.id),
       // Usado pela loja para a seção de lançamentos.
       createdAt: product.createdAt.toISOString(),
       images: sources.map((src, index) => (src.startsWith("data:") ? `/api/public/products/${product.id}/image/${index}?v=${version}` : src)),

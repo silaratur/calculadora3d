@@ -62,6 +62,13 @@ model PricingSettings {
   // vitrines sazonais e descontos por quantidade (JSON [{minQty, percent}]).
   storeProductionDays  Int      @default(10)
   storeQtyDiscounts    String   @default("[]")
+  // Preço de venda do Catálogo termina em ,90 (arredonda para cima).
+  roundPricesTo90      Boolean  @default(true)
+  // Loja: frete grátis a partir de (0 = sem), texto de entrega e cupom.
+  storeFreeShippingMin Float    @default(0)
+  storeShippingText    String   @default("")
+  storeCouponCode      String   @default("")
+  storeCouponPercent   Float    @default(0)
   updatedAt            DateTime @updatedAt
 }
 
@@ -152,6 +159,8 @@ model Product {
   showInStore          Boolean             @default(false)
   // Cores em que a peça pode ser impressa, oferecidas na loja (JSON array de nomes).
   colors               String              @default("[]")
+  // Loja: aceita nome/frase personalizada (campo aparece na peça).
+  personalizable       Boolean             @default(false)
   // Campos do Catálogo Novo (src/app/catalog-new) — só populados por ele;
   // produtos criados no Catálogo atual ficam com os padrões (0/nenhum).
   prepMinutes          Float               @default(0)
@@ -422,4 +431,15 @@ model CashEntry {
   createdAt   DateTime @default(now())
 
   @@unique([sourceType, sourceId])
+}
+
+// Depoimentos de clientes mostrados na loja (cadastrados em Configurações).
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  text      String
+  // Ex.: "Kit mini pandas para festa de 5 anos"
+  context   String   @default("")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
 }

@@ -195,13 +195,25 @@ function priceBeforeFees(unitCost: number, percent: number, method: PricingMetho
  * (1 - comissão - ads) é o que garante que a margem sobre o líquido seja a
  * pretendida, e não menor.
  */
+/**
+ * Preço de vitrine: sobe para o próximo valor terminado em ,90 (8,01 → 8,90;
+ * 10,08 → 10,90). O -0,000001 evita que 8,90 "exato" pule para 9,90 por
+ * imprecisão de ponto flutuante. Mesma regra da migração que arredondou os
+ * preços já cadastrados.
+ */
+export function roundPriceTo90(value: number) {
+  if (value <= 0) return value;
+  return Math.round((Math.ceil(value - 0.9 - 0.000001) + 0.9) * 100) / 100;
+}
+
 export function calculateSuggestedPrice({
   unitCost,
   markupPercent,
   channel = noChannelFees,
   discountPerUnit = 0,
   method = "markup",
-}: SuggestedPriceInput): SuggestedPrice {
+  roundTo90 = false,
+}: SuggestedPriceInput & { roundTo90?: boolean }): SuggestedPrice {
   const takeRate = Math.max(1 - channel.commissionRate - channel.adsRate, 0.01);
   const gross = (value: number) => (value + channel.fixedFee) / takeRate;
 
@@ -211,7 +223,7 @@ export function calculateSuggestedPrice({
   return {
     minimum,
     suggested,
-    final: Math.max(suggested - discountPerUnit, 0),
+    final: roundTo90 ? roundPriceTo90(Math.max(suggested - discountPerUnit, 0)) : Math.max(suggested - discountPerUnit, 0),
     channelFees: suggested - unitCost * (1 + markupPercent / 100),
   };
 }

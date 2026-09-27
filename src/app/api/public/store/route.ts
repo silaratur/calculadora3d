@@ -9,7 +9,10 @@ import { corsHeaders } from "../products/route";
  * Configurações. Nada de custo interno sai daqui.
  */
 export async function GET() {
-  const settings = await prisma.pricingSettings.upsert({ where: { id: "default" }, update: {}, create: {} });
+  const [settings, testimonials] = await Promise.all([
+    prisma.pricingSettings.upsert({ where: { id: "default" }, update: {}, create: {} }),
+    prisma.testimonial.findMany({ where: { active: true }, orderBy: { createdAt: "desc" }, take: 6, select: { id: true, name: true, text: true, context: true } }),
+  ]);
   let qtyDiscounts: { minQty: number; percent: number }[] = [];
   try {
     const parsed: unknown = JSON.parse(settings.storeQtyDiscounts);
@@ -29,6 +32,11 @@ export async function GET() {
       paymentText: settings.quotePaymentText,
       warrantyText: settings.quoteWarrantyText,
       qtyDiscounts,
+      freeShippingMin: settings.storeFreeShippingMin,
+      shippingText: settings.storeShippingText,
+      // Só avisa que existe cupom; o código é validado em /api/public/coupon.
+      hasCoupon: Boolean(settings.storeCouponCode && settings.storeCouponPercent > 0),
+      testimonials,
     },
     { headers: { ...corsHeaders, "Cache-Control": "public, max-age=60" } },
   );

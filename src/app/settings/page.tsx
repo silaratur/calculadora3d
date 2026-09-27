@@ -5,11 +5,13 @@ import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconTrash } from "@/components/Icons";
 
-type Settings = { energyRate: number; defaultPowerWatts: number; laborRate: number; monthlyRent: number; monthlySubscriptions: number; monthlyMaintenance: number; monthlyOtherCosts: number; monthlyPieces: number; defaultMarkup: number; defaultLossRate: number; companyName: string; companyContact: string; quoteValidityDays: number; quoteDeliveryText: string; quoteWarrantyText: string; quotePaymentText: string; storeProductionDays: number; storeQtyDiscounts: string };
+type Settings = { energyRate: number; defaultPowerWatts: number; laborRate: number; monthlyRent: number; monthlySubscriptions: number; monthlyMaintenance: number; monthlyOtherCosts: number; monthlyPieces: number; defaultMarkup: number; defaultLossRate: number; companyName: string; companyContact: string; quoteValidityDays: number; quoteDeliveryText: string; quoteWarrantyText: string; quotePaymentText: string; storeProductionDays: number; storeQtyDiscounts: string; roundPricesTo90: boolean; storeFreeShippingMin: number; storeShippingText: string; storeCouponCode: string; storeCouponPercent: number };
+type Testimonial = { id: string; name: string; text: string; context: string };
 type Tier = { minQty: string; percent: string };
 type Marketplace = { id: string; name: string; commissionRate: number; fixedFee: number; adsRate: number; notes: string };
 
-const emptySettings: Settings = { energyRate: 0.85, defaultPowerWatts: 250, laborRate: 25, monthlyRent: 0, monthlySubscriptions: 50, monthlyMaintenance: 40, monthlyOtherCosts: 0, monthlyPieces: 60, defaultMarkup: 40, defaultLossRate: 5, companyName: "AC3D", companyContact: "", quoteValidityDays: 7, quoteDeliveryText: "", quoteWarrantyText: "", quotePaymentText: "", storeProductionDays: 10, storeQtyDiscounts: "[]" };
+const emptySettings: Settings = { energyRate: 0.85, defaultPowerWatts: 250, laborRate: 25, monthlyRent: 0, monthlySubscriptions: 50, monthlyMaintenance: 40, monthlyOtherCosts: 0, monthlyPieces: 60, defaultMarkup: 40, defaultLossRate: 5, companyName: "AC3D", companyContact: "", quoteValidityDays: 7, quoteDeliveryText: "", quoteWarrantyText: "", quotePaymentText: "", storeProductionDays: 10, storeQtyDiscounts: "[]", roundPricesTo90: true, storeFreeShippingMin: 0, storeShippingText: "", storeCouponCode: "", storeCouponPercent: 0 };
+const emptyTestimonial = { name: "", text: "", context: "" };
 
 /** storeQtyDiscounts vem do banco como JSON; na tela vira linhas editáveis. */
 function parseTiers(raw: string): Tier[] {
@@ -28,6 +30,8 @@ const numberValue = (value: string) => { const clean = value.replace(/R\$\s?/g, 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings>(emptySettings);
   const [tiers, setTiers] = useState<Tier[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [testimonial, setTestimonial] = useState(emptyTestimonial);
   const [channel, setChannel] = useState(emptyChannel);
   const [channels, setChannels] = useState<Marketplace[]>([]);
   const [editingChannelId, setEditingChannelId] = useState<string | null>(null);
@@ -36,7 +40,8 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function load() {
-      const [settingsResponse, channelsResponse] = await Promise.all([fetch("/api/settings"), fetch("/api/marketplaces")]);
+      const [settingsResponse, channelsResponse, testimonialsResponse] = await Promise.all([fetch("/api/settings"), fetch("/api/marketplaces"), fetch("/api/testimonials")]);
+      if (testimonialsResponse.ok) setTestimonials((await testimonialsResponse.json()) as Testimonial[]);
       if (settingsResponse.status === 401) { setNeedsLogin(true); return; }
       setNeedsLogin(false);
       if (settingsResponse.ok) {
@@ -57,6 +62,20 @@ export default function SettingsPage() {
       .filter((tier) => tier.minQty >= 2 && tier.percent > 0);
     const response = await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...settings, storeQtyDiscounts }) });
     setFeedback(response.ok ? "Configurações salvas." : "Não foi possível salvar as configurações.");
+  }
+
+  async function saveTestimonial(event: FormEvent) {
+    event.preventDefault();
+    const response = await fetch("/api/testimonials", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(testimonial) });
+    if (!response.ok) { setFeedback("Confira o nome e o texto do depoimento."); return; }
+    setTestimonials([(await response.json()) as Testimonial, ...testimonials]);
+    setTestimonial(emptyTestimonial);
+    setFeedback("Depoimento publicado na loja.");
+  }
+
+  async function deleteTestimonial(id: string) {
+    const response = await fetch(`/api/testimonials?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    if (response.ok) setTestimonials(testimonials.filter((item) => item.id !== id));
   }
 
   async function saveChannel(event: FormEvent) {
@@ -125,6 +144,10 @@ export default function SettingsPage() {
             <p className="settings-intro">Esses valores alimentam automaticamente a calculadora e o custo fixo rateado por peça. Custo de produção da máquina (kWh, potência, hora de trabalho, peças produzidas por mês) e custos fixos mensais detalhados agora ficam em Custos → Produção e Custos → Fixos.</p>
             <div className="settings-group">
               <h3>Preço padrão</h3>
+              <label className="checkbox-field">
+                <input type="checkbox" checked={settings.roundPricesTo90} onChange={(event) => setSettings({ ...settings, roundPricesTo90: event.target.checked })} />
+                Arredondar o preço de venda do Catálogo para terminar em ,90
+              </label>
               <label>Markup padrão (%)<input value={settings.defaultMarkup} onChange={(event) => setSettings({ ...settings, defaultMarkup: numberValue(event.target.value) })} /></label>
               <label>Perdas/refugo padrão (%)<input value={settings.defaultLossRate} onChange={(event) => setSettings({ ...settings, defaultLossRate: numberValue(event.target.value) })} /></label>
             </div>
@@ -150,6 +173,14 @@ export default function SettingsPage() {
                 </div>
               ))}
               {tiers.length < 5 ? <button type="button" className="quiet-button" onClick={() => setTiers([...tiers, { minQty: "", percent: "" }])}>+ Adicionar faixa</button> : null}
+              <span className="settings-subtitle">Entrega</span>
+              <label>Frete grátis a partir de (R$, 0 = não oferecer)<input inputMode="decimal" value={settings.storeFreeShippingMin} onChange={(event) => setSettings({ ...settings, storeFreeShippingMin: numberValue(event.target.value) })} /></label>
+              <label>Texto de entrega na loja<input type="text" value={settings.storeShippingText} onChange={(event) => setSettings({ ...settings, storeShippingText: event.target.value })} placeholder="Ex: Retirada grátis em Vitória ou envio pelos Correios." /></label>
+              <span className="settings-subtitle">Cupom de primeira compra (divulgue no Instagram)</span>
+              <div className="form-grid three">
+                <label>Código<input type="text" value={settings.storeCouponCode} onChange={(event) => setSettings({ ...settings, storeCouponCode: event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, "") })} placeholder="BEMVINDO10" /></label>
+                <label>Desconto (%)<input inputMode="decimal" value={settings.storeCouponPercent} onChange={(event) => setSettings({ ...settings, storeCouponPercent: numberValue(event.target.value) })} /></label>
+              </div>
             </div>
             <button className="primary-button" type="submit">Salvar configurações</button>
           </form>
@@ -168,6 +199,26 @@ export default function SettingsPage() {
                 <button className="primary-button" type="submit">{editingChannelId ? "Salvar alterações" : "Adicionar canal"}</button>
                 {editingChannelId ? <button className="secondary-button" type="button" onClick={cancelEditChannel}>Cancelar</button> : null}
               </div>
+            </form>
+
+            <form className="preset-form" onSubmit={saveTestimonial}>
+              <h2>Depoimentos da loja</h2>
+              <p className="settings-intro">O que clientes disseram (peça pelo WhatsApp depois da entrega). Aparecem na loja; só publique com autorização do cliente.</p>
+              <label>Nome<input required value={testimonial.name} onChange={(event) => setTestimonial({ ...testimonial, name: event.target.value })} placeholder="Ex: Mariana, Vitória" /></label>
+              <label>Depoimento<textarea required value={testimonial.text} onChange={(event) => setTestimonial({ ...testimonial, text: event.target.value })} /></label>
+              <label>Sobre o quê (opcional)<input value={testimonial.context} onChange={(event) => setTestimonial({ ...testimonial, context: event.target.value })} placeholder="Ex: Mini pandas para a festa de 5 anos" /></label>
+              <button className="primary-button" type="submit">Publicar depoimento</button>
+              {testimonials.map((item) => (
+                <article className="preset-card" key={item.id}>
+                  <div className="card-top">
+                    <span className="material-badge">DEPOIMENTO</span>
+                    <button type="button" className="delete-button" onClick={() => deleteTestimonial(item.id)} aria-label={`Excluir depoimento de ${item.name}`}><IconTrash className="nav-icon" /></button>
+                  </div>
+                  <h3>{item.name}</h3>
+                  <p>{item.text}</p>
+                  {item.context ? <p>{item.context}</p> : null}
+                </article>
+              ))}
             </form>
 
             <div className="channel-list">

@@ -76,3 +76,10 @@ docker logs calculadora3d-calculadora3d-1 --tail 50   # ver logs do app
 cd /opt/calculadora3d && docker compose restart        # reiniciar
 docker compose down                                    # parar (não afeta os outros apps)
 ```
+
+## Loja pública (ac3d.silaratur.cloud)
+
+A loja (`loja-ac3d`, repositório à parte) lê `/api/public/products` e `/api/public/store` (sem login) e
+cria pedidos em `/api/public/orders`, que exige o cabeçalho `x-store-key`. Para isso o
+`/opt/calculadora3d/.env` precisa de `STORE_API_KEY=<mesma chave de /opt/loja-ac3d/.env>` — sem ela a
+rota responde 503 e a loja segue só pelo WhatsApp (o pedido não entra em Orçamentos).
