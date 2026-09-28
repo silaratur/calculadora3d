@@ -13,6 +13,8 @@ import { ProductPhotoCarousel, ProductPreviewModal, categoryColor, productImages
 
 type Material = { id: string; name: string; type: string; color?: string; stockGrams?: number; unitPrice: number; unitWeightGrams: number; costPerKg: number; active?: boolean };
 type MaterialLine = { materialId: string; grams: number };
+type Supply = { id: string; name: string; category: string; unitCost: number; active?: boolean };
+type DraftSupplyLine = { supplyId: string; quantity: string };
 // No formulário o peso fica como texto (não número) igual ao resto do app —
 // se o valor ligado ao <input> for number, digitar "64,9" perde a vírgula no
 // meio da digitação porque o value volta arredondado a cada tecla.
@@ -54,6 +56,7 @@ type Product = {
   colors?: string;
   personalizable?: boolean;
   materials: MaterialLine[];
+  supplies?: { supplyId: string; quantity: number }[];
   salesCount: number;
   createdAt: string;
 };
@@ -65,6 +68,8 @@ type Draft = {
   // images[0] é a capa (vai pra imageUrl, usada em Orçamentos/Produção).
   images: string[];
   materialLines: DraftMaterialLine[];
+  // Insumos/acessórios por unidade (Biblioteca → Insumos); quantidade como texto, igual às gramas.
+  supplyLines: DraftSupplyLine[];
   hours: string;
   minutes: string;
   prep: string;
@@ -87,6 +92,7 @@ const emptyDraft: Draft = {
   description: "",
   images: [],
   materialLines: [],
+  supplyLines: [],
   hours: "0",
   minutes: "0",
   prep: "0",
@@ -146,6 +152,7 @@ export default function CatalogPage() {
   // desativados, para peças que ainda usam um deles manterem o custo real.
   const [materials, setMaterials] = useState<Material[]>([]);
   const [allMaterials, setAllMaterials] = useState<Material[]>([]);
+  const [supplies, setSupplies] = useState<Supply[]>([]);
   const [printers, setPrinters] = useState<Printer[]>([]);
   const [marketplaces, setMarketplaces] = useState<Marketplace[]>([defaultMarketplace]);
   const [settings, setSettings] = useState<PricingSettings>({ energyRate: 0.85, defaultPowerWatts: 250, laborRate: 25, defaultMarkup: 40, defaultLossRate: 5, monthlyRent: 0, monthlySubscriptions: 50, monthlyMaintenance: 40, monthlyOtherCosts: 0, monthlyPieces: 60 });
@@ -178,13 +185,14 @@ export default function CatalogPage() {
       // atuais dele, não uma cópia em memória de quando a página abriu — foi
       // exatamente essa mesma causa que deixava o preço desatualizado em
       // Orçamentos.
-      const [productRes, materialRes, printerRes, settingsRes, marketplaceRes, fixedRes] = await Promise.all([
+      const [productRes, materialRes, printerRes, settingsRes, marketplaceRes, fixedRes, suppliesRes] = await Promise.all([
         fetch("/api/products", { cache: "no-store" }),
         fetch("/api/materials?all=true", { cache: "no-store" }),
         fetch("/api/printers", { cache: "no-store" }),
         fetch("/api/settings", { cache: "no-store" }),
         fetch("/api/marketplaces"),
         fetch("/api/costs/fixed"),
+        fetch("/api/supplies?all=true", { cache: "no-store" }),
       ]);
       if (productRes.status === 401) { setNeedsLogin(true); return; }
       setNeedsLogin(false);
@@ -195,6 +203,7 @@ export default function CatalogPage() {
         setMaterials(data.filter((item) => item.active !== false));
       }
       if (printerRes.ok) setPrinters((await printerRes.json()) as Printer[]);
+      if (suppliesRes.ok) setSupplies((await suppliesRes.json()) as Supply[]);
       if (settingsRes.ok) setSettings((await settingsRes.json()) as PricingSettings);
       // "Venda Direta" (0% de taxas) fica sempre disponível, igual na Calculadora.
       if (marketplaceRes.ok) { const data = (await marketplaceRes.json()) as Marketplace[]; setMarketplaces([defaultMarketplace, ...data]); }
@@ -273,6 +282,11 @@ export default function CatalogPage() {
   const filamentPricing = filamentCostFor(materialLinesWithData.map((entry) => ({ grams: n(entry.line.grams), material: entry.material })));
   const materialCost = filamentPricing.cost;
   const totalWeightGrams = materialLinesWithData.reduce((sum, entry) => sum + n(entry.line.grams), 0);
+  const supplyLinesWithData = draft.supplyLines.flatMap((line) => {
+    const supply = supplies.find((item) => item.id === line.supplyId);
+    return supply ? [{ line, supply }] : [];
+  });
+  const suppliesTotal = supplyLinesWithData.reduce((sum, entry) => sum + entry.supply.unitCost * n(entry.line.quantity), 0);
   const printTimeHours = n(draft.hours) + n(draft.minutes) / 60;
   const printer = printers.find((item) => item.id === draft.printerId);
   const marketplace = marketplaces.find((item) => item.id === draft.marketplaceId) ?? marketplaces[0] ?? defaultMarketplace;
@@ -286,6 +300,7 @@ export default function CatalogPage() {
       materialUnitPrice: 0,
       materialUnitWeightGrams: 1000,
       filamentCostOverride: filamentCost,
+      suppliesCost: suppliesTotal,
       printTimeHours,
       prepMinutes: n(draft.prep),
       cleanupMinutes: n(draft.cleanup),
@@ -308,7 +323,7 @@ export default function CatalogPage() {
       roundTo90: settings.roundPricesTo90 ?? false,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const cost = useMemo(() => pieceCostFor(materialCost), [materialCost, totalWeightGrams, printTimeHours, draft.prep, draft.cleanup, draft.lossRate, settings, printer, currentMonthFixedCost]);
+  const cost = useMemo(() => pieceCostFor(materialCost), [materialCost, suppliesTotal, totalWeightGrams, printTimeHours, draft.prep, draft.cleanup, draft.lossRate, settings, printer, currentMonthFixedCost]);
   const pricing = priceFor(cost.total);
   const suggestedPrice = pricing.final;
 
@@ -334,6 +349,7 @@ export default function CatalogPage() {
     { label: "Mão de Obra", value: cost.labor, color: legendColors[2] },
     { label: "Energia", value: cost.energy, color: legendColors[3] },
     { label: "Custos Fixos Rateados", value: cost.fixedCosts, color: legendColors[4] },
+    { label: "Insumos", value: cost.supplies, color: "#c9a24a" },
     { label: "Reserva Perdas", value: cost.reserve, color: legendColors[5] },
   ];
   const costSegmentsTotal = costSegments.reduce((sum, segment) => sum + segment.value, 0) || 1;
@@ -376,6 +392,17 @@ export default function CatalogPage() {
   }
   function updateMaterialLine(index: number, patch: Partial<DraftMaterialLine>) {
     setDraft({ ...draft, materialLines: draft.materialLines.map((line, i) => (i === index ? { ...line, ...patch } : line)) });
+  }
+  function addSupplyLine() {
+    const used = new Set(draft.supplyLines.map((line) => line.supplyId));
+    const next = supplies.find((item) => item.active !== false && !used.has(item.id));
+    if (next) setDraft({ ...draft, supplyLines: [...draft.supplyLines, { supplyId: next.id, quantity: "1" }] });
+  }
+  function updateSupplyLine(index: number, patch: Partial<DraftSupplyLine>) {
+    setDraft({ ...draft, supplyLines: draft.supplyLines.map((line, i) => (i === index ? { ...line, ...patch } : line)) });
+  }
+  function removeSupplyLine(index: number) {
+    setDraft({ ...draft, supplyLines: draft.supplyLines.filter((_, i) => i !== index) });
   }
   function removeMaterialLine(index: number) {
     setDraft({ ...draft, materialLines: draft.materialLines.filter((_, i) => i !== index) });
@@ -437,6 +464,7 @@ export default function CatalogPage() {
       description: product.description ?? "",
       images: productImages(product),
       materialLines: product.materials?.map((line) => ({ materialId: line.materialId, grams: String(line.grams).replace(".", ",") })) ?? [],
+      supplyLines: product.supplies?.map((line) => ({ supplyId: line.supplyId, quantity: String(line.quantity).replace(".", ",") })) ?? [],
       hours: String(Math.floor(product.printTimeHours)),
       minutes: String(Math.round((product.printTimeHours % 1) * 60)),
       prep: String(product.prepMinutes),
@@ -475,6 +503,7 @@ export default function CatalogPage() {
       cleanupMinutes: n(draft.cleanup),
       printerId: draft.printerId || null,
       materials: draft.materialLines.filter((line) => n(line.grams) > 0).map((line) => ({ materialId: line.materialId, grams: n(line.grams) })),
+      supplies: draft.supplyLines.filter((line) => n(line.quantity) > 0).map((line) => ({ supplyId: line.supplyId, quantity: n(line.quantity) })),
       materialCost: cost.filament,
       laborCost: cost.labor,
       energyCost: cost.energy,
@@ -795,6 +824,40 @@ export default function CatalogPage() {
                 </section>
 
                 <section className="calc-section">
+                  <Title text="INSUMOS & ACESSÓRIOS ADICIONAIS" />
+                  <div className="material-lines">
+                    <span className="material-lines-label">Argolas, correntes, ímãs, embalagem, tags… — o que vai em cada unidade desta peça (cadastrados na Biblioteca → Insumos)</span>
+                    {draft.supplyLines.length ? (
+                      <div className="material-line supply-line material-line-header">
+                        <span>Insumo (da Biblioteca)</span>
+                        <span>Qtd. por peça</span>
+                        <span>Custo</span>
+                        <span />
+                      </div>
+                    ) : null}
+                    {draft.supplyLines.map((line, index) => {
+                      const supply = supplies.find((item) => item.id === line.supplyId);
+                      return (
+                        <div className="material-line supply-line" key={index}>
+                          <select value={line.supplyId} onChange={(event) => updateSupplyLine(index, { supplyId: event.target.value })}>
+                            {/* Desativados só aparecem na linha que já os usa (o custo não some). */}
+                            {supplies
+                              .filter((item) => item.id === line.supplyId || (item.active !== false && !draft.supplyLines.some((other, otherIndex) => otherIndex !== index && other.supplyId === item.id)))
+                              .map((item) => <option key={item.id} value={item.id}>{item.active === false ? '⚠ ' : ''}{item.name} — {brl(item.unitCost)}/un. ({item.category}){item.active === false ? ' (desativado)' : ''}</option>)}
+                          </select>
+                          <input inputMode="decimal" value={line.quantity} onChange={(event) => updateSupplyLine(index, { quantity: event.target.value })} placeholder="1" />
+                          <small className="supply-line-cost">{brl((supply?.unitCost ?? 0) * n(line.quantity))}</small>
+                          <button type="button" className="delete-button" onClick={() => removeSupplyLine(index)} aria-label="Remover insumo"><IconTrash className="nav-icon" /></button>
+                        </div>
+                      );
+                    })}
+                    <button type="button" className="secondary-button" onClick={addSupplyLine} disabled={!supplies.some((item) => item.active !== false && !draft.supplyLines.some((line) => line.supplyId === item.id))}>+ Adicionar insumo</button>
+                    {!supplies.length ? <p className="admin-feedback">Cadastre insumos na Biblioteca para selecioná-los aqui.</p> : null}
+                    {suppliesTotal > 0 ? <small className="filament-pricing-note">Insumos desta peça: <b>{brl(suppliesTotal)}</b> por unidade — já entram no custo e no preço sugerido.</small> : null}
+                  </div>
+                </section>
+
+                <section className="calc-section">
                   <Title text="TEMPO DE PRODUÇÃO (PEÇA INTEIRA)" />
                   <div className="field-grid three">
                     <label>Horas de impressão<input inputMode="numeric" value={draft.hours} onChange={(event) => setDraft({ ...draft, hours: event.target.value })} /></label>
@@ -885,6 +948,7 @@ export default function CatalogPage() {
                     <Cost label="Filamento" value={cost.filament} dot={legendColors[0]} />
                     <Cost label="Depreciação" value={cost.machine} dot={legendColors[1]} />
                     <Cost label="Mão de Obra" value={cost.labor} dot={legendColors[2]} />
+                    {cost.supplies > 0 ? <Cost label="Insumos" value={cost.supplies} dot="#c9a24a" /> : null}
                   </div>
                   <div>
                     <Cost label="Energia" value={cost.energy} dot={legendColors[3]} />
@@ -897,6 +961,7 @@ export default function CatalogPage() {
                   <Cost label="Energia" value={cost.energy} />
                   <Cost label="Depreciação + Manut." value={cost.machine} />
                   <Cost label="Mão de Obra" value={cost.labor} />
+                  {cost.supplies > 0 ? <Cost label={`Insumos & acessórios (${supplyLinesWithData.length})`} value={cost.supplies} /> : null}
                   <Cost label={`Custos Fixos Rateados (${brl(fixedCostPerHour(settings, currentMonthFixedCost ?? undefined))}/h × ${printTimeHours.toFixed(2)} h)`} value={cost.fixedCosts} />
                   <Cost label="Reserva para perdas" value={cost.reserve} />
                   <hr />

@@ -16,6 +16,8 @@ const productSchema = z.object({
   extraImages: z.array(z.string().min(1)).max(4).optional(),
   material: z.string().optional(),
   materials: z.array(z.object({ materialId: z.string().min(1), grams: z.number().min(0) })).optional(),
+  // Insumos e acessórios por unidade (argola, corrente, embalagem…), da Biblioteca.
+  supplies: z.array(z.object({ supplyId: z.string().min(1), quantity: z.number().min(0) })).optional(),
   weightGrams: z.number().min(0),
   printTimeHours: z.number().min(0),
   volumeCm3: z.number().min(0).optional(),
@@ -74,6 +76,13 @@ async function nextSkuForCategory(category: string) {
 
 type MaterialLine = { materialId: string; grams: number };
 
+/** Linhas de insumo sem quantidade saem; o mesmo insumo em duas linhas soma (evita violar o @@unique). */
+function mergeSupplies(lines: { supplyId: string; quantity: number }[] | undefined) {
+  const bySupply = new Map<string, number>();
+  for (const line of lines ?? []) if (line.quantity > 0) bySupply.set(line.supplyId, (bySupply.get(line.supplyId) ?? 0) + line.quantity);
+  return Array.from(bySupply, ([supplyId, quantity]) => ({ supplyId, quantity }));
+}
+
 /** Resolve o custo e o nome de material a partir das linhas de material selecionadas na Biblioteca. */
 async function resolveMaterials(lines: MaterialLine[] | undefined) {
   const rawUsable = (lines ?? []).filter((line) => line.grams > 0);
@@ -121,7 +130,7 @@ export async function GET(request: Request) {
     prisma.product.findMany({
       where: { active: true },
       orderBy: { createdAt: "desc" },
-      include: { materials: true, printer: true, marketplaceChannel: true },
+      include: { materials: true, supplies: true, printer: true, marketplaceChannel: true },
     }),
     // Total vendido por produto (soma da quantidade de todos os pedidos, sem
     // filtrar por status) — pro card do catálogo mostrar tração de vendas.
@@ -173,6 +182,7 @@ export async function POST(request: Request) {
     discountPerUnit: data.discountPerUnit ?? 0,
     marketplaceChannelId: data.marketplaceChannelId ?? null,
     ...(resolved ? { materials: { create: resolved.lines } } : {}),
+    ...(mergeSupplies(data.supplies).length ? { supplies: { create: mergeSupplies(data.supplies) } } : {}),
   };
 
   // Duas requisições concorrentes podem calcular o mesmo próximo SKU antes de
@@ -182,7 +192,7 @@ export async function POST(request: Request) {
     try {
       const product = await prisma.product.create({
         data: { ...baseData, sku: await nextSkuForCategory(data.category) },
-        include: { materials: true, printer: true, marketplaceChannel: true },
+        include: { materials: true, supplies: true, printer: true, marketplaceChannel: true },
       });
       return NextResponse.json(product, { status: 201 });
     } catch (error) {
@@ -214,6 +224,8 @@ export async function PUT(request: Request) {
       // o que já existia.
       await tx.productMaterial.deleteMany({ where: { productId: id } });
     }
+    // Mesma lógica para os insumos: enviados (mesmo vazios) = substitui todos.
+    if (data.supplies) await tx.productSupply.deleteMany({ where: { productId: id } });
     return tx.product.update({
       where: { id },
       data: {
@@ -249,8 +261,9 @@ export async function PUT(request: Request) {
         discountPerUnit: data.discountPerUnit ?? 0,
         marketplaceChannelId: data.marketplaceChannelId ?? null,
         ...(resolved ? { materials: { create: resolved.lines } } : {}),
+        ...(data.supplies && mergeSupplies(data.supplies).length ? { supplies: { create: mergeSupplies(data.supplies) } } : {}),
       },
-      include: { materials: true, printer: true, marketplaceChannel: true },
+      include: { materials: true, supplies: true, printer: true, marketplaceChannel: true },
     });
   });
 

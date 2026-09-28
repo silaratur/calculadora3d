@@ -1921,3 +1921,7 @@ a.material-badge { text-decoration: none; }
 .customer-sort { align-items: center; color: var(--admin-muted); display: inline-flex; font-size: 13px; gap: 8px; margin-left: auto; }
 .customer-sort select { min-height: 34px; width: auto; }
 .customer-since { color: var(--admin-muted); font-size: 12px; }
+
+/* Catálogo: linhas de insumo do produto (insumo, qtd., custo, lixeira). */
+.material-line.supply-line { grid-template-columns: 1fr 90px 90px auto; }
+.supply-line-cost { color: var(--admin-muted); font-family: var(--font-mono, monospace); text-align: right; }
