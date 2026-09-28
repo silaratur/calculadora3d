@@ -1,0 +1,474 @@
+{
+  "pack": "semana-2026-09-29",
+  "posts": [
+    {
+      "id": "01-carrossel-natal",
+      "type": "carousel",
+      "title": "Carrossel · Coleção de Natal",
+      "when": "terça 29/09, 19h",
+      "slides": [
+        {
+          "kind": "cover",
+          "photo": "carrossel/D.014-3.png",
+          "label": "Coleção de Natal",
+          "title": "Um Natal com significado",
+          "subtitle": "Peças impressas em 3D aqui no estúdio, para a mesa, o aparador e a ceia."
+        },
+        {
+          "kind": "product",
+          "sku": "D.014",
+          "photo": "carrossel/D.014-4.png",
+          "name": "Presépio Minimalista",
+          "line": "José, Maria e o Menino Jesus sob a estrela de Belém. 12 cm."
+        },
+        {
+          "kind": "product",
+          "sku": "D.018",
+          "photo": "carrossel/D.018-2.png",
+          "name": "Quebra-Nozes Canelado",
+          "line": "O clássico do Natal em versão moderna. Cerca de 20 cm."
+        },
+        {
+          "kind": "product",
+          "sku": "D.010",
+          "photo": "carrossel/D.010-3.png",
+          "name": "Renas Natalinas",
+          "line": "Conjunto com 3 renas de 17,5 cm.",
+          "priceFrom": true,
+          "colors": [
+            "Vermelho",
+            "Bege",
+            "Branco"
+          ]
+        },
+        {
+          "kind": "product",
+          "sku": "D.013",
+          "photo": "carrossel/D.013-2.png",
+          "name": "Tigelas Árvore de Natal",
+          "line": "Para biscoitos, castanhas e petiscos da ceia. Empilháveis."
+        },
+        {
+          "kind": "product",
+          "sku": "D.012",
+          "photo": "carrossel/D.012-4.png",
+          "name": "Porta-Guardanapo Árvore",
+          "line": "15 × 15 cm. Organiza e já decora a mesa da ceia."
+        },
+        {
+          "kind": "product",
+          "sku": "D.002",
+          "photo": "carrossel/D.002-3.png",
+          "name": "Placa Feliz Natal",
+          "label": "Decoração de Natal",
+          "line": "Com floco de neve. Em vermelho ou branco.",
+          "colors": [
+            "Vermelho",
+            "Branco"
+          ]
+        },
+        {
+          "kind": "cta",
+          "heading": "Como pedir",
+          "note": "Produção limitada. Garanta as suas para chegar antes da ceia."
+        }
+      ],
+      "caption": "O Natal começa pela mesa de casa. 🎄\n\nSeparamos as peças da nossa Coleção de Natal — todas impressas em 3D aqui no estúdio, em cores que combinam com a sua decoração:\n\n• Presépio Minimalista Sagrada Família\n• Quebra-Nozes Canelado\n• Renas Natalinas\n• Tigelas Árvore de Natal\n• Porta-Guardanapo Árvore\n• Placa Feliz Natal\n\nArraste para ver preços e cores. Para pedir, é só tocar no link da bio e pedir seu orçamento na loja.\n\nA produção é limitada — vale garantir as suas com antecedência.\n\n#natal #decoracaodenatal #presepio #mesadenatal #quebranozes #impressao3d #feitoamao #ac3dstudio"
+    },
+    {
+      "id": "02-carrossel-dia-das-criancas",
+      "type": "carousel",
+      "title": "Carrossel · Dia das Crianças (lembrancinhas articuladas)",
+      "when": "quinta 01/10, 19h",
+      "slides": [
+        {
+          "kind": "cover",
+          "photo": "b011-8cm/B.011-3.png",
+          "label": "Dia das Crianças · 12/10",
+          "title": "Presentes\nque se mexem",
+          "subtitle": "Chaveiros e bichinhos articulados, perfeitos para lembrancinha, sacolinha e presente."
+        },
+        {
+          "kind": "product",
+          "sku": "B.011",
+          "photo": "b011-8cm/B.011-2.png",
+          "name": "Chaveiro Dinossauro",
+          "line": "T-Rex articulado de 8 cm que se mexe nas mãos."
+        },
+        {
+          "kind": "product",
+          "sku": "B.012",
+          "photo": "carrossel/B.012-2.png",
+          "name": "Unicórnio Articulado",
+          "line": "9 cm de altura e 11 cm de comprimento."
+        },
+        {
+          "kind": "product",
+          "sku": "B.004",
+          "photo": "carrossel/B.004-2.png",
+          "name": "Chaveiro Estrela Sensorial",
+          "line": "Estrelas encaixadas que giram. Ocupa as mãos e acalma."
+        },
+        {
+          "kind": "product",
+          "sku": "B.005",
+          "photo": "carrossel/B.005-3.png",
+          "name": "Chaveiro Hexagonal Sensorial",
+          "line": "3,7 × 3,2 cm. Leve para levar na mochila."
+        },
+        {
+          "kind": "product",
+          "sku": "B.007",
+          "photo": "carrossel/B.007-4.png",
+          "name": "Cachorrinho Articulado",
+          "line": "Textura que lembra pelo. Cada parte do corpo se mexe."
+        },
+        {
+          "kind": "product",
+          "sku": "B.001",
+          "photo": "carrossel/B.001-3.png",
+          "name": "Kit 12 Mini Capivaras",
+          "line": "12 capivaras articuladas de 2,7 cm. Sucesso na sacolinha."
+        },
+        {
+          "kind": "cta",
+          "heading": "Lembrancinhas para a festa",
+          "steps": [
+            "Toque no link da bio",
+            "Escolha as peças e as cores",
+            "Peça seu orçamento pela loja"
+          ],
+          "note": "Vai precisar de muitas unidades? Fale com a gente na página Festas e Empresas."
+        }
+      ],
+      "caption": "Dia das Crianças chegando: 12/10. 🦖\n\nNossos articulados são pequenos, coloridos e se mexem nas mãos — viram brinquedo, chaveiro e lembrancinha ao mesmo tempo:\n\n• Chaveiro Dinossauro (8 cm)\n• Unicórnio Articulado\n• Chaveiro Estrela Sensorial\n• Chaveiro Hexagonal Sensorial\n• Cachorrinho Articulado\n• Kit 12 Mini Capivaras\n\nArraste para ver preços e cores. Pedidos pelo link da bio.\n\nPara festas, escolas e empresas, fazemos em quantidade — é só chamar.\n\n#diadascriancas #lembrancinhas #lembrancinhasdefesta #brinquedosensorial #dinossauro #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "03-story-presepio",
+      "type": "story-cheio",
+      "title": "Story · Presépio",
+      "sku": "D.014",
+      "background": "stories-fundo/D.014.png",
+      "tag": "Coleção de Natal",
+      "headline": "Presépio",
+      "script": "Sagrada Família",
+      "subline": "Traço minimalista, significado eterno",
+      "uses": [
+        {
+          "icon": "estrela",
+          "label": "Estrela de Belém no topo"
+        },
+        {
+          "icon": "casa",
+          "label": "Sala, aparador ou recepção"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente que emociona"
+        }
+      ],
+      "note": "o centro\ndo seu Natal",
+      "noteTarget": [
+        0.26,
+        0.5
+      ],
+      "fomo": "Produção limitada para o Natal",
+      "scenes": [
+        {
+          "photo": "carrossel/D.014-2.png",
+          "icon": "casa",
+          "title": "Na sala",
+          "sub": "Perto das velas e da árvore"
+        },
+        {
+          "photo": "carrossel/D.014-3.png",
+          "icon": "presente",
+          "title": "De presente",
+          "sub": "Emociona quem recebe"
+        },
+        {
+          "photo": "carrossel/D.014-4.png",
+          "icon": "paleta",
+          "title": "3 cores",
+          "sub": "Branco, bege ou marrom"
+        }
+      ],
+      "size": "12 cm de altura",
+      "signature": "O verdadeiro sentido do Natal",
+      "bgScale": 1.02,
+      "bgShift": 19,
+      "productBox": [
+        310,
+        705,
+        757,
+        1242
+      ],
+      "noteSize": 40,
+      "noteWidth": 220,
+      "when": "terça 29/09, 12h"
+    },
+    {
+      "id": "04-story-quebra-nozes",
+      "type": "story-cheio",
+      "title": "Story · Quebra-Nozes",
+      "when": "quarta 30/09, 12h",
+      "sku": "D.018",
+      "background": "stories-fundo/D.018.png",
+      "tag": "Coleção de Natal",
+      "headline": "Quebra-Nozes",
+      "script": "canelado",
+      "uses": [
+        {
+          "icon": "casa",
+          "label": "Estante, aparador ou lareira"
+        },
+        {
+          "icon": "paleta",
+          "label": "Combine as cores"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente de Natal"
+        }
+      ],
+      "note": "o guardião\nda sua estante",
+      "fomo": "Produção limitada para o Natal",
+      "scenes": [
+        {
+          "photo": "carrossel/D.018-2.png",
+          "icon": "casa",
+          "title": "Na lareira",
+          "sub": "Clima de Natal"
+        },
+        {
+          "photo": "carrossel/D.018-3.png",
+          "icon": "coracao",
+          "title": "Na entrada",
+          "sub": "Recebe as visitas"
+        },
+        {
+          "photo": "carrossel/D.018-4.png",
+          "icon": "paleta",
+          "title": "4 cores",
+          "sub": "Monte o seu conjunto"
+        }
+      ],
+      "size": "cerca de 20 cm",
+      "signature": "O Natal começa na decoração",
+      "productBox": [
+        446,
+        618,
+        632,
+        1237
+      ],
+      "noteTarget": [
+        0.39,
+        0.5
+      ]
+    },
+    {
+      "id": "05-story-dinossauro",
+      "type": "story-cheio",
+      "title": "Story · Chaveiro Dinossauro",
+      "sku": "B.011",
+      "background": "stories-fundo/B.011.png",
+      "tag": "Dia das Crianças",
+      "headline": "Dino",
+      "script": "articulado",
+      "subline": "Mexe, dobra e vai junto na chave",
+      "uses": [
+        {
+          "icon": "mao",
+          "label": "Mexe inteirinho nas mãos"
+        },
+        {
+          "icon": "chave",
+          "label": "Chave, mochila ou estojo"
+        },
+        {
+          "icon": "presente",
+          "label": "Lembrancinha de festa"
+        }
+      ],
+      "note": "8 cm de pura diversão",
+      "noteTarget": [
+        0.2,
+        0.57
+      ],
+      "fomo": "Lembrancinhas: produção limitada",
+      "scenes": [
+        {
+          "photo": "b011-8cm/B.011-3.png",
+          "icon": "presente",
+          "title": "Na festa",
+          "sub": "Sacolinhas surpresa"
+        },
+        {
+          "photo": "b011-8cm/B.011-2.png",
+          "icon": "mao",
+          "title": "Na mão",
+          "sub": "Cabe na palma"
+        },
+        {
+          "photo": "b011-8cm/B.011-1.png",
+          "icon": "chave",
+          "title": "Na chave",
+          "sub": "Vai pra todo lado"
+        }
+      ],
+      "colorsNote": "8 cores pra escolher",
+      "size": "8 cm",
+      "signature": "Diversão que cabe no bolso",
+      "productBox": [
+        232,
+        766,
+        778,
+        1130
+      ],
+      "noteTop": 1152,
+      "noteSize": 40,
+      "noteWidth": 440,
+      "when": "quinta 01/10, 12h"
+    },
+    {
+      "id": "06-story-porta-guardanapo",
+      "type": "story-cheio",
+      "title": "Story · Porta-Guardanapo Árvore",
+      "when": "sexta 02/10, 12h",
+      "sku": "D.012",
+      "background": "stories-fundo/D.012.png",
+      "tag": "Mesa da ceia",
+      "headline": "A ceia começa",
+      "script": "pela mesa",
+      "uses": [
+        {
+          "icon": "mesa",
+          "label": "Organiza os guardanapos"
+        },
+        {
+          "icon": "estrela",
+          "label": "Decora a mesa posta"
+        },
+        {
+          "icon": "folha",
+          "label": "Reutilizável todo ano"
+        }
+      ],
+      "note": "e ainda\ndecora",
+      "fomo": "Produção limitada para o Natal",
+      "scenes": [
+        {
+          "photo": "carrossel/D.012-2.png",
+          "icon": "mesa",
+          "title": "Na ceia",
+          "sub": "Mesa pronta e organizada"
+        },
+        {
+          "photo": "carrossel/D.012-3.png",
+          "icon": "coracao",
+          "title": "No café",
+          "sub": "Clima de Natal todo dia"
+        },
+        {
+          "photo": "carrossel/D.012-4.png",
+          "icon": "paleta",
+          "title": "4 cores",
+          "sub": "Combina com sua mesa"
+        }
+      ],
+      "size": "15 × 15 cm",
+      "signature": "Detalhes que fazem a ceia",
+      "productBox": [
+        316,
+        636,
+        810,
+        1201
+      ],
+      "noteTarget": [
+        0.27,
+        0.52
+      ],
+      "noteSize": 40,
+      "noteWidth": 220,
+      "fomoTop": 326
+    },
+    {
+      "id": "07-story-mini-jesus",
+      "type": "story-cheio",
+      "title": "Story · Mini Jesus (combo)",
+      "sku": "B.009",
+      "background": "stories-fundo/B.009.png",
+      "tag": "Fé e decoração",
+      "headline": "Mini",
+      "script": "Jesus",
+      "subline": "Um pequeno símbolo de fé para o seu dia",
+      "uses": [
+        {
+          "icon": "coracao",
+          "label": "Mais fé no dia a dia"
+        },
+        {
+          "icon": "casa",
+          "label": "Acolhe qualquer cantinho"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente com significado"
+        }
+      ],
+      "note": "Que Ele esteja\nsempre com você",
+      "noteTarget": [
+        0.33,
+        0.5
+      ],
+      "fomo": "Produção limitada · garanta o seu",
+      "scenes": [
+        {
+          "photo": "carrossel/B.009-3.png",
+          "icon": "carro",
+          "title": "No carro",
+          "sub": "No seu caminho"
+        },
+        {
+          "photo": "carrossel/B.009-2.png",
+          "icon": "monitor",
+          "title": "No trabalho",
+          "sub": "Mais leveza no seu dia"
+        },
+        {
+          "photo": "carrossel/B.009-4.png",
+          "icon": "vela",
+          "title": "No oratório",
+          "sub": "Um cantinho de oração"
+        },
+        {
+          "photo": "carrossel/B.006-3.png",
+          "icon": "casa",
+          "title": "Na estante",
+          "sub": "Decora com significado"
+        }
+      ],
+      "combos": {
+        "unit": "B.009",
+        "kit": "B.006",
+        "kitQty": 4
+      },
+      "signature": "Fé em cada detalhe",
+      "productBox": [
+        395,
+        675,
+        670,
+        1222
+      ],
+      "when": "sábado 03/10, 12h"
+    },
+    {
+      "id": "08-story-como-pedir",
+      "type": "story",
+      "kind": "cta",
+      "title": "Story · Como pedir",
+      "when": "sábado 03/10, 18h",
+      "note": "Produção limitada — garanta o seu."
+    }
+  ]
+}

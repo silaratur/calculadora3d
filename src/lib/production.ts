@@ -23,7 +23,7 @@ export function rollupStatus(itemStatuses: string[]): ProductionStatus {
 
 import type { PrismaClient } from "@prisma/client";
 
-export type SnapshotProductLine = { id?: string; name: string; quantity?: number };
+export type SnapshotProductLine = { id?: string; name: string; quantity?: number; color?: string; materialId?: string };
 
 /**
  * Quebra o snapshot de um orçamento (Quote.snapshotJson) na lista real de
@@ -42,7 +42,7 @@ export function parseSnapshotProductLines(snapshotJson: string | null | undefine
   }
 }
 
-export type ProductionItemDraft = { name: string; quantity: number; productId: string | null };
+export type ProductionItemDraft = { name: string; quantity: number; productId: string | null; color?: string; materialId?: string | null };
 
 /**
  * Monta a lista de ProductionItem a criar para um pedido novo: uma peça por
@@ -64,9 +64,13 @@ export async function buildProductionItemDrafts(
     ? new Set((await prisma.product.findMany({ where: { id: { in: ids } }, select: { id: true } })).map((p) => p.id))
     : new Set<string>();
 
+  // A cor vai no nome (quem imprime vê direto no card) e no campo próprio;
+  // materialId é o filamento da cor, de onde sai a baixa de estoque.
   return lines.map((line) => ({
-    name: line.name,
+    name: line.color ? `${line.name} — ${line.color}` : line.name,
     quantity: line.quantity || 1,
     productId: line.id && validIds.has(line.id) ? line.id : null,
+    color: line.color ?? "",
+    materialId: line.materialId ?? null,
   }));
 }

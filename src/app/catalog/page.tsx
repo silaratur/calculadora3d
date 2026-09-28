@@ -6,11 +6,12 @@ import { AuthBanner } from "@/components/AuthBanner";
 import { IconClock, IconSave, IconShieldAlert, IconShoppingBag, IconTag, IconTrash, IconX } from "@/components/Icons";
 import { calculateMultiMaterialCost, calculatePieceCost, calculateSuggestedPrice, effectiveMonthlyFixedCost, fixedCostPerPiece, markupPercentForFinalPrice, type PricingMethod } from "@/lib/costing";
 import { resizeImage } from "@/lib/image";
-import { libraryColors, sameColor, swatch } from "@/lib/filament-colors";
+import { closestFilament, libraryColors, sameColor, swatch } from "@/lib/filament-colors";
+import { mostExpensiveColorFilament } from "@/lib/color-variants";
 import { CompetitorPrices } from "@/components/CompetitorPrices";
 import { ProductPhotoCarousel, ProductPreviewModal, categoryColor, productImages } from "@/components/ProductPreview";
 
-type Material = { id: string; name: string; type: string; color?: string; stockGrams?: number; unitPrice: number; unitWeightGrams: number; costPerKg: number };
+type Material = { id: string; name: string; type: string; color?: string; stockGrams?: number; unitPrice: number; unitWeightGrams: number; costPerKg: number; active?: boolean };
 type MaterialLine = { materialId: string; grams: number };
 // No formulário o peso fica como texto (não número) igual ao resto do app —
 // se o valor ligado ao <input> for number, digitar "64,9" perde a vírgula no
@@ -134,7 +135,10 @@ function normalizeCategory(value: string) {
 
 export default function CatalogPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  // materials = só os ativos (opções dos seletores); allMaterials inclui os
+  // desativados, para peças que ainda usam um deles manterem o custo real.
   const [materials, setMaterials] = useState<Material[]>([]);
+  const [allMaterials, setAllMaterials] = useState<Material[]>([]);
   const [printers, setPrinters] = useState<Printer[]>([]);
   const [marketplaces, setMarketplaces] = useState<Marketplace[]>([defaultMarketplace]);
   const [settings, setSettings] = useState<PricingSettings>({ energyRate: 0.85, defaultPowerWatts: 250, laborRate: 25, defaultMarkup: 40, defaultLossRate: 5, monthlyRent: 0, monthlySubscriptions: 50, monthlyMaintenance: 40, monthlyOtherCosts: 0, monthlyPieces: 60 });
@@ -169,7 +173,7 @@ export default function CatalogPage() {
       // Orçamentos.
       const [productRes, materialRes, printerRes, settingsRes, marketplaceRes, fixedRes] = await Promise.all([
         fetch("/api/products", { cache: "no-store" }),
-        fetch("/api/materials", { cache: "no-store" }),
+        fetch("/api/materials?all=true", { cache: "no-store" }),
         fetch("/api/printers", { cache: "no-store" }),
         fetch("/api/settings", { cache: "no-store" }),
         fetch("/api/marketplaces"),
@@ -178,7 +182,11 @@ export default function CatalogPage() {
       if (productRes.status === 401) { setNeedsLogin(true); return; }
       setNeedsLogin(false);
       if (productRes.ok) setProducts((await productRes.json()) as Product[]);
-      if (materialRes.ok) setMaterials((await materialRes.json()) as Material[]);
+      if (materialRes.ok) {
+        const data = (await materialRes.json()) as Material[];
+        setAllMaterials(data);
+        setMaterials(data.filter((item) => item.active !== false));
+      }
       if (printerRes.ok) setPrinters((await printerRes.json()) as Printer[]);
       if (settingsRes.ok) setSettings((await settingsRes.json()) as PricingSettings);
       // "Venda Direta" (0% de taxas) fica sempre disponível, igual na Calculadora.
@@ -245,45 +253,74 @@ export default function CatalogPage() {
   const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const materialLinesWithData = draft.materialLines
-    .map((line) => ({ line, material: materials.find((item) => item.id === line.materialId) }))
+    .map((line) => ({ line, material: allMaterials.find((item) => item.id === line.materialId) }))
     .filter((entry): entry is { line: DraftMaterialLine; material: Material } => Boolean(entry.material));
-  const materialCost = calculateMultiMaterialCost(materialLinesWithData.map((entry) => ({ grams: n(entry.line.grams), material: entry.material })));
+  // Preço único para todas as cores: peça de um filamento com cores marcadas é
+  // precificada com o filamento MAIS CARO entre elas (mesmo tipo da receita).
+  // A receita continua com o filamento original; o orçamento usa o da cor escolhida.
+  const filamentCostFor = (lines: { grams: number; material: Material }[]) => {
+    if (lines.length !== 1 || !draft.colors.length) return { cost: calculateMultiMaterialCost(lines), pricedWith: null as Material | null };
+    const top = mostExpensiveColorFilament(lines[0].material, draft.colors, allMaterials);
+    return { cost: calculateMultiMaterialCost([{ grams: lines[0].grams, material: top }]), pricedWith: top.id === lines[0].material.id ? null : top };
+  };
+  const filamentPricing = filamentCostFor(materialLinesWithData.map((entry) => ({ grams: n(entry.line.grams), material: entry.material })));
+  const materialCost = filamentPricing.cost;
   const totalWeightGrams = materialLinesWithData.reduce((sum, entry) => sum + n(entry.line.grams), 0);
   const printTimeHours = n(draft.hours) + n(draft.minutes) / 60;
   const printer = printers.find((item) => item.id === draft.printerId);
   const marketplace = marketplaces.find((item) => item.id === draft.marketplaceId) ?? marketplaces[0] ?? defaultMarketplace;
   const quickChannels = marketplaces.slice(0, 4);
 
-  const cost = useMemo(
-    () =>
-      calculatePieceCost({
-        weightGrams: totalWeightGrams,
-        materialUnitPrice: 0,
-        materialUnitWeightGrams: 1000,
-        filamentCostOverride: materialCost,
-        printTimeHours,
-        prepMinutes: n(draft.prep),
-        cleanupMinutes: n(draft.cleanup),
-        laborRatePerHour: settings.laborRate,
-        energyRatePerKwh: settings.energyRate,
-        powerWatts: printer?.powerWatts ?? 0,
-        printerPurchasePrice: printer?.purchasePrice,
-        printerUsefulLifeHours: printer?.usefulLifeHours,
-        printerMaintenancePerHour: printer?.maintenancePerHour,
-        fixedCostPerPiece: fixedCostPerPiece(settings, currentMonthFixedCost ?? undefined),
-        lossRatePercent: n(draft.lossRate),
-      }),
-    [materialCost, totalWeightGrams, printTimeHours, draft.prep, draft.cleanup, draft.lossRate, settings, printer, currentMonthFixedCost],
-  );
-  const pricing = calculateSuggestedPrice({
-    unitCost: cost.total,
-    markupPercent: n(draft.markup),
-    channel: marketplace,
-    discountPerUnit: n(draft.discount),
-    method: draft.pricingMethod,
-    roundTo90: settings.roundPricesTo90 ?? false,
-  });
+  // Custo da peça para um dado custo de filamento — usado no cálculo normal e
+  // na simulação de reposição de filamento desativado (abaixo).
+  const pieceCostFor = (filamentCost: number) =>
+    calculatePieceCost({
+      weightGrams: totalWeightGrams,
+      materialUnitPrice: 0,
+      materialUnitWeightGrams: 1000,
+      filamentCostOverride: filamentCost,
+      printTimeHours,
+      prepMinutes: n(draft.prep),
+      cleanupMinutes: n(draft.cleanup),
+      laborRatePerHour: settings.laborRate,
+      energyRatePerKwh: settings.energyRate,
+      powerWatts: printer?.powerWatts ?? 0,
+      printerPurchasePrice: printer?.purchasePrice,
+      printerUsefulLifeHours: printer?.usefulLifeHours,
+      printerMaintenancePerHour: printer?.maintenancePerHour,
+      fixedCostPerPiece: fixedCostPerPiece(settings, currentMonthFixedCost ?? undefined),
+      lossRatePercent: n(draft.lossRate),
+    });
+  const priceFor = (unitCost: number) =>
+    calculateSuggestedPrice({
+      unitCost,
+      markupPercent: n(draft.markup),
+      channel: marketplace,
+      discountPerUnit: n(draft.discount),
+      method: draft.pricingMethod,
+      roundTo90: settings.roundPricesTo90 ?? false,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const cost = useMemo(() => pieceCostFor(materialCost), [materialCost, totalWeightGrams, printTimeHours, draft.prep, draft.cleanup, draft.lossRate, settings, printer, currentMonthFixedCost]);
+  const pricing = priceFor(cost.total);
   const suggestedPrice = pricing.final;
+
+  // Filamentos desativados ainda usados pela peça: o custo segue com os dados
+  // deles (o preço não despenca sozinho) e cada linha ganha uma sugestão de
+  // reposição — mesmo tipo, cor mais próxima — com a simulação do novo preço.
+  type DisabledLine = { index: number; material: Material; replacement: Material | null; simulatedCost: number; simulatedPrice: number };
+  const disabledLines = draft.materialLines.flatMap((line, index): DisabledLine[] => {
+    const material = allMaterials.find((item) => item.id === line.materialId);
+    if (!material || material.active !== false) return [];
+    const free = materials.filter((item) => !draft.materialLines.some((other, otherIndex) => otherIndex !== index && other.materialId === item.id));
+    const replacement = closestFilament(material, free);
+    if (!replacement) return [{ index, material, replacement: null, simulatedCost: 0, simulatedPrice: 0 }];
+    const simulatedFilament = filamentCostFor(
+      materialLinesWithData.map((entry) => ({ grams: n(entry.line.grams), material: entry.line === line ? replacement : entry.material })),
+    ).cost;
+    const simulatedCost = pieceCostFor(simulatedFilament).total;
+    return [{ index, material, replacement, simulatedCost, simulatedPrice: priceFor(simulatedCost).final }];
+  });
   const costSegments = [
     { label: "Filamento", value: cost.filament, color: legendColors[0] },
     { label: "Depreciação", value: cost.machine, color: legendColors[1] },
@@ -690,23 +727,63 @@ export default function CatalogPage() {
                         <span />
                       </div>
                     ) : null}
-                    {draft.materialLines.map((line, index) => (
-                      <div className="material-line" key={index}>
-                        <select value={line.materialId} onChange={(event) => updateMaterialLine(index, { materialId: event.target.value })}>
-                          {materials
-                            // Um material só pode estar em uma linha por vez — sem isso,
-                            // duas linhas com o mesmo filamento derrubavam o salvamento.
-                            .filter((item) => item.id === line.materialId || !draft.materialLines.some((other, otherIndex) => otherIndex !== index && other.materialId === item.id))
-                            .map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                        </select>
-                        {/* Texto (não number) e vírgula aceita — mantém "64,9" enquanto
-                            digita, sem arredondar a cada tecla (n() só converte ao calcular/salvar). */}
-                        <input inputMode="decimal" value={line.grams} onChange={(event) => updateMaterialLine(index, { grams: event.target.value })} placeholder="Ex: 64,9" />
-                        <button type="button" className="delete-button" onClick={() => removeMaterialLine(index)} aria-label="Remover material"><IconTrash className="nav-icon" /></button>
-                      </div>
-                    ))}
+                    {draft.materialLines.map((line, index) => {
+                      const disabled = disabledLines.find((entry) => entry.index === index);
+                      return (
+                        <div key={index}>
+                          <div className="material-line">
+                            <select value={line.materialId} onChange={(event) => updateMaterialLine(index, { materialId: event.target.value })}>
+                              {/* O filamento desativado continua visível nesta linha (marcado),
+                                  mas não é oferecido para outras. */}
+                              {disabled ? <option value={disabled.material.id}>⚠ {disabled.material.name} (desativado)</option> : null}
+                              {materials
+                                // Um material só pode estar em uma linha por vez — sem isso,
+                                // duas linhas com o mesmo filamento derrubavam o salvamento.
+                                .filter((item) => item.id === line.materialId || !draft.materialLines.some((other, otherIndex) => otherIndex !== index && other.materialId === item.id))
+                                .map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                            </select>
+                            {/* Texto (não number) e vírgula aceita — mantém "64,9" enquanto
+                                digita, sem arredondar a cada tecla (n() só converte ao calcular/salvar). */}
+                            <input inputMode="decimal" value={line.grams} onChange={(event) => updateMaterialLine(index, { grams: event.target.value })} placeholder="Ex: 64,9" />
+                            <button type="button" className="delete-button" onClick={() => removeMaterialLine(index)} aria-label="Remover material"><IconTrash className="nav-icon" /></button>
+                          </div>
+                          {disabled ? (
+                            <div className="filament-disabled-alert" role="alert">
+                              <strong><IconShieldAlert className="nav-icon" /> Filamento desativado na Biblioteca</strong>
+                              <p>{disabled.material.type} {disabled.material.color || disabled.material.name} não está mais disponível. O custo abaixo ainda usa o preço dele.</p>
+                              {disabled.replacement ? (
+                                <>
+                                  <p>
+                                    Reposição sugerida (mesmo tipo, cor mais próxima):{" "}
+                                    <span className="filament-swatch" style={{ background: swatch(disabled.replacement.color || disabled.replacement.name) }} />{" "}
+                                    <b>{disabled.replacement.type} {disabled.replacement.color || disabled.replacement.name}</b>
+                                    {" — "}{Math.round(disabled.replacement.stockGrams ?? 0)} g em estoque
+                                  </p>
+                                  <p>
+                                    Simulação com a troca: custo {brl(cost.total)} → <b>{brl(disabled.simulatedCost)}</b>, preço sugerido {brl(suggestedPrice)} → <b>{brl(disabled.simulatedPrice)}</b>
+                                  </p>
+                                  <button type="button" className="secondary-button" onClick={() => updateMaterialLine(index, { materialId: disabled.replacement!.id })}>
+                                    Trocar por {disabled.replacement.type} {disabled.replacement.color || disabled.replacement.name}
+                                  </button>
+                                </>
+                              ) : (
+                                <p>Nenhum filamento {disabled.material.type} ativo na Biblioteca para repor. Cadastre ou reative um {disabled.material.type} para trocar.</p>
+                              )}
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
                     <button type="button" className="secondary-button" onClick={addMaterialLine} disabled={!materials.length || draft.materialLines.length >= materials.length}>+ Adicionar material</button>
                     {!materials.length ? <p className="admin-feedback">Cadastre filamentos na Biblioteca para selecioná-los aqui.</p> : null}
+                    {filamentPricing.pricedWith ? (
+                      <small className="filament-pricing-note">
+                        <span className="filament-swatch" style={{ background: swatch(filamentPricing.pricedWith.color || filamentPricing.pricedWith.name) }} />{" "}
+                        Preço calculado com <b>{filamentPricing.pricedWith.type} {filamentPricing.pricedWith.color || filamentPricing.pricedWith.name}</b>, o filamento mais caro entre as cores oferecidas — assim o mesmo preço vale para todas as cores. No orçamento, o custo usa o filamento da cor escolhida.
+                      </small>
+                    ) : draft.materialLines.length > 1 && draft.colors.length ? (
+                      <small className="filament-pricing-note">Peça com mais de um filamento: a cor não é trocada no orçamento (a receita vale como está).</small>
+                    ) : null}
                   </div>
                 </section>
 

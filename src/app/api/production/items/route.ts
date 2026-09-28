@@ -63,9 +63,12 @@ export async function PUT(request: Request) {
     });
 
     if (firstTimeCompleted && existing.product) {
+      // Peça de um filamento feita em outra cor: a baixa sai do filamento da
+      // cor escolhida no orçamento (mesmas gramas da receita).
+      const colorMaterialId = existing.product.materials.length === 1 ? existing.materialId : null;
       for (const line of existing.product.materials) {
         await tx.material.update({
-          where: { id: line.materialId },
+          where: { id: colorMaterialId ?? line.materialId },
           data: { stockGrams: { decrement: line.grams * existing.quantity } },
         });
       }

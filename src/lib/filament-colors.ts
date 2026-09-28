@@ -32,6 +32,48 @@ export function swatch(color: string) {
 
 export const sameColor = (a: string, b: string) => normalize(a) === normalize(b);
 
+const FINISHES = ["fosco", "matte", "silk", "seda", "brilho", "glitter", "marmore", "translucido", "transparente"];
+const finishOf = (text: string) => FINISHES.filter((word) => normalize(text).includes(word)).sort().join(" ");
+
+function rgb(hex: string) {
+  const value = parseInt(hex.slice(1), 16);
+  return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+}
+
+/** Distância entre duas cores com peso perceptual (vermelho/verde/azul "redmean"). */
+function colorDistance(a: string, b: string) {
+  const [r1, g1, b1] = rgb(swatch(a));
+  const [r2, g2, b2] = rgb(swatch(b));
+  const mean = (r1 + r2) / 2;
+  const dr = r1 - r2;
+  const dg = g1 - g2;
+  const db = b1 - b2;
+  return Math.sqrt((2 + mean / 256) * dr * dr + 4 * dg * dg + (2 + (255 - mean) / 256) * db * db);
+}
+
+type FilamentLike = { id: string; type: string; color?: string; name: string; stockGrams?: number };
+
+/**
+ * Reposição de um filamento desativado: só candidatos do MESMO tipo (PLA branco
+ * continua PLA, PETG branco continua PETG) e, entre eles, o mais parecido pela
+ * cor, preferindo o mesmo acabamento (fosco, silk…) e quem tem estoque.
+ * Retorna null se não houver nenhum filamento ativo do mesmo tipo.
+ */
+export function closestFilament<T extends FilamentLike>(target: FilamentLike, candidates: T[]): T | null {
+  const targetColor = target.color || target.name;
+  const scored = candidates
+    .filter((item) => item.id !== target.id && normalize(item.type) === normalize(target.type))
+    .map((item) => {
+      const color = item.color || item.name;
+      let score = sameColor(color, targetColor) ? 0 : colorDistance(color, targetColor);
+      if (finishOf(color) !== finishOf(targetColor)) score += 25;
+      if ((item.stockGrams ?? 0) <= 0) score += 400;
+      return { item, score };
+    })
+    .sort((a, b) => a.score - b.score);
+  return scored[0]?.item ?? null;
+}
+
 /** Uma opção por cor (PLA e PETG brancos viram um "Branco"), na ordem da Biblioteca. */
 export function libraryColors(materials: { color?: string; stockGrams?: number }[]) {
   const colors: string[] = [];

@@ -368,6 +368,9 @@ model ProductionItem {
   product     Product?      @relation(fields: [productId], references: [id])
   name        String
   quantity    Float         @default(1)
+  // Cor escolhida no orçamento e o filamento dela (baixa de estoque) — vazio = receita do produto.
+  color       String        @default("")
+  materialId  String?
   status      String        @default("WAITING")
   completedAt DateTime?
   createdAt   DateTime      @default(now())

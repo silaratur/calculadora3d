@@ -5,26 +5,32 @@ import { useSearchParams } from "next/navigation";
 import { AdminHeader } from "@/components/AdminHeader";
 import { IconBookmark, IconChevronDown, IconChevronUp, IconClock, IconCopy, IconDownload, IconSave, IconShoppingBag, IconTrash } from "@/components/Icons";
 import { ProductPhotoLink } from "@/components/ProductPreview";
-import { quoteStatusLabel } from "@/lib/quotes";
+import { catalogPriceDrift, quoteStatusLabel } from "@/lib/quotes";
 import { QuoteRevisionView } from "@/components/QuoteRevisionView";
 import { calculateSuggestedPrice, markupPercentForFinalPrice, type PricingMethod } from "@/lib/costing";
+import { defaultColor, productColors, resolveColorLine, singleFilamentRecipe, filamentForColor, type VariantMaterial } from "@/lib/color-variants";
+import { swatch } from "@/lib/filament-colors";
 
 // Produto já cadastrado no Catálogo — custo e tempo de impressão vêm prontos
 // de lá (calculados com o motor multi-material do Catálogo), então aqui só
 // usamos os valores finais, sem recalcular nada.
-type Product = { id: string; name: string; sku: string; category: string; cost: number; price: number; printTimeHours: number; imageUrl?: string };
+// materials/colors/materialCost/lossRatePercent: para a cor escolhida em cada
+// linha trocar o filamento e recalcular o custo real (src/lib/color-variants.ts).
+type Product = { id: string; name: string; sku: string; category: string; cost: number; price: number; printTimeHours: number; imageUrl?: string; materialCost: number; lossRatePercent?: number; colors?: string; materials?: { materialId: string; grams: number }[] };
 type Supply = { id: string; name: string; category: string; unitCost: number };
 type Marketplace = { id: string; name: string; commissionRate: number; fixedFee: number; adsRate: number };
 type CustomExtra = { id: string; name: string; unitCost: number };
 type CustomerLead = { id: string; name: string; phone: string; email: string };
-type ProductLine = { productId: string; quantity: string };
+// color vazio = cor padrão do produto (a da receita, se oferecida). O mesmo
+// produto pode aparecer em várias linhas, uma por cor (2 brancas + 3 beges).
+type ProductLine = { productId: string; quantity: string; color?: string };
 type SupplyLine = { supplyId: string; quantity: string; unitCost: string };
 type Settings = { companyName: string; companyContact: string; quoteDeliveryText: string; quoteWarrantyText: string; quotePaymentText: string };
 // Formato salvo em Quote.snapshotJson — precisa bater com o que saveQuote()
 // grava, senão "Carregar no Editor" não restaura tudo exatamente como foi
 // criado.
 type QuoteSnapshot = {
-  products?: { id: string; name: string; quantity: number; unitCost: number; printTimeHours: number; imageUrl?: string }[];
+  products?: { id: string; name: string; quantity: number; unitCost: number; unitPrice?: number; printTimeHours: number; imageUrl?: string; color?: string; materialId?: string }[];
   markup?: string;
   discount?: string;
   supplies?: { id: string; name: string; category?: string; quantity: number; unitCost: number }[];
@@ -68,6 +74,8 @@ export default function OrcamentosPage() {
 // um limite de Suspense acima — daí o componente estar separado do default export.
 function OrcamentosForm() {
   const [products, setProducts] = useState<Product[]>([]);
+  // Todos os filamentos (inclusive desativados) — só para resolver a cor das linhas.
+  const [materials, setMaterials] = useState<VariantMaterial[]>([]);
   const [supplies, setSupplies] = useState<Supply[]>(demoSupplies);
   const [marketplaces, setMarketplaces] = useState<Marketplace[]>([defaultMarketplace]);
   const [settings, setSettings] = useState<Settings>(emptySettings);
@@ -102,6 +110,11 @@ function OrcamentosForm() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [restoredFrom, setRestoredFrom] = useState<number | null>(null);
   const [viewingRevision, setViewingRevision] = useState<QuoteRevisionEntry | null>(null);
+  // Orçamento salvo como estava no banco — para avisar se o Catálogo mudou de
+  // preço desde então. "keep" = mantendo o preço negociado; "update" = usando
+  // os preços atuais (decisão do usuário no alerta).
+  const [loadedQuote, setLoadedQuote] = useState<{ snapshotJson: string; finalPrice: number; markup: string } | null>(null);
+  const [driftChoice, setDriftChoice] = useState<"keep" | "update" | null>(null);
   // Orçamento aprovado já virou venda: só leitura (a API também recusa).
   const readOnly = quoteMeta?.status === "CONVERTED";
 
@@ -120,11 +133,13 @@ function OrcamentosForm() {
     // resposta em cache, e sem o refetch abaixo o orçamento calcularia sempre
     // com o valor que estava em memória desde o carregamento da página.
     async function loadCatalog() {
-      const [productsRes, suppliesRes] = await Promise.all([
+      const [productsRes, suppliesRes, materialsRes] = await Promise.all([
         fetch("/api/products", { cache: "no-store" }),
         fetch("/api/supplies", { cache: "no-store" }),
+        fetch("/api/materials?all=true", { cache: "no-store" }),
       ]);
       if (productsRes.ok) setProducts((await productsRes.json()) as Product[]);
+      if (materialsRes.ok) setMaterials((await materialsRes.json()) as VariantMaterial[]);
       if (suppliesRes.ok) { const data = (await suppliesRes.json()) as Supply[]; if (data.length) setSupplies(data); }
     }
     async function load() {
@@ -159,7 +174,7 @@ function OrcamentosForm() {
     setNotes(versionNotes);
     let s: QuoteSnapshot = {};
     try { s = JSON.parse(snapshotJson) as QuoteSnapshot; } catch { s = {}; }
-    setProductLines((s.products ?? []).map((item) => ({ productId: item.id, quantity: String(item.quantity ?? 1) })));
+    setProductLines((s.products ?? []).map((item) => ({ productId: item.id, quantity: String(item.quantity ?? 1), color: item.color ?? "" })));
     if (s.markup !== undefined) setMarkup(s.markup);
     if (s.discount !== undefined) setDiscount(s.discount);
     if (s.marketplace?.id) setMarketplaceId(s.marketplace.id);
@@ -174,11 +189,15 @@ function OrcamentosForm() {
       setCurrentQuoteId(quoteId);
       const response = await fetch(`/api/quotes/${quoteId}`);
       if (!response.ok) return;
-      const quote = (await response.json()) as { productName: string; customerName: string; customerPhone: string; customerEmail: string; notes: string; snapshotJson: string } & QuoteMeta;
+      const quote = (await response.json()) as { productName: string; customerName: string; customerPhone: string; customerEmail: string; notes: string; snapshotJson: string; finalPrice: number } & QuoteMeta;
       setClient(quote.customerName);
       setClientPhone(quote.customerPhone);
       setClientEmail(quote.customerEmail);
       applyVersion(quote.productName, quote.notes, quote.snapshotJson);
+      let savedMarkup = "0";
+      try { savedMarkup = (JSON.parse(quote.snapshotJson) as QuoteSnapshot).markup ?? "0"; } catch { /* snapshot antigo */ }
+      setLoadedQuote({ snapshotJson: quote.snapshotJson, finalPrice: quote.finalPrice, markup: savedMarkup });
+      setDriftChoice(null);
       setQuoteMeta({ source: quote.source, sourceDetail: quote.sourceDetail, status: quote.status, revision: quote.revision, code: quote.code, archiveReason: quote.archiveReason, revisions: quote.revisions ?? [], order: quote.order ?? null });
     }
     void loadQuote();
@@ -207,16 +226,16 @@ function OrcamentosForm() {
 
   function productSuggestions(index: number, currentProductId: string) {
     const query = productPickerQuery.trim().toLowerCase();
-    const available = products.filter(
-      (item) => item.id === currentProductId || !productLines.some((other, otherIndex) => otherIndex !== index && other.productId === item.id),
-    );
-    const matches = query ? available.filter((item) => item.name.toLowerCase().includes(query)) : available;
+    // O mesmo produto pode entrar de novo (outra cor) — a lista mostra todos.
+    void index;
+    void currentProductId;
+    const matches = query ? products.filter((item) => item.name.toLowerCase().includes(query)) : products;
     return [...matches].sort((a, b) => a.name.localeCompare(b.name));
   }
 
   function addProductLine() {
     const usedIds = new Set(productLines.map((line) => line.productId));
-    const next = products.find((item) => !usedIds.has(item.id));
+    const next = products.find((item) => !usedIds.has(item.id)) ?? products[0];
     if (!next) return;
     setProductLines((current) => [...current, { productId: next.id, quantity: "1" }]);
   }
@@ -230,12 +249,22 @@ function OrcamentosForm() {
     setProductLines((current) => current.filter((_, i) => i !== index));
   }
 
+  // Cada linha resolve a cor: filamento do mesmo tipo naquela cor e o custo
+  // real com ele. O preço continua o do Catálogo (único para todas as cores).
   const productLinesWithData = useMemo(
-    () => productLines
-      .map((line) => ({ line, product: products.find((item) => item.id === line.productId) }))
-      .filter((entry): entry is { line: ProductLine; product: Product } => Boolean(entry.product)),
-    [productLines, products],
+    () => productLines.flatMap((line) => {
+      const product = products.find((item) => item.id === line.productId);
+      if (!product) return [];
+      const color = line.color || defaultColor(product, materials);
+      const resolved = resolveColorLine(product, color, materials);
+      return [{ line, product, color, material: resolved.material, unitCost: resolved.unitCost }];
+    }),
+    [productLines, products, materials],
   );
+
+  const lineEntry = (index: number) => productLinesWithData.find((entry) => entry.line === productLines[index]);
+  const lineCost = (index: number, product: Product) => lineEntry(index)?.unitCost ?? product.cost;
+  const colorOf = (line: ProductLine, product: Product) => line.color || defaultColor(product, materials);
 
   function addSupplyLine() {
     const usedIds = new Set(supplyLines.map((line) => line.supplyId));
@@ -285,7 +314,7 @@ function OrcamentosForm() {
     // (produtos pelo custo do Catálogo, não pelo preço de venda, + insumos).
     // Sem isso, um orçamento no preço do Catálogo (ex.: pedido da loja, markup
     // 0) mostrava lucro zero, embora o lucro já esteja embutido no preço.
-    const productsRealCost = productLinesWithData.reduce((sum, entry) => sum + entry.product.cost * (n(entry.line.quantity) || 1), 0);
+    const productsRealCost = productLinesWithData.reduce((sum, entry) => sum + entry.unitCost * (n(entry.line.quantity) || 1), 0);
     const realCost = productsRealCost + suppliesCost;
     const takeRate = Math.max(1 - marketplace.commissionRate - marketplace.adsRate, 0.01);
     const channelFees = pricing.final * (1 - takeRate) + (pricing.final > 0 ? marketplace.fixedFee : 0);
@@ -391,9 +420,14 @@ function OrcamentosForm() {
         id: entry.product.id,
         name: entry.product.name,
         quantity: n(entry.line.quantity) || 1,
-        unitCost: entry.product.cost,
+        unitCost: entry.unitCost,
+        // Preço do Catálogo usado neste orçamento — base do alerta de mudança de preço.
+        unitPrice: entry.product.price,
         printTimeHours: entry.product.printTimeHours,
         imageUrl: entry.product.imageUrl,
+        // Cor e filamento da linha: aparecem no PDF/Produção e guiam a baixa de estoque.
+        ...(entry.color ? { color: entry.color } : {}),
+        ...(entry.material ? { materialId: entry.material.id } : {}),
       })),
       markup,
       discount,
@@ -468,7 +502,8 @@ function OrcamentosForm() {
     const items = [
       ...productLinesWithData.map((entry) => {
         const quantity = n(entry.line.quantity) || 1;
-        return quantity > 1 ? `${entry.product.name} (x${quantity})` : entry.product.name;
+        const label = entry.color ? `${entry.product.name} — ${entry.color}` : entry.product.name;
+        return quantity > 1 ? `${label} (x${quantity})` : label;
       }),
       // Embalagem/caixa é custo interno, não um item que o cliente escolheu —
       // valor continua embutido no total, só não aparece na lista de itens.
@@ -530,6 +565,24 @@ function OrcamentosForm() {
     });
     setMarkup(String(Math.round(percent * 10000) / 10000));
   }
+
+  // Preços do Catálogo mudaram desde que este orçamento (em aberto) foi salvo?
+  const priceDrift = useMemo(() => {
+    if (!loadedQuote || !products.length || quoteMeta?.status !== "DRAFT") return null;
+    return catalogPriceDrift(loadedQuote.snapshotJson, (id) => products.find((item) => item.id === id)?.price);
+  }, [loadedQuote, products, quoteMeta?.status]);
+  // Padrão: o preço combinado com o cliente não muda sozinho — recalcula o
+  // markup para chegar no preço salvo com a base nova (o usuário pode trocar).
+  useEffect(() => {
+    if (!priceDrift || driftChoice || !loadedQuote || !calc.costWithReserve) return;
+    const negotiated = loadedQuote.finalPrice;
+    function keepNegotiatedPrice() {
+      applyFinalPrice(String(negotiated));
+      setDriftChoice("keep");
+    }
+    keepNegotiatedPrice();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [priceDrift, driftChoice, loadedQuote, calc.costWithReserve]);
 
   const costSegments = [
     { label: "Produtos", value: calc.productsCost, color: legendColors[0] },
@@ -593,6 +646,24 @@ function OrcamentosForm() {
             onClose={() => setViewingRevision(null)}
             onRestore={() => { restoreRevision(viewingRevision); setViewingRevision(null); }}
           />
+        ) : null}
+        {priceDrift && loadedQuote ? (
+          <div className="price-drift-alert" role="alert">
+            <strong>⚠ Os preços do Catálogo mudaram desde que este orçamento foi salvo</strong>
+            {priceDrift.changes.length ? (
+              <ul>{priceDrift.changes.map((change) => <li key={change.name}>{change.name}: {brl(change.before)} → <b>{brl(change.after)}</b></li>)}</ul>
+            ) : (
+              <p>Soma dos produtos: {brl(priceDrift.savedBase)} → <b>{brl(priceDrift.currentBase)}</b></p>
+            )}
+            {driftChoice === "update" ? (
+              <p>Usando os preços atuais. <button type="button" className="link-button" onClick={() => { applyFinalPrice(String(loadedQuote.finalPrice)); setDriftChoice("keep"); }}>Voltar ao preço negociado ({brl(loadedQuote.finalPrice)})</button></p>
+            ) : (
+              <p>
+                Mantendo o preço negociado com o cliente: <b>{brl(loadedQuote.finalPrice)}</b>.{" "}
+                <button type="button" className="link-button" onClick={() => { setMarkup(loadedQuote.markup); setDriftChoice("update"); }}>Atualizar para os preços atuais</button>
+              </p>
+            )}
+          </div>
         ) : null}
         <fieldset className="readonly-fieldset" disabled={readOnly}>
         <section className="project-header">
@@ -715,10 +786,13 @@ function OrcamentosForm() {
                             ) : null}
                           </ul>
                         ) : null}
+                        {product && productColors(product.colors).length ? (
+                          <ColorPicker product={product} materials={materials} value={colorOf(line, product)} onChange={(color) => updateProductLine(index, { color })} />
+                        ) : null}
                       </div>
                       {product ? (
-                        <small className="product-line-info" title={`Custo de fabricação · ${fmtHours(product.printTimeHours * quantity)} de impressão${quantity > 1 ? ` · ${quantity}x ${brl(product.cost)} cada` : ""}`}>
-                          <IconClock className="nav-icon" /> {brl(product.cost * quantity)}
+                        <small className="product-line-info" title={`Custo de fabricação${lineEntry(index)?.color ? ` na cor ${lineEntry(index)?.color}` : ""} · ${fmtHours(product.printTimeHours * quantity)} de impressão${quantity > 1 ? ` · ${quantity}x ${brl(lineCost(index, product))} cada` : ""}`}>
+                          <IconClock className="nav-icon" /> {brl(lineCost(index, product) * quantity)}
                         </small>
                       ) : <span />}
                       {product ? (
@@ -740,7 +814,7 @@ function OrcamentosForm() {
               </div>
               {products.length === 0 ? <div className="empty-note">Nenhum produto cadastrado no Catálogo ainda.</div> : null}
               <div className="material-lines-actions">
-                <button type="button" className="secondary-button" onClick={addProductLine} disabled={!products.length || productLines.length >= products.length}>+ Adicionar produto</button>
+                <button type="button" className="secondary-button" onClick={addProductLine} disabled={!products.length}>+ Adicionar produto</button>
               </div>
               {productLines.length ? (
                 <div className="metric-wide">
@@ -876,7 +950,7 @@ function OrcamentosForm() {
             {readOnly ? null : <button className="saved-tag" onClick={save}><IconSave className="nav-icon" /> Salvar</button>}
             <small className="price-final-hint">Digite um preço pra calcular a margem automaticamente</small>
             <hr />
-            <div className="summary-title"><span>Composição de Custos</span><strong>Custo Total: {brl(calc.costWithReserve)}</strong></div>
+            <div className="summary-title"><span>Composição</span><strong>Custo de Produção: {brl(calc.realCost)}</strong></div>
             <div className="cost-bar">
               {costSegments.map((segment) => (
                 <i key={segment.label} title={`${segment.label}: ${brl(segment.value)}`} style={{ width: `${(segment.value / costSegmentsTotal) * 100}%`, background: segment.color }} />
@@ -897,8 +971,8 @@ function OrcamentosForm() {
               {/* Custo Base é só a base sobre a qual o markup/margem é aplicado — não
                   é o que decide se o orçamento tá bom, por isso fica discreto aqui.
                   O Preço Final Sugerido aparece uma vez só, no topo deste painel. */}
-              <Cost label="Custo Base" value={calc.costWithReserve} subtotal muted />
-              <p className="summary-note">soma acima — base do cálculo, não o preço final</p>
+              <Cost label="Base (preços do Catálogo + insumos)" value={calc.costWithReserve} subtotal muted />
+              <p className="summary-note">base sobre a qual a margem é aplicada — não é o custo de produção</p>
             </div>
             <div className="summary-card">
               <Info label="Método de Precificação" value={pricingMethod === "markup" ? "Markup" : "Margem Real"} />
@@ -952,5 +1026,26 @@ function Info({ label, value }: { label: string; value: string }) {
       <span>{label}</span>
       <strong>{value}</strong>
     </div>
+  );
+}
+
+/**
+ * Cor da peça nesta linha do orçamento. Peças de um filamento trocam o
+ * filamento pela cor (mesmo tipo); peças AMS mostram as cores só como
+ * informação. Cores sem filamento do mesmo tipo na Biblioteca ficam marcadas.
+ */
+function ColorPicker({ product, materials, value, onChange }: { product: Product; materials: VariantMaterial[]; value: string; onChange: (color: string) => void }) {
+  const colors = productColors(product.colors);
+  const recipe = singleFilamentRecipe(product, materials);
+  return (
+    <label className="product-color-picker">
+      <span className="filament-swatch" style={{ background: swatch(value || "?") }} />
+      <select value={value} onChange={(event) => onChange(event.target.value)} aria-label="Cor da peça">
+        {colors.map((color) => {
+          const available = !recipe || Boolean(filamentForColor(recipe.base, color, materials));
+          return <option key={color} value={color}>{available ? color : `${color} (sem ${recipe?.base.type} nessa cor)`}</option>;
+        })}
+      </select>
+    </label>
   );
 }

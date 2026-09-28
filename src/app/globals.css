@@ -1880,3 +1880,40 @@ a.material-badge { text-decoration: none; }
 /* Cores disponíveis na loja, no card do Catálogo (mesmas bolinhas do formulário). */
 .product-card-colors { display: flex; flex-wrap: wrap; gap: 4px; margin: -4px 0 4px; }
 .product-card-colors .color-dot { flex-basis: 14px; height: 14px; width: 14px; }
+
+/* Catálogo: linha cujo filamento foi desativado na Biblioteca — aviso + reposição sugerida. */
+.filament-disabled-alert {
+  display: grid;
+  gap: 6px;
+  margin: 6px 0 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--warn-border);
+  border-radius: 10px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 13px;
+}
+.filament-disabled-alert strong { display: flex; align-items: center; gap: 6px; }
+.filament-disabled-alert p { margin: 0; }
+.filament-disabled-alert b { color: var(--ink, inherit); }
+.filament-disabled-alert .secondary-button { justify-self: start; }
+.filament-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  vertical-align: middle;
+}
+.filament-pricing-note { color: var(--admin-muted); display: block; font-size: 12px; line-height: 1.45; }
+.filament-pricing-note b { color: var(--copper, #602f32); }
+
+.product-color-picker { align-items: center; display: flex; gap: 6px; margin-top: 4px; }
+.product-color-picker select { font-size: 12px; min-height: 30px; padding: 2px 8px; width: auto; }
+
+/* Orçamento salvo cujo Catálogo mudou de preço depois (Orçamentos e card em Projetos). */
+.price-drift-alert { background: var(--warn-soft); border: 1px solid var(--warn-border); border-radius: 12px; color: var(--warn); display: grid; font-size: 13px; gap: 6px; margin: 0 0 16px; padding: 14px 16px; }
+.price-drift-alert ul { margin: 0; padding-left: 18px; }
+.price-drift-alert p { margin: 0; }
+.price-drift-alert .link-button { background: none; border: 0; color: inherit; cursor: pointer; font: inherit; font-weight: 700; padding: 0; text-decoration: underline; }
+.quote-card-drift { background: var(--warn-soft); border: 1px solid var(--warn-border); border-radius: 999px; color: var(--warn); font-size: 11px; font-weight: 700; padding: 2px 8px; white-space: nowrap; }

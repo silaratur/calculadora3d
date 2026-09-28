@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
-import { quoteStatusLabel } from "@/lib/quotes";
+import { catalogPriceDrift, quoteRealCost, quoteStatusLabel } from "@/lib/quotes";
 import { canAccessPath } from "@/lib/roles";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconClock, IconDownload, IconTrash, IconUser } from "@/components/Icons";
@@ -64,9 +64,9 @@ const statusBadgeColor: Record<string, string> = { DRAFT: "#8a4a4e", CONVERTED: 
 /** Itens, canal e desconto do orçamento — mostrados como leitura no popup de conversão, nenhum deles editável ali. */
 function convertPreview(snapshotJson: string): { items: QuoteItem[]; marketplaceName: string; discount: number } {
   try {
-    const snapshot = JSON.parse(snapshotJson) as { products?: { name: string; quantity?: number }[]; marketplace?: { name?: string }; discount?: string };
+    const snapshot = JSON.parse(snapshotJson) as { products?: { name: string; quantity?: number; color?: string }[]; marketplace?: { name?: string }; discount?: string };
     return {
-      items: snapshot.products?.map((item) => ({ name: item.name, quantity: item.quantity || 1 })) ?? [],
+      items: snapshot.products?.map((item) => ({ name: item.color ? `${item.name} — ${item.color}` : item.name, quantity: item.quantity || 1 })) ?? [],
       marketplaceName: snapshot.marketplace?.name || "Venda Direta",
       discount: Number(snapshot.discount) || 0,
     };
@@ -123,13 +123,18 @@ export default function ProjectsPage() {
   const [itemsPerPage, setItemsPerPage] = useState(15);
   const [page, setPage] = useState(1);
 
+  // Preço atual de cada produto — para marcar orçamentos em aberto cujo Catálogo mudou.
+  const [catalogPrices, setCatalogPrices] = useState<Map<string, number>>(new Map());
+
   useEffect(() => {
     async function load() {
-      const [quoteResponse, archivedResponse, sessionResponse] = await Promise.all([
+      const [quoteResponse, archivedResponse, sessionResponse, productsResponse] = await Promise.all([
         fetch("/api/quotes"),
         fetch("/api/quotes?status=ARCHIVED"),
         fetch("/api/session"),
+        fetch("/api/products", { cache: "no-store" }),
       ]);
+      if (productsResponse.ok) setCatalogPrices(new Map(((await productsResponse.json()) as { id: string; price: number }[]).map((item) => [item.id, item.price])));
       if (quoteResponse.status === 401) { setNeedsLogin(true); return; }
       setNeedsLogin(false);
       if (quoteResponse.ok) setQuotes((await quoteResponse.json()) as Quote[]);
@@ -349,6 +354,12 @@ export default function ProjectsPage() {
                     </div>
                     <span className="quote-card-meta">
                       <span className="material-badge">{displayCode(quote.code)}</span>
+                      {(() => {
+                        const drift = quote.status === "DRAFT" && catalogPrices.size ? catalogPriceDrift(quote.snapshotJson, (id) => catalogPrices.get(id)) : null;
+                        if (!drift) return null;
+                        const detail = drift.changes.length ? drift.changes.map((change) => `${change.name}: ${brl(change.before)} → ${brl(change.after)}`).join("\n") : `Soma dos produtos: ${brl(drift.savedBase)} → ${brl(drift.currentBase)}`;
+                        return <span className="quote-card-drift" title={`Preços do Catálogo mudaram desde este orçamento:\n${detail}`}>⚠ Preço do Catálogo mudou</span>;
+                      })()}
                       {sourceLabel[quote.source] ? (
                         <span className="quote-card-source" title={quote.sourceDetail ? `Cliente chegou à loja via ${channelLabel(quote.sourceDetail)}` : undefined}>
                           {sourceLabel[quote.source]}{quote.sourceDetail && quote.sourceDetail !== "direto" ? ` · ${channelLabel(quote.sourceDetail)}` : ""}
@@ -359,7 +370,9 @@ export default function ProjectsPage() {
                     </span>
                     <h2>{quote.productName}</h2>
                     <div className="product-card-prices">
-                      <div><span>Custo</span><strong>{brl(quote.baseCost)}</strong></div>
+                      {/* Custo real de produção (Catálogo por cor + insumos) — o baseCost
+                          é a soma dos PREÇOS de venda, base do markup, não o custo. */}
+                      <div><span>Custo</span><strong>{brl(quoteRealCost(quote.snapshotJson) ?? quote.baseCost)}</strong></div>
                       <div><span>Preço</span><strong className="price-highlight">{brl(quote.finalPrice)}</strong></div>
                     </div>
                     <div className="product-card-stats">

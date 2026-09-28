@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { nextSharedCode } from "@/lib/codes";
 import { prisma } from "@/lib/prisma";
+import { resolveColorLine } from "@/lib/color-variants";
 
 /**
  * Pedido feito na loja (ac3d.silaratur.cloud) vira um Orçamento "Em aberto"
@@ -143,7 +144,9 @@ export async function POST(request: Request) {
   if (!order.items.length) return NextResponse.json({ error: "Sacola vazia" }, { status: 400 });
   const products = await prisma.product.findMany({
     where: { sku: { in: order.items.map((item) => item.sku) }, active: true, showInStore: true },
+    include: { materials: true },
   });
+  const materials = await prisma.material.findMany();
   const bySku = new Map(products.map((product) => [product.sku, product]));
   const lines = order.items.filter((item) => bySku.has(item.sku));
   if (!lines.length) return NextResponse.json({ error: "Nenhuma peça da sacola está disponível" }, { status: 400 });
@@ -163,14 +166,31 @@ export async function POST(request: Request) {
   const couponOk = Boolean(order.coupon) && Boolean(settings.storeCouponCode) && settings.storeCouponPercent > 0 && order.coupon!.toUpperCase() === settings.storeCouponCode.toUpperCase();
   const couponPercent = couponOk ? settings.storeCouponPercent : 0;
   const total = cents(afterTiers * (1 - couponPercent / 100));
-  const baseCost = cents(priced.reduce((sum, line) => sum + line.product.cost * line.qty, 0));
-
-  // Uma linha por produto no snapshot (formato da tela de Orçamentos); cor e
-  // personalização de cada linha da sacola vão nas observações.
-  const snapshotProducts = [...qtyBySku.entries()].map(([sku, quantity]) => {
+  // Uma linha por produto + cor no snapshot (formato da tela de Orçamentos):
+  // a cor troca o filamento (mesmo tipo) e o custo real da linha; o preço é o
+  // do Catálogo. Personalização segue nas observações.
+  const byVariant = new Map<string, { sku: string; color: string; quantity: number }>();
+  for (const line of priced) {
+    const color = line.color ?? "";
+    const key = `${line.sku}|${color.toLowerCase()}`;
+    const current = byVariant.get(key);
+    byVariant.set(key, { sku: line.sku, color, quantity: (current?.quantity ?? 0) + line.qty });
+  }
+  const snapshotProducts = [...byVariant.values()].map(({ sku, color, quantity }) => {
     const product = bySku.get(sku)!;
-    return { id: product.id, name: product.name, quantity, unitCost: product.cost, printTimeHours: product.printTimeHours, imageUrl: product.imageUrl.startsWith("data:") ? undefined : product.imageUrl };
+    const resolved = resolveColorLine(product, color, materials);
+    return {
+      id: product.id,
+      name: product.name,
+      quantity,
+      unitCost: resolved.unitCost,
+      printTimeHours: product.printTimeHours,
+      imageUrl: product.imageUrl.startsWith("data:") ? undefined : product.imageUrl,
+      ...(color ? { color } : {}),
+      ...(resolved.material ? { materialId: resolved.material.id } : {}),
+    };
   });
+  const baseCost = cents(snapshotProducts.reduce((sum, line) => sum + line.unitCost * line.quantity, 0));
   const notes = [
     `Pedido pela loja em ${received}.`,
     ...priced.map((line) => `• ${line.qty}x ${line.product.name} (${line.sku})${line.color ? ` — cor ${line.color}` : ""}${line.personalization ? ` — personalização: "${line.personalization}"` : ""} — ${line.unit.toFixed(2).replace(".", ",")}/un.${line.percent ? ` (-${line.percent}%)` : ""}`),
@@ -181,7 +201,7 @@ export async function POST(request: Request) {
 
   const first = priced[0].product.name;
   const quote = await createQuote({
-    productId: snapshotProducts.length === 1 ? snapshotProducts[0].id : null,
+    productId: new Set(snapshotProducts.map((line) => line.id)).size === 1 ? snapshotProducts[0].id : null,
     productName: snapshotProducts.length === 1 ? first : `${first} + ${snapshotProducts.length - 1} ${snapshotProducts.length === 2 ? "item" : "itens"}`,
     ...customer,
     status: "DRAFT",

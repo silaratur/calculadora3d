@@ -203,7 +203,10 @@ function priceBeforeFees(unitCost: number, percent: number, method: PricingMetho
  */
 export function roundPriceTo90(value: number) {
   if (value <= 0) return value;
-  return Math.round((Math.ceil(value - 0.9 - 0.000001) + 0.9) * 100) / 100;
+  // Centavos antes: o preço digitado vira markup de 4 casas e volta com resíduo
+  // (12,90 → 12,900001), que sem isso pulava para 13,90.
+  const cents = Math.round(value * 100) / 100;
+  return Math.round((Math.ceil(cents - 0.9 - 0.000001) + 0.9) * 100) / 100;
 }
 
 export function calculateSuggestedPrice({

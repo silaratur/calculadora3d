@@ -22,7 +22,7 @@ type QuoteRecord = {
 type Snapshot = {
   material?: { name?: string; type?: string } | null;
   weightGrams?: number;
-  products?: { id: string; name: string; quantity: number; imageUrl?: string }[];
+  products?: { id: string; name: string; quantity: number; imageUrl?: string; color?: string }[];
   supplies?: { id: string; name: string; category?: string; quantity: number }[];
   customExtras?: { id: string; name: string }[];
   calculations?: { printTime?: number };
@@ -91,7 +91,7 @@ export default function QuotePrintPage() {
 
   const snapshot = parseSnapshot(quote.snapshotJson);
   const includedItems: IncludedItem[] = [
-    ...(snapshot.products ?? []).filter((item) => item.name).map((item) => ({ productId: item.id, name: item.name, quantity: item.quantity, imageUrl: item.imageUrl })),
+    ...(snapshot.products ?? []).filter((item) => item.name).map((item) => ({ productId: item.id, name: item.color ? `${item.name} — ${item.color}` : item.name, quantity: item.quantity, imageUrl: item.imageUrl })),
     // Embalagem/caixa é custo interno, não um item que o cliente escolheu —
     // valor continua embutido no total, só não aparece na lista de itens.
     ...(snapshot.supplies ?? [])

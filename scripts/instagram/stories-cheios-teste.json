@@ -1,0 +1,254 @@
+{
+  "pack": "stories-cheios-teste",
+  "posts": [
+    {
+      "id": "1-mini-jesus",
+      "type": "story-cheio",
+      "title": "Story · Mini Jesus (combo)",
+      "sku": "B.009",
+      "background": "stories-fundo/B.009.png",
+      "tag": "Fé e decoração",
+      "headline": "Mini",
+      "script": "Jesus",
+      "subline": "Um pequeno símbolo de fé para o seu dia",
+      "uses": [
+        {
+          "icon": "coracao",
+          "label": "Mais fé no dia a dia"
+        },
+        {
+          "icon": "casa",
+          "label": "Acolhe qualquer cantinho"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente com significado"
+        }
+      ],
+      "note": "Que Ele esteja\nsempre com você",
+      "noteTarget": [
+        0.33,
+        0.5
+      ],
+      "fomo": "Produção limitada · garanta o seu",
+      "scenes": [
+        {
+          "photo": "carrossel/B.009-3.png",
+          "icon": "carro",
+          "title": "No carro",
+          "sub": "No seu caminho"
+        },
+        {
+          "photo": "carrossel/B.009-2.png",
+          "icon": "monitor",
+          "title": "No trabalho",
+          "sub": "Mais leveza no seu dia"
+        },
+        {
+          "photo": "carrossel/B.009-4.png",
+          "icon": "vela",
+          "title": "No oratório",
+          "sub": "Um cantinho de oração"
+        },
+        {
+          "photo": "carrossel/B.006-3.png",
+          "icon": "casa",
+          "title": "Na estante",
+          "sub": "Decora com significado"
+        }
+      ],
+      "combos": {
+        "unit": "B.009",
+        "kit": "B.006",
+        "kitQty": 4
+      },
+      "signature": "Fé em cada detalhe",
+      "productBox": [
+        395,
+        675,
+        670,
+        1222
+      ]
+    },
+    {
+      "id": "2-presepio",
+      "type": "story-cheio",
+      "title": "Story · Presépio",
+      "sku": "D.014",
+      "background": "stories-fundo/D.014.png",
+      "tag": "Coleção de Natal",
+      "headline": "Presépio",
+      "script": "Sagrada Família",
+      "subline": "Traço minimalista, significado eterno",
+      "uses": [
+        {
+          "icon": "estrela",
+          "label": "Estrela de Belém no topo"
+        },
+        {
+          "icon": "casa",
+          "label": "Sala, aparador ou recepção"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente que emociona"
+        }
+      ],
+      "note": "o centro\ndo seu Natal",
+      "noteTarget": [
+        0.26,
+        0.5
+      ],
+      "fomo": "Produção limitada para o Natal",
+      "scenes": [
+        {
+          "photo": "carrossel/D.014-2.png",
+          "icon": "casa",
+          "title": "Na sala",
+          "sub": "Perto das velas e da árvore"
+        },
+        {
+          "photo": "carrossel/D.014-3.png",
+          "icon": "presente",
+          "title": "De presente",
+          "sub": "Emociona quem recebe"
+        },
+        {
+          "photo": "carrossel/D.014-4.png",
+          "icon": "paleta",
+          "title": "3 cores",
+          "sub": "Branco, bege ou marrom"
+        }
+      ],
+      "size": "12 cm de altura",
+      "signature": "O verdadeiro sentido do Natal",
+      "bgScale": 1.02,
+      "bgShift": 19,
+      "productBox": [
+        310,
+        705,
+        757,
+        1242
+      ],
+      "noteSize": 40,
+      "noteWidth": 220
+    },
+    {
+      "id": "3-dinossauro",
+      "type": "story-cheio",
+      "title": "Story · Chaveiro Dinossauro",
+      "sku": "B.011",
+      "background": "stories-fundo/B.011.png",
+      "tag": "Dia das Crianças",
+      "headline": "Dino",
+      "script": "articulado",
+      "subline": "Mexe, dobra e vai junto na chave",
+      "uses": [
+        {
+          "icon": "mao",
+          "label": "Mexe inteirinho nas mãos"
+        },
+        {
+          "icon": "chave",
+          "label": "Chave, mochila ou estojo"
+        },
+        {
+          "icon": "presente",
+          "label": "Lembrancinha de festa"
+        }
+      ],
+      "note": "8 cm de pura diversão",
+      "noteTarget": [
+        0.2,
+        0.57
+      ],
+      "fomo": "Lembrancinhas: produção limitada",
+      "scenes": [
+        {
+          "photo": "b011-8cm/B.011-3.png",
+          "icon": "presente",
+          "title": "Na festa",
+          "sub": "Sacolinhas surpresa"
+        },
+        {
+          "photo": "b011-8cm/B.011-2.png",
+          "icon": "mao",
+          "title": "Na mão",
+          "sub": "Cabe na palma"
+        },
+        {
+          "photo": "b011-8cm/B.011-1.png",
+          "icon": "chave",
+          "title": "Na chave",
+          "sub": "Vai pra todo lado"
+        }
+      ],
+      "colorsNote": "8 cores pra escolher",
+      "size": "8 cm",
+      "signature": "Diversão que cabe no bolso",
+      "productBox": [
+        232,
+        766,
+        778,
+        1130
+      ],
+      "noteTop": 1152,
+      "noteSize": 40,
+      "noteWidth": 440
+    },
+    {
+      "id": "4-porta-joias",
+      "type": "story-cheio",
+      "title": "Story · Porta-Joias Redondo",
+      "sku": "D.005",
+      "background": "stories-fundo/D.005.png",
+      "tag": "Organização",
+      "headline": "Tudo no",
+      "script": "lugar certo",
+      "subline": "Bandeja redonda com borda de esferas",
+      "uses": [
+        {
+          "icon": "chave",
+          "label": "Joias, chaves e relógio"
+        },
+        {
+          "icon": "casa",
+          "label": "Penteadeira ou lavabo"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente delicado"
+        }
+      ],
+      "fomo": "Feito à mão · produção limitada",
+      "scenes": [
+        {
+          "photo": "carrossel/D.005-3.png",
+          "icon": "chave",
+          "title": "Na entrada",
+          "sub": "Chaves e óculos à mão"
+        },
+        {
+          "photo": "carrossel/D.005-2.png",
+          "icon": "coracao",
+          "title": "Na penteadeira",
+          "sub": "Joias sempre juntas"
+        },
+        {
+          "photo": "carrossel/D.005-4.png",
+          "icon": "paleta",
+          "title": "3 cores",
+          "sub": "Branco, bege ou marrom"
+        }
+      ],
+      "size": "15 cm de diâmetro",
+      "signature": "Delicadeza em cada detalhe",
+      "productBox": [
+        210,
+        717,
+        836,
+        1185
+      ]
+    }
+  ]
+}
