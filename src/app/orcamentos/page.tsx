@@ -281,9 +281,21 @@ function OrcamentosForm() {
       discountPerUnit: n(discount),
       method: pricingMethod,
     });
+    // Lucro de verdade: preço final menos taxas do canal e o CUSTO de produção
+    // (produtos pelo custo do Catálogo, não pelo preço de venda, + insumos).
+    // Sem isso, um orçamento no preço do Catálogo (ex.: pedido da loja, markup
+    // 0) mostrava lucro zero, embora o lucro já esteja embutido no preço.
+    const productsRealCost = productLinesWithData.reduce((sum, entry) => sum + entry.product.cost * (n(entry.line.quantity) || 1), 0);
+    const realCost = productsRealCost + suppliesCost;
+    const takeRate = Math.max(1 - marketplace.commissionRate - marketplace.adsRate, 0.01);
+    const channelFees = pricing.final * (1 - takeRate) + (pricing.final > 0 ? marketplace.fixedFee : 0);
+    const realProfit = pricing.final - channelFees - realCost;
     return {
       printTime: productsPrintTime,
       productsCost,
+      productsRealCost,
+      realCost,
+      realProfit,
       suppliesCost,
       insumosCount: supplyLinesWithData.length + customExtras.length,
       costWithReserve,
@@ -496,7 +508,7 @@ function OrcamentosForm() {
     return lines.filter((line) => line !== null).join("\n");
   }
 
-  const realMarginPercent = calc.price ? (calc.profit / calc.price) * 100 : 0;
+  const realMarginPercent = calc.price ? (calc.realProfit / calc.price) * 100 : 0;
   // markup guarda casas decimais extras (evita o preço voltar arredondado
   // quando calculado a partir do % — mesma lógica do Catálogo) — só
   // arredonda pra exibir.
@@ -878,6 +890,7 @@ function OrcamentosForm() {
             </div>
             <div className="summary-card">
               <Cost label="Preço de Venda dos Produtos" value={calc.productsCost} />
+              <Cost label="Custo de Produção dos Produtos" value={calc.productsRealCost} />
               <Info label="Tempo Total de Impressão" value={fmtHours(calc.printTime)} />
               <Cost label={`Insumos (${calc.insumosCount})`} value={calc.suppliesCost} />
               <hr />
@@ -896,10 +909,14 @@ function OrcamentosForm() {
               <Info label="Taxa Fixa do Canal" value={brl(marketplace.fixedFee)} />
               {n(discount) > 0 ? <Info label="Desconto Especial" value={brl(n(discount))} /> : null}
               <hr />
-              <Cost label="Margem de Lucro & Taxas" value={calc.profit} bold subtotal />
+              <Cost label="Markup sobre o Catálogo & Taxas" value={calc.profit} bold subtotal />
             </div>
             <div className="profit-grid">
-              <div><span>LUCRO ESTIMADO</span><strong>+{brl(calc.profit)}</strong><small>{marketplace.name} · Margem Real: {realMarginPercent.toFixed(1)}%</small></div>
+              <div className={calc.realProfit < 0 ? "profit-negative" : undefined}>
+                <span>LUCRO ESTIMADO</span>
+                <strong>{calc.realProfit < 0 ? "−" : "+"}{brl(Math.abs(calc.realProfit))}</strong>
+                <small>Sobre o custo de produção ({brl(calc.realCost)}) · {marketplace.name} · Margem Real: {realMarginPercent.toFixed(1)}%</small>
+              </div>
               <div><span>PREÇO ATACADO</span><strong>{brl(calc.price * 0.85)}</strong><small>Desconto por volume</small></div>
             </div>
             <button className="report-button" onClick={generateReport}><IconDownload className="nav-icon" /> Gerar Orçamento em PDF</button>

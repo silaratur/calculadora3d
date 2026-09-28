@@ -370,6 +370,8 @@ textarea:focus {
 .profit-grid div { background: var(--soft); border: 1px solid var(--calc-border); border-radius: 12px; padding: 12px; }
 .profit-grid strong { color: var(--calc-copper); display: block; font-family: var(--font-mono); font-size: 16px; margin-top: 4px; }
 .profit-grid small { color: var(--calc-muted); display: block; font-size: 12px; margin-top: 3px; }
+/* Preço abaixo do custo de produção + taxas: prejuízo, em vermelho. */
+.profit-grid .profit-negative strong { color: var(--danger); }
 .report-button, .whatsapp-button { align-items: center; border: 0; border-radius: 11px; color: var(--on-accent); cursor: pointer; display: flex; font-weight: 600; gap: 8px; justify-content: center; margin-top: 18px; min-height: 40px; width: 100%; }
 .report-button { background: var(--admin-copper); }
 .clear-quote-button { background: transparent; border: 0; color: var(--admin-muted); cursor: pointer; display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; margin: 12px auto 0; padding: 6px 10px; text-decoration: underline; }
