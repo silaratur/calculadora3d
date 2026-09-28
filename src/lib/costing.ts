@@ -56,7 +56,8 @@ export function fixedCostPerPiece(settings: PricingSettingsLike, monthlyTotalOve
  * lançamento do mês em Custos → Fixos, usa ele; se o mês começou e ninguém
  * lançou ainda, repete o total do lançamento anterior mais recente (em vez de
  * cair nos campos antigos de `PricingSettings`, que não têm mais tela pra
- * editar). Só retorna null se nunca houve nenhum lançamento.
+ * editar); sem nenhum mês passado, usa o próximo mês lançado. Só retorna null
+ * se nunca houve nenhum lançamento.
  */
 export function effectiveMonthlyFixedCost(months: { month: string; total: number }[], currentMonth: string): number | null {
   const exact = months.find((item) => item.month === currentMonth);
@@ -64,7 +65,11 @@ export function effectiveMonthlyFixedCost(months: { month: string; total: number
   const mostRecentPast = months
     .filter((item) => item.month < currentMonth)
     .sort((a, b) => (a.month < b.month ? 1 : -1))[0];
-  return mostRecentPast?.total ?? null;
+  if (mostRecentPast) return mostRecentPast.total;
+  // Nenhum mês lançado até agora, mas já há meses futuros (ex.: custos lançados a
+  // partir do mês que vem): usa o mais próximo em vez dos campos antigos.
+  const nextFuture = months.filter((item) => item.month > currentMonth).sort((a, b) => (a.month < b.month ? -1 : 1))[0];
+  return nextFuture?.total ?? null;
 }
 
 export type PieceCostInput = {
