@@ -560,6 +560,11 @@ export default function CatalogPage() {
                   </div>
                   <span className="material-badge">{product.sku}</span>
                   <h2>{product.name}</h2>
+                  {parseColors(product.colors).length ? (
+                    <span className="product-card-colors" aria-label={`Cores: ${parseColors(product.colors).join(", ")}`}>
+                      {parseColors(product.colors).map((color) => <span key={color} className="color-dot" style={{ background: swatch(color) }} title={color} />)}
+                    </span>
+                  ) : null}
                   <div className="product-card-prices">
                     <div><span>Custo</span><strong>{brl(product.cost)}</strong></div>
                     <div><span>Preço</span><strong className="price-highlight">{brl(product.price)}</strong></div>

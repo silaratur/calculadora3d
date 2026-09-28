@@ -1873,3 +1873,6 @@ a.material-badge { text-decoration: none; }
 .color-option input[type="checkbox"] { accent-color: var(--admin-copper); height: 15px; margin: 0; width: 15px; }
 .color-option small { color: #9b8b86; }
 .color-dot { border: 1px solid rgba(0, 0, 0, .18); border-radius: 50%; display: inline-block; flex: 0 0 16px; height: 16px; width: 16px; }
+/* Cores disponíveis na loja, no card do Catálogo (mesmas bolinhas do formulário). */
+.product-card-colors { display: flex; flex-wrap: wrap; gap: 4px; margin: -4px 0 4px; }
+.product-card-colors .color-dot { flex-basis: 14px; height: 14px; width: 14px; }
