@@ -26,6 +26,8 @@ type Quote = {
   updatedAt: string;
   validUntil: string | null;
   revision: number;
+  source: string;
+  sourceDetail: string;
   order: { id: string; orderNumber: string } | null;
 };
 type SortField = "recent" | "client" | "value";
@@ -49,6 +51,14 @@ function validityLabel(validUntil: string | null) {
   if (days === 0) return { text: "vence hoje", late: false };
   return { text: days === 1 ? "vence amanhã" : `vence em ${days} dias`, late: false };
 }
+/** Selo de origem no card — orçamento feito aqui dentro não leva selo. */
+const sourceLabel: Record<string, string> = { loja: "Loja online", "loja-encomenda": "Festas e empresas" };
+const channelLabel = (channel: string) => {
+  const known: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", google: "Google", whatsapp: "WhatsApp", direto: "acesso direto", tiktok: "TikTok" };
+  return known[channel.toLowerCase()] ?? channel;
+};
+type OriginFilter = "all" | "store" | "manual";
+
 const statusBadgeColor: Record<string, string> = { DRAFT: "#8a4a4e", CONVERTED: "#777f5d", ARCHIVED: "#602f32" };
 
 /** Itens, canal e desconto do orçamento — mostrados como leitura no popup de conversão, nenhum deles editável ali. */
@@ -84,6 +94,7 @@ export default function ProjectsPage() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [archivedQuotes, setArchivedQuotes] = useState<Quote[]>([]);
   const [search, setSearch] = useState("");
+  const [origin, setOrigin] = useState<OriginFilter>("all");
   const [tab, setTab] = useState<"quotes" | "converted" | "archived">("quotes");
   const [needsLogin, setNeedsLogin] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -137,15 +148,17 @@ export default function ProjectsPage() {
     return sorted;
   }
 
-  const matchesSearch = (quote: Quote) => `${quote.productName} ${quote.customerName} ${quote.code ?? ""}`.toLowerCase().includes(search.toLowerCase());
+  const matchesSearch = (quote: Quote) =>
+    `${quote.productName} ${quote.customerName} ${quote.code ?? ""}`.toLowerCase().includes(search.toLowerCase()) &&
+    (origin === "all" || (origin === "store") === (quote.source !== "manual"));
   // Aba "Orçamentos" só traz o que ainda está em orçamento (nem virou venda,
   // nem foi arquivado) — convertido tem aba própria, não se mistura aqui.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const filteredQuotes = useMemo(() => sortQuotes(quotes.filter((quote) => quote.status === "DRAFT" && matchesSearch(quote))), [quotes, search, sortBy, sortDirection]);
+  const filteredQuotes = useMemo(() => sortQuotes(quotes.filter((quote) => quote.status === "DRAFT" && matchesSearch(quote))), [quotes, search, origin, sortBy, sortDirection]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const filteredConvertedQuotes = useMemo(() => sortQuotes(quotes.filter((quote) => quote.status === "CONVERTED" && matchesSearch(quote))), [quotes, search, sortBy, sortDirection]);
+  const filteredConvertedQuotes = useMemo(() => sortQuotes(quotes.filter((quote) => quote.status === "CONVERTED" && matchesSearch(quote))), [quotes, search, origin, sortBy, sortDirection]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const filteredArchivedQuotes = useMemo(() => sortQuotes(archivedQuotes.filter(matchesSearch)), [archivedQuotes, search, sortBy, sortDirection]);
+  const filteredArchivedQuotes = useMemo(() => sortQuotes(archivedQuotes.filter(matchesSearch)), [archivedQuotes, search, origin, sortBy, sortDirection]);
 
   const activeQuoteList = tab === "archived" ? filteredArchivedQuotes : tab === "converted" ? filteredConvertedQuotes : filteredQuotes;
   const totalPages = Math.max(1, Math.ceil(activeQuoteList.length / itemsPerPage));
@@ -283,6 +296,12 @@ export default function ProjectsPage() {
                 <button type="button" className={sortBy === "client" ? "chip selected" : "chip"} onClick={() => selectSort("client")}>Cliente{sortArrow("client")}</button>
                 <button type="button" className={sortBy === "value" ? "chip selected" : "chip"} onClick={() => selectSort("value")}>Valor{sortArrow("value")}</button>
               </div>
+              <div className="catalog-sort">
+                <span>Origem</span>
+                {([["all", "Todas"], ["store", "Loja online"], ["manual", "Feitos aqui"]] as const).map(([value, label]) => (
+                  <button type="button" key={value} className={origin === value ? "chip selected" : "chip"} onClick={() => { setOrigin(value); setPage(1); }}>{label}</button>
+                ))}
+              </div>
               <div className="catalog-filters-right">
                 <label className="items-per-page">Por página
                   <select value={itemsPerPage} onChange={(event) => { setItemsPerPage(Number(event.target.value)); setPage(1); }}>
@@ -330,6 +349,11 @@ export default function ProjectsPage() {
                     </div>
                     <span className="quote-card-meta">
                       <span className="material-badge">{displayCode(quote.code)}</span>
+                      {sourceLabel[quote.source] ? (
+                        <span className="quote-card-source" title={quote.sourceDetail ? `Cliente chegou à loja via ${channelLabel(quote.sourceDetail)}` : undefined}>
+                          {sourceLabel[quote.source]}{quote.sourceDetail && quote.sourceDetail !== "direto" ? ` · ${channelLabel(quote.sourceDetail)}` : ""}
+                        </span>
+                      ) : null}
                       {quote.revision > 1 ? <span className="quote-card-rev">Rev. {quote.revision}</span> : null}
                       {validity ? <span className={validity.late ? "quote-card-validity late" : "quote-card-validity"}>{validity.text}</span> : null}
                     </span>

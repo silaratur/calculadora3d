@@ -248,6 +248,11 @@ model Quote {
   // versão anterior vai pra QuoteRevision e este número sobe. Só uso interno —
   // o PDF do cliente não mostra.
   revision      Int         @default(1)
+  // De onde veio: "manual" (feito aqui), "loja" (sacola da loja online) ou
+  // "loja-encomenda" (festas e empresas). sourceDetail = canal que trouxe o
+  // cliente à loja (instagram, google, whatsapp, direto...).
+  source        String      @default("manual")
+  sourceDetail  String      @default("")
   revisions     QuoteRevision[]
   order         SalesOrder?
   createdAt     DateTime    @default(now())

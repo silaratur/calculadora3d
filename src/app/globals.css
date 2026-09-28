@@ -1759,6 +1759,8 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .quote-card-rev { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; }
 .quote-card-validity { background: var(--sunk); border-radius: 999px; color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; padding: 1px 8px; }
 .quote-card-validity.late { background: var(--danger-soft); color: var(--danger); }
+/* Orçamento que veio da loja online (sacola ou festas e empresas). */
+.quote-card-source { background: color-mix(in srgb, var(--admin-olive, #777f5d) 16%, transparent); border-radius: 999px; color: var(--admin-olive, #777f5d); font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; font-weight: 600; padding: 1px 8px; }
 .quote-card-actions .quote-card-sale { color: var(--admin-copper); font-weight: 600; }
 
 /* Vendas (fase 3): etapa da venda — em produção → aguardando entrega → entregue. */

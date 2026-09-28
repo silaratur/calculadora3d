@@ -24,6 +24,12 @@ const orderSchema = z.object({
   kind: z.enum(["cart", "custom"]).default("cart"),
   customerName: z.string().trim().max(80).optional(),
   customerPhone: z.string().trim().max(30).optional(),
+  customerEmail: z.union([z.string().trim().email().max(120), z.literal("")]).optional(),
+  city: z.string().trim().max(80).optional(),
+  delivery: z.enum(["retirada", "entrega", "combinar"]).optional(),
+  neededBy: z.string().trim().max(20).optional(),
+  // Canal que trouxe o cliente à loja (utm_source, site de origem ou app).
+  channel: z.string().trim().max(60).optional(),
   notes: z.string().trim().max(1000).optional(),
   coupon: z.string().trim().max(30).optional(),
   items: z.array(itemSchema).max(50).default([]),
@@ -46,6 +52,28 @@ function discountFor(qty: number, raw: string) {
   } catch {
     return 0;
   }
+}
+
+const deliveryLabel = { retirada: "Retirar no estúdio", entrega: "Receber em casa", combinar: "A combinar" } as const;
+
+/** "2026-12-20" → "20/12/2026"; qualquer outra coisa passa como veio. */
+const brDate = (value: string) => (/^\d{4}-\d{2}-\d{2}$/.test(value) ? value.split("-").reverse().join("/") : value);
+
+/**
+ * Todo pedido da loja vira um lead em Clientes (achado pelos últimos 10
+ * dígitos do telefone). Cliente que já existe ganha o e-mail se não tinha;
+ * nada é apagado.
+ */
+async function upsertLead(name: string, phone: string, email: string, code: string | null) {
+  const digits = phone.replace(/\D/g, "");
+  if (!name || digits.length < 10) return;
+  const customers = await prisma.customer.findMany({ select: { id: true, phone: true, email: true } });
+  const existing = customers.find((customer) => customer.phone.replace(/\D/g, "").endsWith(digits.slice(-10)));
+  if (existing) {
+    if (email && !existing.email) await prisma.customer.update({ where: { id: existing.id }, data: { email } });
+    return;
+  }
+  await prisma.customer.create({ data: { name, phone, email, notes: `Lead da loja online${code ? ` — primeiro pedido #${code.replace(/^ORC-/, "")}` : ""}.` } });
 }
 
 async function createQuote(data: Parameters<typeof prisma.quote.create>[0]["data"]) {
@@ -73,7 +101,15 @@ export async function POST(request: Request) {
   const settings = await prisma.pricingSettings.upsert({ where: { id: "default" }, update: {}, create: {} });
   const validUntil = new Date(Date.now() + settings.quoteValidityDays * 24 * 60 * 60 * 1000);
   const received = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
-  const customer = { customerName: order.customerName ?? "", customerPhone: order.customerPhone ?? "", customerEmail: "" };
+  const customer = { customerName: order.customerName ?? "", customerPhone: order.customerPhone ?? "", customerEmail: order.customerEmail ?? "" };
+  const channel = order.channel || "direto";
+  // Contato/entrega que o cliente preencheu na loja — entram nas observações.
+  const contact = [
+    order.city ? `Cidade/bairro: ${order.city}` : "",
+    order.delivery ? `Entrega: ${deliveryLabel[order.delivery]}` : "",
+    order.neededBy ? `Precisa até: ${brDate(order.neededBy)}` : "",
+    `Chegou à loja via: ${channel}`,
+  ].filter(Boolean);
 
   if (order.kind === "custom") {
     if (!order.custom) return NextResponse.json({ error: "Detalhes da encomenda obrigatórios" }, { status: 400 });
@@ -85,6 +121,7 @@ export async function POST(request: Request) {
       quantity ? `Quantidade: ${quantity}` : "",
       details ? `Detalhes: ${details}` : "",
       order.notes ? `Observações: ${order.notes}` : "",
+      ...contact,
     ].filter(Boolean).join("\n");
     const quote = await createQuote({
       productName: `Encomenda: ${occasion}${quantity ? ` (${quantity} un.)` : ""}`,
@@ -96,7 +133,10 @@ export async function POST(request: Request) {
       snapshotJson: JSON.stringify({ origin: "loja-encomenda", request: order.custom }),
       notes,
       validUntil,
+      source: "loja-encomenda",
+      sourceDetail: channel,
     });
+    await upsertLead(customer.customerName, customer.customerPhone, customer.customerEmail, quote.code).catch(() => undefined);
     return NextResponse.json({ code: quote.code }, { status: 201 });
   }
 
@@ -136,6 +176,7 @@ export async function POST(request: Request) {
     ...priced.map((line) => `• ${line.qty}x ${line.product.name} (${line.sku})${line.color ? ` — cor ${line.color}` : ""}${line.personalization ? ` — personalização: "${line.personalization}"` : ""} — ${line.unit.toFixed(2).replace(".", ",")}/un.${line.percent ? ` (-${line.percent}%)` : ""}`),
     couponOk ? `Cupom ${settings.storeCouponCode} (-${couponPercent}%)` : "",
     order.notes ? `Observações do cliente: ${order.notes}` : "",
+    ...contact,
   ].filter(Boolean).join("\n");
 
   const first = priced[0].product.name;
@@ -155,6 +196,10 @@ export async function POST(request: Request) {
     }),
     notes,
     validUntil,
+    source: "loja",
+    sourceDetail: channel,
   });
+  // O lead nunca derruba o pedido: se falhar, o orçamento já está salvo.
+  await upsertLead(customer.customerName, customer.customerPhone, customer.customerEmail, quote.code).catch(() => undefined);
   return NextResponse.json({ code: quote.code, total, subtotal, couponPercent }, { status: 201 });
 }

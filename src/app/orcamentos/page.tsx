@@ -36,7 +36,9 @@ type QuoteSnapshot = {
 
 type QuoteRevisionEntry = { id: string; number: number; finalPrice: number; baseCost: number; productName: string; snapshotJson: string; notes: string; createdAt: string };
 // Estado do orçamento aberto no editor (ciclo da negociação, ver src/lib/quotes.ts).
-type QuoteMeta = { status: string; revision: number; code: string | null; archiveReason: string | null; revisions: QuoteRevisionEntry[]; order: { id: string; orderNumber: string } | null };
+type QuoteMeta = {
+  source?: string;
+  sourceDetail?: string; status: string; revision: number; code: string | null; archiveReason: string | null; revisions: QuoteRevisionEntry[]; order: { id: string; orderNumber: string } | null };
 
 const demoSupplies: Supply[] = [{ id: "bag", name: "Embalagem simples", category: "Embalagem & Caixas", unitCost: 0.35 }];
 const defaultMarketplace: Marketplace = { id: "direct", name: "Venda Direta", commissionRate: 0, fixedFee: 0, adsRate: 0 };
@@ -177,7 +179,7 @@ function OrcamentosForm() {
       setClientPhone(quote.customerPhone);
       setClientEmail(quote.customerEmail);
       applyVersion(quote.productName, quote.notes, quote.snapshotJson);
-      setQuoteMeta({ status: quote.status, revision: quote.revision, code: quote.code, archiveReason: quote.archiveReason, revisions: quote.revisions ?? [], order: quote.order ?? null });
+      setQuoteMeta({ source: quote.source, sourceDetail: quote.sourceDetail, status: quote.status, revision: quote.revision, code: quote.code, archiveReason: quote.archiveReason, revisions: quote.revisions ?? [], order: quote.order ?? null });
     }
     void loadQuote();
   }, [quoteId]);
@@ -533,6 +535,12 @@ function OrcamentosForm() {
               <span className="quote-status-chip">{quoteStatusLabel[quoteMeta.status] ?? quoteMeta.status}</span>
               <strong>{quoteMeta.code ? `#${quoteMeta.code.replace(/^ORC-/, "")}` : "Orçamento"}</strong>
               {quoteMeta.status !== "CONVERTED" ? <span className="quote-status-rev">Revisão {quoteMeta.revision}</span> : null}
+              {quoteMeta.source && quoteMeta.source !== "manual" ? (
+                <span className="quote-card-source">
+                  {quoteMeta.source === "loja-encomenda" ? "Festas e empresas" : "Pedido da loja online"}
+                  {quoteMeta.sourceDetail && quoteMeta.sourceDetail !== "direto" ? ` · via ${quoteMeta.sourceDetail}` : ""}
+                </span>
+              ) : null}
               {restoredFrom ? <span className="quote-status-note">Conteúdo da revisão {restoredFrom} carregado — salve pra ele virar a revisão {quoteMeta.revision + 1}.</span> : null}
               {quoteMeta.status === "CONVERTED" ? (
                 <span className="quote-status-note">
