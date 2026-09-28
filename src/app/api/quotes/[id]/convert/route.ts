@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { buildProductionItemDrafts } from "@/lib/production";
 import { orderNumberForQuote } from "@/lib/codes";
 import { quoteRealCost } from "@/lib/quotes";
+import { matchCustomer } from "@/lib/customers";
 
 async function authenticated() {
   return Boolean(await getCurrentUser());
@@ -68,11 +69,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   // O cliente já foi cadastrado em Clientes quando o orçamento foi salvo (ver
   // ensureCustomerRegistered em Orçamentos) — aqui só vincula o pedido a esse
-  // cadastro pelo nome; não recria nem deixa trocar.
-  const trimmedName = quote.customerName.trim().toLowerCase();
-  const matchedCustomer = trimmedName
-    ? (await prisma.customer.findMany({ where: { active: true } })).find((c) => c.name.trim().toLowerCase() === trimmedName)
-    : undefined;
+  // cadastro: telefone, depois e-mail, depois nome sem acento (src/lib/customers.ts).
+  const matchedCustomer = matchCustomer(
+    { name: quote.customerName, phone: quote.customerPhone, email: quote.customerEmail },
+    await prisma.customer.findMany({ where: { active: true } }),
+  );
 
   // Orçamento com várias peças do Catálogo (kit) vira uma peça de produção
   // por peça — não um item único "1x nome do orçamento".

@@ -6,7 +6,10 @@ import { AuthBanner } from "@/components/AuthBanner";
 import { IconTrash } from "@/components/Icons";
 
 type CustomerOrder = { id: string; totalAmount: number; paidAmount: number; createdAt: string };
-type Customer = { id: string; name: string; email: string; phone: string; notes: string; orders: CustomerOrder[] };
+type Customer = { id: string; name: string; email: string; phone: string; notes: string; createdAt: string; orders: CustomerOrder[] };
+type SortBy = "name" | "buyer" | "newest" | "oldest";
+const paidOf = (customer: Customer) => customer.orders.reduce((sum, order) => sum + order.paidAmount, 0);
+const boughtOf = (customer: Customer) => customer.orders.reduce((sum, order) => sum + order.totalAmount, 0);
 
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const emptyDraft = { name: "", email: "", phone: "", notes: "" };
@@ -16,6 +19,7 @@ export default function CustomersPage() {
   const [draft, setDraft] = useState(emptyDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<SortBy>("name");
   const [feedback, setFeedback] = useState("");
   const [needsLogin, setNeedsLogin] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
@@ -31,10 +35,15 @@ export default function CustomersPage() {
     void load();
   }, [reloadToken]);
 
-  const filtered = useMemo(
-    () => customers.filter((item) => `${item.name} ${item.email} ${item.phone}`.toLowerCase().includes(search.toLowerCase())),
-    [customers, search],
-  );
+  const filtered = useMemo(() => {
+    const list = customers.filter((item) => `${item.name} ${item.email} ${item.phone}`.toLowerCase().includes(search.toLowerCase()));
+    const byName = (a: Customer, b: Customer) => a.name.localeCompare(b.name, "pt-BR");
+    const time = (customer: Customer) => new Date(customer.createdAt).getTime();
+    if (sortBy === "buyer") return list.sort((a, b) => boughtOf(b) - boughtOf(a) || byName(a, b));
+    if (sortBy === "newest") return list.sort((a, b) => time(b) - time(a));
+    if (sortBy === "oldest") return list.sort((a, b) => time(a) - time(b));
+    return list.sort(byName);
+  }, [customers, search, sortBy]);
 
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -102,10 +111,22 @@ export default function CustomersPage() {
           </form>
 
           <section className="catalog-results">
-            <div className="catalog-filters"><strong>{filtered.length} clientes</strong></div>
+            <div className="catalog-filters">
+              <strong>{filtered.length} clientes</strong>
+              <label className="customer-sort">
+                Ordenar por
+                <select value={sortBy} onChange={(event) => setSortBy(event.target.value as SortBy)}>
+                  <option value="name">Nome (A–Z)</option>
+                  <option value="buyer">Maior comprador</option>
+                  <option value="newest">Cadastro mais recente</option>
+                  <option value="oldest">Cadastro mais antigo</option>
+                </select>
+              </label>
+            </div>
             <div className="preset-grid">
               {filtered.map((customer) => {
-                const totalSpent = customer.orders.reduce((sum, order) => sum + order.paidAmount, 0);
+                const totalSpent = paidOf(customer);
+                const totalBought = boughtOf(customer);
                 const totalOwed = customer.orders.reduce((sum, order) => sum + Math.max(order.totalAmount - order.paidAmount, 0), 0);
                 return (
                   <article className="preset-card" key={customer.id}>
@@ -119,9 +140,10 @@ export default function CustomersPage() {
                     <h3>{customer.name}</h3>
                     <p>{customer.email || "sem e-mail"} {customer.phone ? `· ${customer.phone}` : ""}</p>
                     <p className="card-detail">
-                      Total pago: {brl(totalSpent)}
+                      Em pedidos: {brl(totalBought)} · Pago: {brl(totalSpent)}
                       {totalOwed > 0 ? ` · A receber: ${brl(totalOwed)}` : ""}
                     </p>
+                    <p className="card-detail customer-since">Cliente desde {new Date(customer.createdAt).toLocaleDateString("pt-BR")}</p>
                     {customer.notes ? <p className="card-detail">{customer.notes}</p> : null}
                   </article>
                 );

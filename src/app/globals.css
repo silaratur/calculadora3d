@@ -1917,3 +1917,7 @@ a.material-badge { text-decoration: none; }
 .price-drift-alert p { margin: 0; }
 .price-drift-alert .link-button { background: none; border: 0; color: inherit; cursor: pointer; font: inherit; font-weight: 700; padding: 0; text-decoration: underline; }
 .quote-card-drift { background: var(--warn-soft); border: 1px solid var(--warn-border); border-radius: 999px; color: var(--warn); font-size: 11px; font-weight: 700; padding: 2px 8px; white-space: nowrap; }
+
+.customer-sort { align-items: center; color: var(--admin-muted); display: inline-flex; font-size: 13px; gap: 8px; margin-left: auto; }
+.customer-sort select { min-height: 34px; width: auto; }
+.customer-since { color: var(--admin-muted); font-size: 12px; }
