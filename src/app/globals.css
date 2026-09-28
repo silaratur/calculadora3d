@@ -1925,3 +1925,32 @@ a.material-badge { text-decoration: none; }
 /* Catálogo: linhas de insumo do produto (insumo, qtd., custo, lixeira). */
 .material-line.supply-line { grid-template-columns: 1fr 90px 90px auto; }
 .supply-line-cost { color: var(--admin-muted); font-family: var(--font-mono, monospace); text-align: right; }
+
+/* Catálogo → Concorrência: registro de anúncios e avaliação de preços. */
+.competitor-panel { display: grid; gap: 16px; }
+.competitor-toolbar { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; }
+.competitor-toolbar p { color: var(--admin-muted); font-size: 13px; margin: 0; max-width: 720px; }
+.competitor-form { max-width: 820px; }
+.competitor-preview { background: var(--admin-field, #faf3ec); border-radius: 10px; font-size: 13px; margin: 0; padding: 10px 12px; }
+.competitor-section-title { font-size: 15px; margin: 8px 0 0; }
+.competitor-table { display: grid; gap: 6px; }
+.competitor-row { align-items: center; background: var(--admin-paper, #fffdfb); border: 1px solid var(--admin-border, #e8ddd7); border-radius: 12px; color: inherit; display: grid; font: inherit; font-size: 13px; gap: 10px; grid-template-columns: 1.6fr .7fr 1.4fr 1fr 1fr 2fr; padding: 10px 12px; text-align: left; width: 100%; }
+button.competitor-row { cursor: pointer; }
+.competitor-head { background: none; border: 0; color: var(--admin-muted); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.competitor-row small, .competitor-entry small { color: var(--admin-muted); display: block; font-size: 11px; }
+.competitor-row .num, .competitor-entry .num { font-family: var(--font-mono, monospace); }
+.competitor-product b { display: block; }
+.competitor-reco { font-size: 12px; line-height: 1.35; }
+.competitor-row.position-abaixo { border-left: 4px solid #3f7d55; }
+.competitor-row.position-media { border-left: 4px solid #d1a94a; }
+.competitor-row.position-acima { border-left: 4px solid #a3402a; }
+.competitor-row.position-mercado-abaixo-do-custo { border-left: 4px solid #3d2225; }
+.competitor-entries { display: grid; gap: 6px; margin: 4px 0 10px 16px; }
+.competitor-entry { align-items: center; border-bottom: 1px dashed var(--admin-border, #e8ddd7); display: grid; font-size: 12px; gap: 10px; grid-template-columns: 1.6fr 1.4fr 1.1fr .7fr auto; padding: 6px 0; }
+.competitor-entry.stale { opacity: .6; }
+.competitor-entry-actions { display: flex; gap: 10px; }
+.competitor-entry-actions .link-button, .competitor-missing .link-button { background: none; border: 0; color: var(--copper, #602f32); cursor: pointer; font: inherit; font-weight: 700; padding: 0; text-decoration: underline; }
+.competitor-missing summary { cursor: pointer; font-weight: 700; }
+.competitor-missing ul { display: grid; gap: 6px; list-style: none; margin: 10px 0 0; padding: 0; }
+.competitor-missing li { align-items: center; display: flex; font-size: 13px; gap: 12px; justify-content: space-between; }
+@media (max-width: 900px) { .competitor-row, .competitor-entry { grid-template-columns: 1fr 1fr; } .competitor-head { display: none; } }

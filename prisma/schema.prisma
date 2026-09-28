@@ -388,6 +388,11 @@ model CompetitorPrice {
   competitor  String
   channel     String   @default("")
   price       Float
+  // Quantidade de peças no anúncio (kit de 10 = 10) e frete pago pelo comprador (0 = grátis):
+  // a avaliação compara o preço POR UNIDADE com frete.
+  quantity    Float    @default(1)
+  shipping    Float    @default(0)
+  notes       String   @default("")
   url         String   @default("")
   checkedAt   DateTime @default(now())
 }

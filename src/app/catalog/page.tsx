@@ -592,7 +592,7 @@ export default function CatalogPage() {
               <button type="button" className={listTab === "competitors" ? "selected" : ""} onClick={() => setListTab("competitors")}>Concorrência</button>
             </div>
 
-            {listTab === "competitors" ? <CompetitorPrices search={search} /> : (
+            {listTab === "competitors" ? <CompetitorPrices search={search} products={products} marketplaces={marketplaces} /> : (
             <>
 
             <div className="catalog-filters">
