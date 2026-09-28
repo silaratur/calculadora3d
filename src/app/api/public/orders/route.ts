@@ -191,6 +191,13 @@ export async function POST(request: Request) {
     snapshotJson: JSON.stringify({
       origin: "loja",
       products: snapshotProducts,
+      // O editor de Orçamentos parte do preço do Catálogo e soma o markup do
+      // orçamento por cima; o preço da loja já É o do Catálogo, então markup 0
+      // e os descontos da loja (quantidade + cupom) como abatimento — assim o
+      // orçamento abre com o mesmo valor que o cliente viu.
+      markup: "0",
+      pricingMethod: "markup",
+      discount: cents(subtotal - total).toFixed(2).replace(".", ","),
       calculations: { price: total, subtotal, afterTiers, couponPercent, costWithReserve: baseCost, profit: cents(total - baseCost) },
       storeLines: priced.map((line) => ({ sku: line.sku, qty: line.qty, color: line.color ?? "", personalization: line.personalization ?? "", unit: line.unit, percent: line.percent })),
     }),
