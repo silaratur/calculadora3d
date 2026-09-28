@@ -791,6 +791,226 @@ async function storyFull(story, product, products) {
   return sharp(canvas(H, C.cream)).composite(layers).jpeg({ quality: 92 }).toBuffer();
 }
 
+// ─── Carrossel cheio (4:5) ────────────────────────────────────────────────────
+// Capa com vitrine de peças, slide por produto (foto sem nada por cima + nome,
+// frase à mão, preço em pincelada, cores, tamanho e ícones de uso) e "Como
+// pedir" no vinho. Mesmas regras dos stories: logo sempre, link da bio,
+// produção limitada, nada cobrindo o produto.
+const CH = 1350;
+
+function footerCheio(layers, { index, total, dark = false }) {
+  return (async () => {
+    const top = CH - 88;
+    layers.push({ input: Buffer.from(`<svg width="${W - 88}" height="2"><rect width="${W - 88}" height="2" fill="${dark ? "#7a4a4d" : C.border}"/></svg>`), left: 44, top });
+    const mark = await logo(dark ? path.join(ROOT, "public", "logo-ac3d-monograma-claro.png") : MONOGRAM, 46);
+    layers.push({ input: mark, left: 44, top: top + 22 });
+    const brand = await text("AC3D STUDIO", { size: 20, weight: 700, color: dark ? C.cream : C.copper, spacing: 0.16 });
+    layers.push({ ...brand, left: 100, top: top + 36 });
+    const cta = await text("Peça pelo link da bio", { size: 22, weight: 700, color: dark ? C.cream : C.copper });
+    const ctaW = cta.width + 40;
+    const cx = Math.round((W - ctaW) / 2) + 40;
+    layers.push({ input: icon("link", 26, dark ? C.cream : C.copper, 2.2), left: cx - 40, top: top + 32 });
+    layers.push({ ...cta, left: cx, top: top + 34 });
+    if (total) {
+      const counter = await text(`${index}/${total}`, { size: 22, weight: "mono", color: dark ? C.cream : C.muted });
+      layers.push({ ...counter, left: W - 44 - counter.width, top: top + 34 });
+    }
+  })();
+}
+
+async function coverCheio(slide, products) {
+  const rand = random(seedOf(slide.title || "capa"));
+  const layers = [];
+  layers.push({ input: await logo(LOGO, 118), left: 44, top: 36 });
+  if (slide.tag) {
+    const tag = await text(slide.tag.toUpperCase(), { size: 22, weight: 800, color: C.cream, spacing: 0.14 });
+    const tw = tag.width + 48;
+    layers.push({ input: pill("", { width: tw, height: 52, fill: C.copper }), left: W - 44 - tw, top: 58 });
+    layers.push({ ...tag, left: W - 44 - tw + 24, top: 58 + Math.round((52 - tag.height) / 2) });
+  }
+  let y = 180;
+  const head = await text(slide.headline, { size: 76, weight: 800, color: C.ink });
+  layers.push({ ...head, left: 44, top: y });
+  y += head.height - 14;
+  const script = await rotated(await text(slide.script, { size: 150, weight: "hand", color: C.copper }), -3);
+  layers.push({ input: brush(script.width + 40, Math.round(script.height * 0.5), "#ead9c6", rand), left: 30, top: y + Math.round(script.height * 0.42) });
+  layers.push({ ...script, left: 44, top: y });
+  const heart = doodle.heart(64, C.copper, rand);
+  layers.push({ ...heart, left: 44 + script.width + 6, top: y + Math.round(script.height * 0.3) });
+  y += script.height + 14;
+  if (slide.subline) {
+    const sub = await text(slide.subline.toUpperCase(), { size: 21, weight: 700, color: C.olive, spacing: 0.14, width: 640 });
+    layers.push({ ...sub, left: 46, top: y });
+    y += sub.height + 12;
+    layers.push({ input: ornament(320, C.olive), left: 46, top: y });
+  }
+  if (slide.fomo) {
+    const d = 210;
+    const words = await text(slide.fomo, { size: 36, weight: "hand", color: C.cream, width: 160, align: "centre", lineHeight: 0.92 });
+    const disc = Buffer.from(`<svg width="${d}" height="${d}"><circle cx="${d / 2}" cy="${d / 2}" r="${d / 2 - 4}" fill="${C.copper}"/><circle cx="${d / 2}" cy="${d / 2}" r="${d / 2 - 14}" fill="none" stroke="${C.cream}" stroke-opacity=".45" stroke-width="2" stroke-dasharray="7 7"/></svg>`);
+    const tilted = await rotated({ input: await sharp(disc).composite([{ input: words.input, left: Math.round((d - words.width) / 2), top: Math.round((d - words.height) / 2) }]).png().toBuffer() }, 8);
+    layers.push({ input: tilted.input, left: W - 40 - tilted.width, top: 150 });
+  }
+  // Vitrine: 2 linhas × 3 peças (foto 4:3 inteira, nome e preço).
+  const tileW = 320;
+  const photoH = 240;
+  let ty = 540;
+  for (const [i, item] of (slide.items || []).slice(0, 6).entries()) {
+    const product = products[item.sku];
+    const tx = 40 + (i % 3) * (tileW + 20);
+    if (i === 3) ty += photoH + 118;
+    layers.push({ input: await roundedPhoto(item.photo, tileW, photoH, 18), left: tx, top: ty });
+    const name = await text(item.name || product.name, { size: 21, weight: 700, color: C.ink, width: tileW - 6, lineHeight: 1.05 });
+    layers.push({ ...name, left: tx + 2, top: ty + photoH + 10 });
+    const price = await text(money(product.price), { size: 24, weight: "mono", color: C.copper });
+    layers.push({ ...price, left: tx + 2, top: ty + photoH + 14 + name.height });
+  }
+  const swipe = await text("Arraste para ver cada peça  →", { size: 24, weight: 700, color: C.cream });
+  const sw = swipe.width + 56;
+  layers.push({ input: pill("", { width: sw, height: 58, fill: C.copper }), left: W - 44 - sw, top: CH - 96 });
+  layers.push({ ...swipe, left: W - 44 - sw + 28, top: CH - 96 + Math.round((58 - swipe.height) / 2) });
+  const handle = await text(HANDLE, { size: 24, weight: 700, color: C.copper });
+  layers.push({ ...handle, left: 44, top: CH - 80 });
+  return sharp(canvas(CH)).composite(layers).jpeg({ quality: 92 }).toBuffer();
+}
+
+async function productCheio(slide, product, index, total) {
+  const rand = random(seedOf(`${slide.sku}-${index}`));
+  // Foto 4:3 inteira, sem nada por cima (regra: produto sempre visível).
+  const layers = [{ input: await roundedPhoto(slide.photo, 1000, 750, 28), left: 40, top: 40 }];
+  let y = 818;
+  const label = await text((slide.label || product.category).toUpperCase(), { size: 21, weight: 700, color: C.olive, spacing: 0.16 });
+  layers.push({ ...label, left: 44, top: y + 8 });
+  if (slide.fomo !== false) {
+    const tag = await text((slide.fomo || "Produção limitada").toUpperCase(), { size: 17, weight: 800, color: C.cream, spacing: 0.12 });
+    const tw = tag.width + 36;
+    layers.push({ input: pill("", { width: tw, height: 38, fill: C.copper }), left: W - 44 - tw, top: y });
+    layers.push({ ...tag, left: W - 44 - tw + 18, top: y + Math.round((38 - tag.height) / 2) });
+  }
+  y += 46;
+  const name = await text(slide.name || product.name, { size: 50, weight: 800, color: C.ink, width: 1000, lineHeight: 1.0 });
+  layers.push({ ...name, left: 44, top: y });
+  y += name.height - 2;
+  if (slide.accent) {
+    const accent = await rotated(await text(slide.accent, { size: 44, weight: "hand", color: C.copper }), -2);
+    layers.push({ ...accent, left: 44, top: y });
+    const heart = doodle.heart(40, C.copper, rand);
+    layers.push({ ...heart, left: 44 + accent.width + 8, top: y + Math.round((accent.height - 40) / 2) });
+    const swash = doodle.swash(Math.min(520, accent.width + 30), C.copper, rand);
+    layers.push({ ...swash, left: 36, top: y + accent.height - 16 });
+    y += accent.height + 30;
+  }
+  if (slide.line) {
+    const line = await text(slide.line, { size: 25, weight: 400, color: C.muted, width: 1000 });
+    layers.push({ ...line, left: 44, top: y });
+    y += line.height + 34;
+  }
+  // Preço em pincelada à esquerda; cores com nome à direita.
+  const priceTop = y;
+  let px = 44;
+  if (slide.priceFrom) {
+    const from = await text("a partir de", { size: 32, weight: "hand", color: C.copper });
+    layers.push({ ...from, left: px, top: priceTop + 14 });
+    px += from.width + 10;
+  }
+  const price = await text(money(product.price), { size: 56, weight: "mono", color: C.ink });
+  layers.push({ input: brush(price.width + 50, price.height + 18, "#ead9c6", rand), left: px - 18, top: priceTop - 6 });
+  layers.push({ ...price, left: px + 6, top: priceTop + 2 });
+  if (slide.size) {
+    const size = await text(slide.size, { size: 20, weight: 700, color: C.ink });
+    layers.push({ input: icon("regua", 24, C.copper), left: 44, top: priceTop + price.height + 16 });
+    layers.push({ ...size, left: 74, top: priceTop + price.height + 18 });
+  }
+  const colors = slide.colors || JSON.parse(product.colors || "[]");
+  if (colors.length > 1) {
+    const dot = 36;
+    const named = colors.length <= 5;
+    const cell = named ? 92 : 56;
+    const rowW = cell * Math.min(colors.length, 8);
+    const x0 = W - 44 - rowW;
+    const cap = await text(`${colors.length} cores`, { size: 30, weight: "hand", color: C.copper });
+    layers.push({ ...cap, left: x0 + Math.round((rowW - cap.width) / 2), top: priceTop - 24 });
+    for (const [i, color] of colors.slice(0, 8).entries()) {
+      const x = x0 + i * cell;
+      layers.push({ input: shadedSwatch(color, dot), left: x + Math.round((cell - dot) / 2), top: priceTop + 16 });
+      if (named) {
+        const nm = await text(shortColor(color), { size: 16, weight: 500, color: C.ink });
+        layers.push({ ...nm, left: x + Math.round((cell - nm.width) / 2), top: priceTop + 16 + dot + 4 });
+      }
+    }
+  }
+  y = priceTop + price.height + (slide.size ? 70 : 42);
+  // Ícones de uso numa linha.
+  const uses = (slide.uses || []).slice(0, 3);
+  const colW = Math.floor((W - 88) / Math.max(uses.length, 1));
+  for (const [i, item] of uses.entries()) {
+    const x = 44 + i * colW;
+    layers.push({ input: Buffer.from(`<svg width="52" height="52"><circle cx="26" cy="26" r="24" fill="${C.paper}" stroke="${C.copper}" stroke-width="2"/></svg>`), left: x, top: y });
+    layers.push({ input: icon(item.icon, 26, C.copper, 1.9), left: x + 13, top: y + 13 });
+    const lab = await text(item.label, { size: 19, weight: 700, color: C.ink, width: colW - 72, lineHeight: 1.05 });
+    layers.push({ ...lab, left: x + 62, top: y + Math.round((52 - lab.height) / 2) });
+  }
+  await footerCheio(layers, { index, total });
+  return sharp(canvas(CH)).composite(layers).jpeg({ quality: 92 }).toBuffer();
+}
+
+async function ctaCheio(slide, index, total) {
+  const layers = [];
+  const mark = await logo(LOGO_LIGHT, 190);
+  const markW = (await sharp(mark).metadata()).width;
+  let y = 0;
+  layers.push({ input: mark, left: Math.round((W - markW) / 2), top: y });
+  y += 190 + 26;
+  const heading = await text(slide.heading || "Como pedir", { size: 58, weight: 800, color: C.cream, width: 1000, align: "centre" });
+  layers.push({ ...heading, left: Math.round((W - heading.width) / 2), top: y });
+  y += heading.height - 6;
+  if (slide.accent) {
+    const accent = await rotated(await text(slide.accent, { size: 48, weight: "hand", color: "#f3c9a8" }), -2);
+    layers.push({ ...accent, left: Math.round((W - accent.width) / 2), top: y });
+    y += accent.height + 18;
+  }
+  const steps = slide.steps || [
+    { icon: "link", title: "Acesse o link da bio", sub: "A loja completa da AC3D" },
+    { icon: "paleta", title: "Escolha peças e cores", sub: "Veja preços e prazos" },
+    { icon: "enviar", title: "Peça seu orçamento", sub: "A gente confirma tudo com você" },
+  ];
+  for (const [i, step] of steps.entries()) {
+    const cardH = 100;
+    layers.push({ input: Buffer.from(`<svg width="900" height="${cardH}"><rect width="900" height="${cardH}" rx="22" fill="${C.cream}"/></svg>`), left: 90, top: y });
+    const num = await text(String(i + 1), { size: 28, weight: "mono", color: C.cream });
+    layers.push({ input: Buffer.from(`<svg width="58" height="58"><circle cx="29" cy="29" r="29" fill="${C.copper}"/></svg>`), left: 114, top: y + 21 });
+    layers.push({ ...num, left: 114 + Math.round((58 - num.width) / 2), top: y + 21 + Math.round((58 - num.height) / 2) });
+    layers.push({ input: icon(step.icon, 34, C.copper, 2), left: 196, top: y + 33 });
+    const t1 = await text(step.title, { size: 28, weight: 800, color: C.ink });
+    const t2 = await text(step.sub, { size: 21, weight: 400, color: C.muted });
+    const th = t1.height + 6 + t2.height;
+    layers.push({ ...t1, left: 252, top: y + Math.round((cardH - th) / 2) });
+    layers.push({ ...t2, left: 252, top: y + Math.round((cardH - th) / 2) + t1.height + 6 });
+    y += cardH + 16;
+  }
+  if (slide.note) {
+    const note = await text(slide.note, { size: 23, weight: 400, color: "#e3cfc9", width: 860, align: "centre" });
+    layers.push({ ...note, left: Math.round((W - note.width) / 2), top: y + 4 });
+    y += note.height + 16;
+  }
+  const fomo = await text((slide.fomo || "Produção limitada — garanta o seu").toUpperCase(), { size: 21, weight: 800, color: C.copper, spacing: 0.1 });
+  const fw = fomo.width + 60;
+  y += 10;
+  layers.push({ input: pill("", { width: fw, height: 54, fill: "#f3c9a8" }), left: Math.round((W - fw) / 2), top: y });
+  layers.push({ ...fomo, left: Math.round((W - fomo.width) / 2), top: y + Math.round((54 - fomo.height) / 2) });
+  y += 54 + 22;
+  const site = await text(SITE, { size: 26, weight: "mono", color: C.cream });
+  layers.push({ ...site, left: Math.round((W - site.width) / 2), top: y });
+  y += site.height + 12;
+  const sign = await text(slide.signature || "Feito à mão, camada por camada", { size: 38, weight: "hand", color: "#f3c9a8" });
+  layers.push({ ...sign, left: Math.round((W - sign.width) / 2), top: y });
+  y += sign.height;
+  const offset = Math.round((CH - 88 - y) / 2);
+  for (const layer of layers) layer.top += offset;
+  await footerCheio(layers, { index, total, dark: true });
+  return sharp(canvas(CH, C.copperDeep)).composite(layers).jpeg({ quality: 92 }).toBuffer();
+}
+
 (async () => {
   const specFile = process.argv[2];
   if (!specFile) return console.log("uso: node scripts/instagram-artes.cjs scripts/instagram/<pauta>.json");
@@ -817,6 +1037,11 @@ async function storyFull(story, product, products) {
         let buffer;
         if (slide.kind === "cover") buffer = await coverSlide(slide);
         else if (slide.kind === "cta") buffer = await ctaSlide(slide);
+        else if (slide.kind === "cover-cheio") {
+          for (const item of slide.items || []) productOf(item.sku);
+          buffer = await coverCheio(slide, products);
+        } else if (slide.kind === "cta-cheio") buffer = await ctaCheio(slide, i + 1, post.slides.length);
+        else if (slide.kind === "product-cheio") buffer = await productCheio(slide, productOf(slide.sku), i + 1, post.slides.length);
         else buffer = await productSlide(slide, productOf(slide.sku), ++index, numbered);
         fs.writeFileSync(file, buffer);
       }
@@ -824,6 +1049,11 @@ async function storyFull(story, product, products) {
       fs.writeFileSync(path.join(dir, "story.jpg"), await storyFull(post, productOf(post.sku), products));
     } else if (post.type === "story-rico") {
       fs.writeFileSync(path.join(dir, "story.jpg"), await storyRich(post, productOf(post.sku)));
+    } else if (post.type === "story" && post.kind === "cta-cheio") {
+      // Mesmo slide "Como pedir" do carrossel, centralizado no 9:16 (fundo vinho).
+      const slide = await ctaCheio(post);
+      const pad = (1920 - CH) / 2;
+      fs.writeFileSync(path.join(dir, "story.jpg"), await sharp(slide).extend({ top: pad, bottom: pad, background: C.copperDeep }).jpeg({ quality: 92 }).toBuffer());
     } else if (post.type === "story") {
       const buffer = post.kind === "cta" ? await ctaSlide(post, 1920) : await storySlide(post, productOf(post.sku));
       fs.writeFileSync(path.join(dir, "story.jpg"), buffer);
