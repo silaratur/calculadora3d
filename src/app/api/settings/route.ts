@@ -12,6 +12,7 @@ const settingsSchema = z.object({
   monthlyMaintenance: z.number().min(0),
   monthlyOtherCosts: z.number().min(0),
   monthlyPieces: z.number().min(1),
+  monthlyProductiveHours: z.number().min(1).optional(),
   defaultMarkup: z.number().min(0),
   defaultLossRate: z.number().min(0),
   companyName: z.string().max(120).optional(),

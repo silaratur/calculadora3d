@@ -48,6 +48,9 @@ model PricingSettings {
   monthlyMaintenance   Float    @default(40)
   monthlyOtherCosts    Float    @default(0)
   monthlyPieces        Float    @default(60)
+  // Rateio do custo fixo por hora de impressão (desde 28/09/2026): custo fixo do
+  // mês ÷ horas produtivas; cada peça paga pelo tempo que ocupa a impressora.
+  monthlyProductiveHours Float  @default(350)
   defaultMarkup        Float    @default(40)
   defaultLossRate      Float    @default(5)
   // Usados no orçamento em PDF enviado ao cliente (src/app/quotes/[id]/print) —

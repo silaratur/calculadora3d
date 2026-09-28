@@ -9,7 +9,7 @@ import { calculatePieceCost, calculateSuggestedPrice, effectiveMonthlyFixedCost,
 type Material = { id: string; name: string; type: string; unitPrice?: number; unitWeightGrams?: number; costPerKg: number };
 type Printer = { id: string; model: string; purchasePrice: number; powerWatts: number; usefulLifeHours: number; maintenancePerHour: number };
 type Supply = { id: string; name: string; category: string; unitCost: number };
-type PricingSettings = { energyRate: number; defaultPowerWatts: number; laborRate: number; monthlyRent: number; monthlySubscriptions: number; monthlyMaintenance: number; monthlyOtherCosts: number; monthlyPieces: number; defaultMarkup: number; defaultLossRate: number };
+type PricingSettings = { energyRate: number; defaultPowerWatts: number; laborRate: number; monthlyRent: number; monthlySubscriptions: number; monthlyMaintenance: number; monthlyOtherCosts: number; monthlyPieces: number; monthlyProductiveHours?: number; defaultMarkup: number; defaultLossRate: number };
 type Marketplace = { id: string; name: string; commissionRate: number; fixedFee: number; adsRate: number };
 type CustomExtra = { id: string; name: string; unitCost: number };
 type CustomerLead = { id: string; name: string };
@@ -251,7 +251,7 @@ function CalculatorForm() {
       printerUsefulLifeHours: printer?.usefulLifeHours,
       printerMaintenancePerHour: n(maintenancePerHour),
       suppliesCost: presetsCost + customCost,
-      fixedCostPerPiece: fixedCostPerPiece(settings, currentMonthFixedCost ?? undefined),
+      fixedCostPerPiece: fixedCostPerPiece(settings, currentMonthFixedCost ?? undefined, n(hours) + n(minutes) / 60),
       lossRatePercent: n(lossRate),
     });
     const pricing = calculateSuggestedPrice({

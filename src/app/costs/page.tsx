@@ -29,6 +29,7 @@ type PricingSettings = {
   monthlyMaintenance: number;
   monthlyOtherCosts: number;
   monthlyPieces: number;
+  monthlyProductiveHours?: number;
   defaultMarkup: number;
   defaultLossRate: number;
   companyName?: string;
@@ -104,14 +105,16 @@ const emptyVariable = { date: todayLocal(), description: "", filament: "0", comm
 // Potência não fica aqui: cada impressora já tem a própria potência (W)
 // cadastrada na Biblioteca, e é ela que entra no cálculo — defaultPowerWatts
 // nunca é usado no Catálogo Novo, só como valor inicial esquecido na Calculadora.
-const productionFields: { key: "energyRate" | "laborRate" | "monthlyPieces"; label: string }[] = [
+// O custo fixo do mês é rateado por hora de impressão (fixo ÷ horas produtivas):
+// cada peça paga pelo tempo que ocupa a impressora, não um valor igual para todas.
+const productionFields: { key: "energyRate" | "laborRate" | "monthlyProductiveHours"; label: string }[] = [
   { key: "energyRate", label: "Custo do kWh (R$)" },
   { key: "laborRate", label: "Custo da hora de trabalho (R$)" },
-  { key: "monthlyPieces", label: "Peças produzidas por mês" },
+  { key: "monthlyProductiveHours", label: "Horas produtivas de impressão por mês" },
 ];
 
 const emptySettings: PricingSettings = { energyRate: 0.85, defaultPowerWatts: 250, laborRate: 25, monthlyRent: 0, monthlySubscriptions: 50, monthlyMaintenance: 40, monthlyOtherCosts: 0, monthlyPieces: 60, defaultMarkup: 40, defaultLossRate: 5 };
-const settingsToProductionDraft = (item: PricingSettings) => ({ energyRate: String(item.energyRate), laborRate: String(item.laborRate), monthlyPieces: String(item.monthlyPieces) });
+const settingsToProductionDraft = (item: PricingSettings) => ({ energyRate: String(item.energyRate), laborRate: String(item.laborRate), monthlyProductiveHours: String(item.monthlyProductiveHours ?? 350) });
 
 export default function CostsPage() {
   const [tab, setTab] = useState<"fixed" | "variable" | "production">("fixed");
@@ -194,7 +197,7 @@ export default function CostsPage() {
       ...settings,
       energyRate: n(productionDraft.energyRate),
       laborRate: n(productionDraft.laborRate),
-      monthlyPieces: Math.max(n(productionDraft.monthlyPieces), 1),
+      monthlyProductiveHours: Math.max(n(productionDraft.monthlyProductiveHours), 1),
     };
     const response = await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(updated) });
     setFeedback(response.ok ? "Custos de produção salvos." : "Não foi possível salvar.");

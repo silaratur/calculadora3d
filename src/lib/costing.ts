@@ -16,6 +16,8 @@ export type PricingSettingsLike = {
   monthlyMaintenance: number;
   monthlyOtherCosts: number;
   monthlyPieces: number;
+  /** Horas de impressão produtivas por mês — base do rateio do custo fixo. */
+  monthlyProductiveHours?: number;
   defaultMarkup: number;
   defaultLossRate: number;
 };
@@ -33,11 +35,20 @@ export const noChannelFees: ChannelFees = { commissionRate: 0, fixedFee: 0, adsR
  * corrente já foi lançado em Custos Fixos (`monthlyTotalOverride`), usa o
  * total de lá; senão cai nos 4 campos antigos de `PricingSettings`.
  */
-export function fixedCostPerPiece(settings: PricingSettingsLike, monthlyTotalOverride?: number) {
+export function fixedCostPerHour(settings: PricingSettingsLike, monthlyTotalOverride?: number) {
   const monthly =
     monthlyTotalOverride ??
     settings.monthlyRent + settings.monthlySubscriptions + settings.monthlyMaintenance + settings.monthlyOtherCosts;
-  return monthly / Math.max(settings.monthlyPieces, 1);
+  return monthly / Math.max(settings.monthlyProductiveHours ?? 350, 1);
+}
+
+/**
+ * Parte do custo fixo que cabe a uma peça: custo fixo por hora × horas de
+ * impressão dela. Antes era um valor igual para qualquer peça (custo fixo ÷
+ * peças/mês), o que pesava demais nas peças pequenas e rápidas.
+ */
+export function fixedCostPerPiece(settings: PricingSettingsLike, monthlyTotalOverride: number | undefined, printTimeHours: number) {
+  return fixedCostPerHour(settings, monthlyTotalOverride) * Math.max(printTimeHours, 0);
 }
 
 /**

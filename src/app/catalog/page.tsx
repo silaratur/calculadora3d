@@ -4,7 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconClock, IconSave, IconShieldAlert, IconShoppingBag, IconTag, IconTrash, IconX } from "@/components/Icons";
-import { calculateMultiMaterialCost, calculatePieceCost, calculateSuggestedPrice, effectiveMonthlyFixedCost, fixedCostPerPiece, markupPercentForFinalPrice, type PricingMethod } from "@/lib/costing";
+import { calculateMultiMaterialCost, calculatePieceCost, materialLineCost, calculateSuggestedPrice, effectiveMonthlyFixedCost, fixedCostPerHour, fixedCostPerPiece, markupPercentForFinalPrice, type PricingMethod } from "@/lib/costing";
 import { resizeImage } from "@/lib/image";
 import { closestFilament, libraryColors, sameColor, swatch } from "@/lib/filament-colors";
 import { mostExpensiveColorFilament } from "@/lib/color-variants";
@@ -18,7 +18,7 @@ type MaterialLine = { materialId: string; grams: number };
 // meio da digitação porque o value volta arredondado a cada tecla.
 type DraftMaterialLine = { materialId: string; grams: string };
 type Printer = { id: string; model: string; purchasePrice: number; powerWatts: number; usefulLifeHours: number; maintenancePerHour: number };
-type PricingSettings = { energyRate: number; defaultPowerWatts: number; laborRate: number; defaultMarkup: number; defaultLossRate: number; monthlyRent: number; monthlySubscriptions: number; monthlyMaintenance: number; monthlyOtherCosts: number; monthlyPieces: number; roundPricesTo90?: boolean };
+type PricingSettings = { energyRate: number; defaultPowerWatts: number; laborRate: number; defaultMarkup: number; defaultLossRate: number; monthlyRent: number; monthlySubscriptions: number; monthlyMaintenance: number; monthlyOtherCosts: number; monthlyPieces: number; monthlyProductiveHours?: number; roundPricesTo90?: boolean };
 type Marketplace = { id: string; name: string; commissionRate: number; fixedFee: number; adsRate: number };
 const defaultMarketplace: Marketplace = { id: "direct", name: "Venda Direta", commissionRate: 0, fixedFee: 0, adsRate: 0 };
 const markupPresets = ["10", "25", "50", "65", "100", "150", "200"];
@@ -114,6 +114,13 @@ function parseColors(raw: string | undefined) {
 }
 
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+/** "PLA Branco - High Speed…" → "PLA Branco - R$ 0,08/g - High Speed…": custo por grama logo após o primeiro " - ", para comparar filamentos na hora de escolher. */
+function materialLabel(material: Material) {
+  const perGram = `${brl(materialLineCost(material, 1))}/g`;
+  const cut = material.name.indexOf(" - ");
+  return cut < 0 ? `${material.name} - ${perGram}` : `${material.name.slice(0, cut)} - ${perGram} - ${material.name.slice(cut + 3)}`;
+}
 const n = (value: string) => Number(value.replace(",", ".")) || 0;
 
 // Direção que cada critério assume ao ser selecionado pela primeira vez —
@@ -288,7 +295,7 @@ export default function CatalogPage() {
       printerPurchasePrice: printer?.purchasePrice,
       printerUsefulLifeHours: printer?.usefulLifeHours,
       printerMaintenancePerHour: printer?.maintenancePerHour,
-      fixedCostPerPiece: fixedCostPerPiece(settings, currentMonthFixedCost ?? undefined),
+      fixedCostPerPiece: fixedCostPerPiece(settings, currentMonthFixedCost ?? undefined, printTimeHours),
       lossRatePercent: n(draft.lossRate),
     });
   const priceFor = (unitCost: number) =>
@@ -735,12 +742,12 @@ export default function CatalogPage() {
                             <select value={line.materialId} onChange={(event) => updateMaterialLine(index, { materialId: event.target.value })}>
                               {/* O filamento desativado continua visível nesta linha (marcado),
                                   mas não é oferecido para outras. */}
-                              {disabled ? <option value={disabled.material.id}>⚠ {disabled.material.name} (desativado)</option> : null}
+                              {disabled ? <option value={disabled.material.id}>⚠ {materialLabel(disabled.material)} (desativado)</option> : null}
                               {materials
                                 // Um material só pode estar em uma linha por vez — sem isso,
                                 // duas linhas com o mesmo filamento derrubavam o salvamento.
                                 .filter((item) => item.id === line.materialId || !draft.materialLines.some((other, otherIndex) => otherIndex !== index && other.materialId === item.id))
-                                .map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                                .map((item) => <option key={item.id} value={item.id}>{materialLabel(item)}</option>)}
                             </select>
                             {/* Texto (não number) e vírgula aceita — mantém "64,9" enquanto
                                 digita, sem arredondar a cada tecla (n() só converte ao calcular/salvar). */}
@@ -890,7 +897,7 @@ export default function CatalogPage() {
                   <Cost label="Energia" value={cost.energy} />
                   <Cost label="Depreciação + Manut." value={cost.machine} />
                   <Cost label="Mão de Obra" value={cost.labor} />
-                  <Cost label="Custos Fixos Rateados" value={cost.fixedCosts} />
+                  <Cost label={`Custos Fixos Rateados (${brl(fixedCostPerHour(settings, currentMonthFixedCost ?? undefined))}/h × ${printTimeHours.toFixed(2)} h)`} value={cost.fixedCosts} />
                   <Cost label="Reserva para perdas" value={cost.reserve} />
                   <hr />
                   <Cost label="Custo Base" value={cost.total} bold subtotal />
