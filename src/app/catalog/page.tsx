@@ -622,7 +622,7 @@ export default function CatalogPage() {
                       ) : null}
                     </label>
                   </div>
-                  <label className="notes-field">Descrição<textarea value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Aparece no card do catálogo" /></label>
+                  <label className="notes-field description-field">Descrição<textarea rows={15} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Aparece no card do catálogo" /></label>
                   <label className="checkbox-field">
                     <input type="checkbox" checked={draft.showInStore} onChange={(event) => setDraft({ ...draft, showInStore: event.target.checked })} />
                     Mostrar na loja (ac3d.silaratur.cloud) — nome, descrição, fotos e preço ficam públicos

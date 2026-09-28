@@ -303,6 +303,8 @@ textarea:focus {
 .pricing-options small, .discount-field small { color: var(--admin-muted); font-size: 12px; }
 .discount-field { margin-top: 16px; max-width: 250px; }
 .notes-field textarea { min-height: 85px; resize: vertical; }
+/* Descrição do produto no Catálogo: texto longo (tópicos, medidas) — 15 linhas visíveis. */
+.description-field textarea { line-height: 1.5; min-height: calc(15 * 1.5em + 20px); }
 .price-summary { position: sticky; top: 24px; padding: 23px; }
 .summary-eyebrow, .profit-grid span { color: var(--calc-muted); font-size: 12px; letter-spacing: .08em; }
 .price-summary h2 { color: var(--admin-copper); font-family: var(--font-sans), Arial, sans-serif; font-size: 28px; margin: 7px 0 0; }
