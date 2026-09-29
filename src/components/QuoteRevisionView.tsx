@@ -7,7 +7,7 @@ import { IconX } from "@/components/Icons";
 /**
  * Mostra uma revisão antiga do orçamento EXATAMENTE como foi salva — itens,
  * quantidades, custos e totais do snapshot daquela hora, sem recalcular com o
- * Catálogo de hoje (o "Restaurar" recalcula; isto aqui não).
+ * Catálogo de hoje.
  */
 
 export type RevisionToView = {
@@ -143,7 +143,7 @@ export function QuoteRevisionView({ revision, onClose, onRestore }: { revision: 
           <button className="secondary-button" type="button" onClick={onClose}>Fechar</button>
           {onRestore ? <button className="primary-button" type="button" onClick={onRestore}>Restaurar esta revisão</button> : null}
         </div>
-        {onRestore ? <p className="revision-view-hint">Restaurar carrega estes itens no editor e recalcula com os preços atuais do Catálogo; ao salvar, vira uma nova revisão.</p> : null}
+        {onRestore ? <p className="revision-view-hint">Restaurar carrega estes itens no editor mantendo o preço desta revisão (dá para trocar para os preços atuais do Catálogo no aviso); ao salvar, vira uma nova revisão.</p> : null}
       </div>
     </div>,
     document.body,

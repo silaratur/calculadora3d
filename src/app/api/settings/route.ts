@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notifyStore } from "@/lib/store-sync";
 
 const settingsSchema = z.object({
   energyRate: z.number().min(0),
@@ -50,5 +51,6 @@ export async function PUT(request: Request) {
     ...(storeQtyDiscounts ? { storeQtyDiscounts: JSON.stringify([...storeQtyDiscounts].sort((a, b) => a.minQty - b.minQty)) } : {}),
   };
   const settings = await prisma.pricingSettings.upsert({ where: { id: "default" }, update: data, create: { id: "default", ...data } });
+  notifyStore();
   return NextResponse.json(settings);
 }

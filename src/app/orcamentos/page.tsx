@@ -113,7 +113,7 @@ function OrcamentosForm() {
   // Orçamento salvo como estava no banco — para avisar se o Catálogo mudou de
   // preço desde então. "keep" = mantendo o preço negociado; "update" = usando
   // os preços atuais (decisão do usuário no alerta).
-  const [loadedQuote, setLoadedQuote] = useState<{ snapshotJson: string; finalPrice: number; markup: string } | null>(null);
+  const [loadedQuote, setLoadedQuote] = useState<{ snapshotJson: string; finalPrice: number; markup: string; discount: string } | null>(null);
   const [driftChoice, setDriftChoice] = useState<"keep" | "update" | null>(null);
   // Orçamento aprovado já virou venda: só leitura (a API também recusa).
   const readOnly = quoteMeta?.status === "CONVERTED";
@@ -194,9 +194,7 @@ function OrcamentosForm() {
       setClientPhone(quote.customerPhone);
       setClientEmail(quote.customerEmail);
       applyVersion(quote.productName, quote.notes, quote.snapshotJson);
-      let savedMarkup = "0";
-      try { savedMarkup = (JSON.parse(quote.snapshotJson) as QuoteSnapshot).markup ?? "0"; } catch { /* snapshot antigo */ }
-      setLoadedQuote({ snapshotJson: quote.snapshotJson, finalPrice: quote.finalPrice, markup: savedMarkup });
+      setLoadedQuote(negotiatedVersion(quote.snapshotJson, quote.finalPrice));
       setDriftChoice(null);
       setQuoteMeta({ source: quote.source, sourceDetail: quote.sourceDetail, status: quote.status, revision: quote.revision, code: quote.code, archiveReason: quote.archiveReason, revisions: quote.revisions ?? [], order: quote.order ?? null });
     }
@@ -387,8 +385,13 @@ function OrcamentosForm() {
   }
 
   // Restaurar só preenche o editor — vira a próxima revisão quando você salvar.
+  // O preço volta ao da revisão (o negociado com o cliente), mesmo que o
+  // Catálogo tenha mudado desde então — igual a abrir um orçamento salvo; o
+  // aviso de preços do Catálogo deixa trocar para os preços atuais.
   function restoreRevision(revision: QuoteRevisionEntry) {
     applyVersion(revision.productName, revision.notes, revision.snapshotJson);
+    setLoadedQuote(negotiatedVersion(revision.snapshotJson, revision.finalPrice));
+    setDriftChoice(null);
     setRestoredFrom(revision.number);
     setHistoryOpen(false);
   }
@@ -556,13 +559,23 @@ function OrcamentosForm() {
   function applyFinalPrice(value: string) {
     const target = n(value);
     if (!target || !calc.costWithReserve) return;
+    // A base já é o preço de venda do Catálogo, e o markup não fica negativo:
+    // preço abaixo da base vira Desconto Especial (markup 0), senão o campo
+    // voltava sozinho para o valor da base. Na base ou acima, o preço sai só
+    // da margem e o desconto zera (não fica um desconto "fantasma" no PDF).
+    const atBase = calculateSuggestedPrice({ unitCost: calc.costWithReserve, markupPercent: 0, channel: marketplace, method: pricingMethod }).final;
+    if (target < atBase - 0.004) {
+      setMarkup("0");
+      setDiscount((atBase - target).toFixed(2).replace(".", ","));
+      return;
+    }
     const percent = markupPercentForFinalPrice({
       unitCost: calc.costWithReserve,
       finalPrice: target,
       channel: marketplace,
-      discountPerUnit: n(discount),
       method: pricingMethod,
     });
+    setDiscount("0");
     setMarkup(String(Math.round(percent * 10000) / 10000));
   }
 
@@ -660,7 +673,7 @@ function OrcamentosForm() {
             ) : (
               <p>
                 Mantendo o preço negociado com o cliente: <b>{brl(loadedQuote.finalPrice)}</b>.{" "}
-                <button type="button" className="link-button" onClick={() => { setMarkup(loadedQuote.markup); setDriftChoice("update"); }}>Atualizar para os preços atuais</button>
+                <button type="button" className="link-button" onClick={() => { setMarkup(loadedQuote.markup); setDiscount(loadedQuote.discount); setDriftChoice("update"); }}>Atualizar para os preços atuais</button>
               </p>
             )}
           </div>
@@ -1034,12 +1047,20 @@ function Info({ label, value }: { label: string; value: string }) {
  * filamento pela cor (mesmo tipo); peças AMS mostram as cores só como
  * informação. Cores sem filamento do mesmo tipo na Biblioteca ficam marcadas.
  */
+/** Versão salva (orçamento ou revisão) cujo preço final deve ser mantido quando o Catálogo muda. */
+function negotiatedVersion(snapshotJson: string, finalPrice: number) {
+  let snapshot: QuoteSnapshot = {};
+  try { snapshot = JSON.parse(snapshotJson) as QuoteSnapshot; } catch { /* snapshot antigo */ }
+  return { snapshotJson, finalPrice, markup: snapshot.markup ?? "0", discount: snapshot.discount ?? "0" };
+}
+
 function ColorPicker({ product, materials, value, onChange }: { product: Product; materials: VariantMaterial[]; value: string; onChange: (color: string) => void }) {
   const colors = productColors(product.colors);
   const recipe = singleFilamentRecipe(product, materials);
   return (
-    <label className="product-color-picker">
+    <label className="product-color-picker" title={value ? `Cor: ${value}` : "Escolher cor"}>
       <span className="filament-swatch" style={{ background: swatch(value || "?") }} />
+      <IconChevronDown className="nav-icon" />
       <select value={value} onChange={(event) => onChange(event.target.value)} aria-label="Cor da peça">
         {colors.map((color) => {
           const available = !recipe || Boolean(filamentForColor(recipe.base, color, materials));

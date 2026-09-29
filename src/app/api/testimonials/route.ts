@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notifyStore } from "@/lib/store-sync";
 
 const testimonialSchema = z.object({
   name: z.string().trim().min(2).max(60),
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
   const parsed = testimonialSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const created = await prisma.testimonial.create({ data: { ...parsed.data, context: parsed.data.context ?? "" } });
+  notifyStore();
   return NextResponse.json(created, { status: 201 });
 }
 
@@ -30,5 +32,6 @@ export async function DELETE(request: Request) {
   if (!id) return NextResponse.json({ error: "ID obrigatório" }, { status: 400 });
   // Sai da loja mas fica no banco (mesmo padrão dos produtos arquivados).
   await prisma.testimonial.update({ where: { id }, data: { active: false } });
+  notifyStore();
   return NextResponse.json({ success: true });
 }

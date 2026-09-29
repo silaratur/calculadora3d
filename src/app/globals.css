@@ -1908,8 +1908,19 @@ a.material-badge { text-decoration: none; }
 .filament-pricing-note { color: var(--admin-muted); display: block; font-size: 12px; line-height: 1.45; }
 .filament-pricing-note b { color: var(--copper, #602f32); }
 
-.product-color-picker { align-items: center; display: flex; gap: 6px; margin-top: 4px; }
-.product-color-picker select { font-size: 12px; min-height: 30px; padding: 2px 8px; width: auto; }
+/* Cor da peça no orçamento: pílula compacta (bolinha da cor + seta) colada à
+   direita do nome do produto, na mesma linha — uma linha por item, e o nome
+   do produto fica com o espaço. O <select> nativo cobre a pílula invisível:
+   o clique abre a lista de cores com os nomes; o nome da cor escolhida
+   aparece no title. */
+.product-picker:has(.product-color-picker) { align-items: center; display: flex; gap: 6px; }
+.product-picker:has(.product-color-picker) > input { flex: 1; }
+.calc-section .product-color-picker { align-items: center; background: var(--field-bg); border: 1px solid var(--admin-border); border-radius: 9px; color: var(--admin-muted); cursor: pointer; flex: none; flex-direction: row; gap: 3px; height: 32px; margin: 0; padding: 0 6px 0 9px; position: relative; }
+.calc-section .product-color-picker:hover { border-color: var(--admin-copper); }
+.calc-section .product-color-picker:focus-within { border-color: var(--admin-copper); box-shadow: 0 0 0 2px var(--focus-ring); }
+.product-color-picker .filament-swatch { flex: none; height: 14px; width: 14px; }
+.product-color-picker .nav-icon { flex: none; height: 12px; width: 12px; }
+.product-line .product-color-picker select { cursor: pointer; inset: 0; min-height: 0; opacity: 0; position: absolute; width: 100%; }
 
 /* Orçamento salvo cujo Catálogo mudou de preço depois (Orçamentos e card em Projetos). */
 .price-drift-alert { background: var(--warn-soft); border: 1px solid var(--warn-border); border-radius: 12px; color: var(--warn); display: grid; font-size: 13px; gap: 6px; margin: 0 0 16px; padding: 14px 16px; }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notifyStore } from "@/lib/store-sync";
 import { calculateMultiMaterialCost } from "@/lib/costing";
 
 // Aceita dois formatos: o novo (Catálogo — `materials[]`, SKU e custo de
@@ -194,6 +195,7 @@ export async function POST(request: Request) {
         data: { ...baseData, sku: await nextSkuForCategory(data.category) },
         include: { materials: true, supplies: true, printer: true, marketplaceChannel: true },
       });
+      notifyStore();
       return NextResponse.json(product, { status: 201 });
     } catch (error) {
       const isUniqueClash = typeof error === "object" && error !== null && "code" in error && error.code === "P2002";
@@ -267,6 +269,7 @@ export async function PUT(request: Request) {
     });
   });
 
+  notifyStore();
   return NextResponse.json(product);
 }
 
@@ -279,5 +282,6 @@ export async function DELETE(request: Request) {
   if (!id) return NextResponse.json({ error: "ID do produto obrigatório" }, { status: 400 });
 
   await prisma.product.update({ where: { id }, data: { active: false } });
+  notifyStore();
   return NextResponse.json({ success: true });
 }

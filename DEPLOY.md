@@ -83,3 +83,7 @@ A loja (`loja-ac3d`, repositório à parte) lê `/api/public/products` e `/api/p
 cria pedidos em `/api/public/orders`, que exige o cabeçalho `x-store-key`. Para isso o
 `/opt/calculadora3d/.env` precisa de `STORE_API_KEY=<mesma chave de /opt/loja-ac3d/.env>` — sem ela a
 rota responde 503 e a loja segue só pelo WhatsApp (o pedido não entra em Orçamentos).
+
+Para a loja se atualizar na hora em que um produto, as Configurações ou os depoimentos são salvos,
+o `/opt/calculadora3d/.env` também precisa de `STORE_URL=https://ac3d.silaratur.cloud`: o sistema chama
+`POST /api/revalidar` da loja (com a mesma `x-store-key`). Sem ela, a loja se atualiza sozinha em até 60 s.
