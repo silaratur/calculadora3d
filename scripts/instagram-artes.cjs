@@ -252,6 +252,7 @@ const ICONS = {
   chave: '<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/>',
   mesa: '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
   mao: '<path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>',
+  livro: '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
   vela: '<path d="M12 2c1 2 2 3 2 4.5a2 2 0 0 1-4 0C10 5 11 4 12 2Z"/><rect x="8" y="10" width="8" height="12" rx="1"/>',
   folha: '<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>',
   regua: '<path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/>',
@@ -697,15 +698,29 @@ async function storyFull(story, product, products) {
       { x: 44, fill: T.panel, ink: T.panelInk, label: "1 unidade", price: unit.price },
       { x: 44 + half + 14, fill: C.copper, ink: C.cream, label: `Kit ${story.combos.kitQty} unidades`, price: kit.price, save },
     ];
+    // Um tamanho de preço para os dois cartões: o maior em que todos cabem
+    // sem encostar no selo "Economize" (16 px de folga).
+    let priceSize = 46;
+    for (; priceSize > 30; priceSize -= 2) {
+      let fits = true;
+      for (const box of boxes) {
+        const sw = box.save ? (await text(`Economize ${money(box.save)}`, { size: 22, weight: 800, color: C.cream })).width + 32 : 0;
+        const room = box.save ? half - 26 - sw - 16 - 16 : half - 52;
+        if ((await text(money(box.price), { size: priceSize, weight: "mono", color: box.ink })).width > room) fits = false;
+      }
+      if (fits) break;
+    }
+    const fullH = (await text(money(boxes[0].price), { size: 46, weight: "mono", color: boxes[0].ink })).height;
     for (const box of boxes) {
       layers.push({ input: Buffer.from(`<svg width="${half}" height="${boxH}"><rect width="${half}" height="${boxH}" rx="20" fill="${box.fill}"/></svg>`), left: box.x, top: cy });
       const lab = await text(box.label, { size: 26, weight: 700, color: box.ink });
       layers.push({ ...lab, left: box.x + 26, top: cy + 18 });
-      const pr = await text(money(box.price), { size: 46, weight: "mono", color: box.ink });
-      layers.push({ ...pr, left: box.x + 26, top: cy + 50 });
-      if (box.save) {
-        const sv = await text(`Economize ${money(box.save)}`, { size: 22, weight: 800, color: C.cream });
-        const sw = sv.width + 32;
+      const sv = box.save ? await text(`Economize ${money(box.save)}`, { size: 22, weight: 800, color: C.cream }) : null;
+      const sw = sv ? sv.width + 32 : 0;
+      const pr = await text(money(box.price), { size: priceSize, weight: "mono", color: box.ink });
+      // Fonte reduzida fica alinhada pela base, onde estaria a de 46.
+      layers.push({ ...pr, left: box.x + 26, top: cy + 50 + fullH - pr.height });
+      if (sv) {
         layers.push({ input: pill('', { width: sw, height: 40, fill: '#5f6549' }), left: box.x + half - sw - 16, top: cy + boxH - 40 - 16 });
         layers.push({ ...sv, left: box.x + half - sw - 16 + 16, top: cy + boxH - 40 - 16 + Math.round((40 - sv.height) / 2) });
         const best = await text("MAIS VANTAJOSO", { size: 18, weight: 800, color: C.copper, spacing: 0.12 });
