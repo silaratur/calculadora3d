@@ -56,7 +56,10 @@ const FACES = {
 /** Texto → PNG transparente. size em px; width opcional quebra linha. */
 async function text(content, { size, weight = 400, color = C.ink, width, spacing = 0, align = "left", lineHeight = 1.15 }) {
   const [family, fw, file, style] = FACES[weight];
-  const markup = `<span foreground="${color}" font_weight="${fw}"${style ? ` font_style="${style}"` : ""}${spacing ? ` letter_spacing="${Math.round(spacing * size * 1024)}"` : ""}>${esc(content)}</span>`;
+  // O espaço da Jakarta tem só 0,18 em e as palavras parecem coladas; +0,08 em em cada espaço.
+  let body = esc(content);
+  if (family === "Plus Jakarta Sans") body = body.replace(/ /g, `<span letter_spacing="${Math.round((spacing + 0.08) * size * 1024)}"> </span>`);
+  const markup = `<span foreground="${color}" font_weight="${fw}"${style ? ` font_style="${style}"` : ""}${spacing ? ` letter_spacing="${Math.round(spacing * size * 1024)}"` : ""}>${body}</span>`;
   const { data, info } = await sharp({
     text: { text: markup, font: `${family} ${size}`, fontfile: path.join(FONTS, file), rgba: true, dpi: 72, width, align, spacing: Math.round(size * (lineHeight - 1)), wrap: "word" },
   }).png().toBuffer({ resolveWithObject: true });
@@ -870,6 +873,10 @@ async function coverCheio(slide, products) {
   const tileW = 320;
   const photoH = 240;
   let ty = 540;
+  // O texto vem recortado no contorno das letras: o preço usa a altura de uma
+  // linha de referência (acento + descendente) para ficar na mesma altura em todas as peças.
+  const lineRef = (await text("Ápg", { size: 21, weight: 700, color: C.ink, lineHeight: 1.05 })).height;
+  const twoRef = (await text("Ápg\nÁpg", { size: 21, weight: 700, color: C.ink, lineHeight: 1.05 })).height;
   for (const [i, item] of (slide.items || []).slice(0, 6).entries()) {
     const product = products[item.sku];
     const tx = 40 + (i % 3) * (tileW + 20);
@@ -878,7 +885,8 @@ async function coverCheio(slide, products) {
     const name = await text(item.name || product.name, { size: 21, weight: 700, color: C.ink, width: tileW - 6, lineHeight: 1.05 });
     layers.push({ ...name, left: tx + 2, top: ty + photoH + 10 });
     const price = await text(money(product.price), { size: 24, weight: "mono", color: C.copper });
-    layers.push({ ...price, left: tx + 2, top: ty + photoH + 14 + name.height });
+    const nameH = name.height > (lineRef + twoRef) / 2 ? twoRef : lineRef;
+    layers.push({ ...price, left: tx + 2, top: ty + photoH + 14 + nameH });
   }
   const swipe = await text("Arraste para ver cada peça  →", { size: 24, weight: 700, color: C.cream });
   const sw = swipe.width + 56;
