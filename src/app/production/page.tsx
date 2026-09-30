@@ -6,6 +6,7 @@ import { AdminHeader } from "@/components/AdminHeader";
 import { IconFileText } from "@/components/Icons";
 import { ProductPhotoLink } from "@/components/ProductPreview";
 import { displayNumber } from "@/lib/sales";
+import { brl } from "@/lib/money";
 
 type Customer = { id: string; name: string };
 type OrderQuote = { id: string; code: string | null };
@@ -48,7 +49,6 @@ const STATUSES = [
   { id: "COMPLETED", label: "Concluído", hint: "Baixa o estoque do material automaticamente" },
 ] as const;
 
-const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const hours = (minutes: number) => (minutes >= 60 ? `${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, "0")}` : `${minutes}min`);
 
 function jobDone(job: Job) {

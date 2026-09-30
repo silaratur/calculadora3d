@@ -6,6 +6,7 @@ import { AuthBanner } from "@/components/AuthBanner";
 import { IconTrash } from "@/components/Icons";
 import { assessMargin, assessProfitPerHour, calculateOrderMetrics } from "@/lib/costing";
 import { displayNumber, saleStage, saleStageLabel, type SaleStage } from "@/lib/sales";
+import { brl } from "@/lib/money";
 
 type Customer = { id: string; name: string };
 type Product = { id: string; sku: string; name: string; cost: number; price: number; printTimeHours: number; active: boolean };
@@ -43,7 +44,6 @@ type Order = {
 
 type Payment = { id: string; orderId: string; date: string; amount: number; method: string; notes: string; reversedAt: string | null };
 
-const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const n = (value: string) => Number(value.replace(",", ".")) || 0;
 const dateValue = (value: string | null) => (value ? value.slice(0, 10) : "");
 

@@ -10,6 +10,7 @@ import { closestFilament, libraryColors, sameColor, swatch } from "@/lib/filamen
 import { mostExpensiveColorFilament } from "@/lib/color-variants";
 import { CompetitorPrices } from "@/components/CompetitorPrices";
 import { ProductPhotoCarousel, ProductPreviewModal, categoryColor, productImages } from "@/components/ProductPreview";
+import { brl } from "@/lib/money";
 
 type Material = { id: string; name: string; type: string; color?: string; stockGrams?: number; unitPrice: number; unitWeightGrams: number; costPerKg: number; active?: boolean };
 type MaterialLine = { materialId: string; grams: number };
@@ -119,7 +120,6 @@ function parseColors(raw: string | undefined) {
   }
 }
 
-const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 /** "PLA Branco - High Speed…" → "PLA Branco - R$ 0,08/g - High Speed…": custo por grama logo após o primeiro " - ", para comparar filamentos na hora de escolher. */
 function materialLabel(material: Material) {

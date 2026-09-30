@@ -1,4 +1,5 @@
 import { roundPriceTo90 } from "@/lib/costing";
+import { brl } from "@/lib/money";
 
 // Avaliação de preços contra a concorrência (Shopee, Mercado Livre, Elo7…):
 // cada anúncio vira um preço POR UNIDADE com frete, e o produto é comparado
@@ -47,7 +48,6 @@ export function evaluatePrice(product: EvaluatedProduct, entries: CompetitorEntr
   const med = median(units);
   const floorPrice = roundPriceTo90(product.cost / (1 - TARGET_MARGIN / 100));
   const diffPercent = ((product.price - med) / med) * 100;
-  const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const marginAt = (price: number) => (((price - product.cost) / price) * 100).toFixed(0);
 
   let position: Position;

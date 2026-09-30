@@ -1,3 +1,4 @@
+import { brl } from "@/lib/money";
 /**
  * Cálculo de custo e preço da operação, em um só lugar.
  *
@@ -360,10 +361,10 @@ export function assessProfitPerHour(profitPerHour: number, laborRatePerHour: num
   if (profitPerHour < laborRatePerHour * 0.5) {
     return {
       level: "warning",
-      message: `Lucro por hora baixo (R$ ${profitPerHour.toFixed(2)}/h). Para peças longas pode não compensar a máquina ocupada.`,
+      message: `Lucro por hora baixo (${brl(profitPerHour)}/h). Para peças longas pode não compensar a máquina ocupada.`,
     };
   }
-  return { level: "good", message: `Lucro por hora de R$ ${profitPerHour.toFixed(2)}/h.` };
+  return { level: "good", message: `Lucro por hora de ${brl(profitPerHour)}/h.` };
 }
 
 /**

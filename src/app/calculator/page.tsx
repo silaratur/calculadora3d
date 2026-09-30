@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { AdminHeader } from "@/components/AdminHeader";
 import { IconBookmark, IconClock, IconCopy, IconDownload, IconSave, IconShieldAlert, IconShoppingBag, IconSparkles, IconTrash } from "@/components/Icons";
 import { calculatePieceCost, calculateSuggestedPrice, effectiveMonthlyFixedCost, fixedCostPerPiece, type PricingMethod } from "@/lib/costing";
+import { brl } from "@/lib/money";
 
 type Material = { id: string; name: string; type: string; unitPrice?: number; unitWeightGrams?: number; costPerKg: number };
 type Printer = { id: string; model: string; purchasePrice: number; powerWatts: number; usefulLifeHours: number; maintenancePerHour: number };
@@ -56,8 +57,7 @@ const n = (value: string) => {
   const normalized = cleanValue.includes(",") ? cleanValue.replace(/\./g, "").replace(",", ".") : cleanValue;
   return Number(normalized) || 0;
 };
-const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const brl3 = (value: number) => `R$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`;
+const brl3 = (value: number) => `R$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`;
 const currencyInput = (value: string) => (n(value) ? brl(n(value)) : "");
 const editingCurrency = (value: string) => value.replace(/^R\$\s?/, "");
 const categoryTag = (category: string) => category.split(/[\s&]/)[0]?.toUpperCase() ?? category.toUpperCase();

@@ -10,6 +10,7 @@ import { QuoteRevisionView } from "@/components/QuoteRevisionView";
 import { calculateSuggestedPrice, markupPercentForFinalPrice, type PricingMethod } from "@/lib/costing";
 import { defaultColor, productColors, resolveColorLine, singleFilamentRecipe, filamentForColor, type VariantMaterial } from "@/lib/color-variants";
 import { swatch } from "@/lib/filament-colors";
+import { brl } from "@/lib/money";
 
 // Produto já cadastrado no Catálogo — custo e tempo de impressão vêm prontos
 // de lá (calculados com o motor multi-material do Catálogo), então aqui só
@@ -59,7 +60,6 @@ const n = (value: string) => {
   const normalized = cleanValue.includes(",") ? cleanValue.replace(/\./g, "").replace(",", ".") : cleanValue;
   return Number(normalized) || 0;
 };
-const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const fmtHours = (hours: number) => `${Math.floor(hours)}h ${Math.round((hours % 1) * 60)}m`;
 
 export default function OrcamentosPage() {

@@ -8,6 +8,7 @@ import { AuthBanner } from "@/components/AuthBanner";
 import { IconDownload, IconFileText } from "@/components/Icons";
 import { ProductPhotoLink } from "@/components/ProductPreview";
 import { displayNumber, paymentStatusLabel, saleStage, saleStageLabel } from "@/lib/sales";
+import { brl } from "@/lib/money";
 
 /**
  * Página da venda (fase 3): tudo de uma venda num lugar — etapa, peças,
@@ -48,7 +49,6 @@ type Order = {
   production: { status: string; completedAt: string | null; items: Item[] } | null;
 };
 
-const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const n = (value: string) => Number(value.replace(",", ".")) || 0;
 const fmtDate = (value: string | null | undefined) => (value ? new Date(value).toLocaleDateString("pt-BR") : null);
 const itemStatusLabel: Record<string, string> = { WAITING: "Na fila", PRINTING: "Imprimindo", FINISHING: "Acabamento", COMPLETED: "Concluída" };

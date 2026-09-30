@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { IconTrash } from "@/components/Icons";
+import { brl } from "@/lib/money";
 
 type Tab = "filaments" | "printers" | "supplies";
 
@@ -51,10 +52,6 @@ const emptyFilament = { name: "", brand: "", type: "PLA", color: "", unitPrice: 
 const emptyPrinter = { model: "", purchasePrice: "", powerWatts: "160", usefulLifeHours: "5000", maintenancePerHour: "0,60", purchaseDate: "", purchaseLink: "" };
 const emptySupply = { name: "", category: supplyCategories[1], unitCost: "", purchaseDate: "", purchaseLink: "" };
 
-function money(value: number) {
-  return `R$ ${value.toFixed(2).replace(".", ",")}`;
-}
-
 function numberValue(value: string) {
   const cleanValue = value.replace(/R\$\s?/g, "").replace(/\s/g, "");
   const normalized = cleanValue.includes(",")
@@ -65,7 +62,7 @@ function numberValue(value: string) {
 
 function currencyInput(value: string) {
   const numericValue = numberValue(value);
-  return numericValue ? `R$ ${numericValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "";
+  return numericValue ? `R$ ${numericValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "";
 }
 
 function editingCurrency(value: string) {
@@ -327,9 +324,9 @@ export default function AdminPage() {
                     </div>
                     <h3>{item.name}</h3>
                     <p>Marca: {item.brand || "Genérico"} {item.color ? `| ${item.color}` : ""}</p>
-                    <strong>{money(item.unitPrice || item.costPerKg)} <small>({item.unitWeightGrams}g)</small></strong>
+                    <strong>{brl(item.unitPrice || item.costPerKg)} <small>({item.unitWeightGrams}g)</small></strong>
                     <p className="card-detail">
-                      {money((item.unitPrice || item.costPerKg) / Math.max(item.unitWeightGrams, 1))}/g · Estoque: {item.stockGrams}g
+                      {brl((item.unitPrice || item.costPerKg) / Math.max(item.unitWeightGrams, 1))}/g · Estoque: {item.stockGrams}g
                       {lowStock && item.active ? <span className="low-stock-badge">Estoque baixo</span> : null}
                       {!item.active ? <span className="inactive-badge">Desativado — sem estoque</span> : null}
                     </p>
@@ -352,7 +349,7 @@ export default function AdminPage() {
               <div className="form-actions"><button className="primary-button" type="submit">{editingId ? "Atualizar Impressora" : "Salvar Impressora"}</button>{editingId ? <button className="secondary-button" type="button" onClick={() => { setEditingId(null); setPrinter(emptyPrinter); }}>Cancelar</button> : null}</div>
             </form>
             <div className="preset-grid printer-grid">
-              {printers.map((item) => { const hourly = item.purchasePrice / item.usefulLifeHours + item.maintenancePerHour; return <article className="preset-card" key={item.id}><div className="card-top"><span className="material-badge printer-badge">Impressora</span><span className="card-actions"><button className="edit-button" onClick={() => editPreset("printers", item)}>Editar</button><button className="delete-button" onClick={() => deletePreset("/api/printers", item.id)} aria-label={`Excluir ${item.model}`}><IconTrash className="nav-icon" /></button></span></div><h3>{item.model}</h3><p>Valor {money(item.purchasePrice)} | Potência {item.powerWatts}W</p><p>Vida útil: {item.usefulLifeHours}h | Manut.: {money(item.maintenancePerHour)}/h</p><strong className="cost-pill">Custo máquina: {money(hourly)}/hora</strong><p className="card-detail">Compra: {item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString("pt-BR") : "não informada"} {item.purchaseLink ? <a href={item.purchaseLink} target="_blank" rel="noreferrer">Abrir link</a> : null}</p></article>; })}
+              {printers.map((item) => { const hourly = item.purchasePrice / item.usefulLifeHours + item.maintenancePerHour; return <article className="preset-card" key={item.id}><div className="card-top"><span className="material-badge printer-badge">Impressora</span><span className="card-actions"><button className="edit-button" onClick={() => editPreset("printers", item)}>Editar</button><button className="delete-button" onClick={() => deletePreset("/api/printers", item.id)} aria-label={`Excluir ${item.model}`}><IconTrash className="nav-icon" /></button></span></div><h3>{item.model}</h3><p>Valor {brl(item.purchasePrice)} | Potência {item.powerWatts}W</p><p>Vida útil: {item.usefulLifeHours}h | Manut.: {brl(item.maintenancePerHour)}/h</p><strong className="cost-pill">Custo máquina: {brl(hourly)}/hora</strong><p className="card-detail">Compra: {item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString("pt-BR") : "não informada"} {item.purchaseLink ? <a href={item.purchaseLink} target="_blank" rel="noreferrer">Abrir link</a> : null}</p></article>; })}
             </div>
           </section>
         ) : null}
@@ -385,7 +382,7 @@ export default function AdminPage() {
                   </div>
                   <h3>{item.name}</h3>
                   <p>Categoria: {item.category}</p>
-                  <strong>{money(item.unitCost)} <small>por unidade</small></strong>
+                  <strong>{brl(item.unitCost)} <small>por unidade</small></strong>
                   {!item.active ? <p className="card-detail"><span className="inactive-badge">Desativado — sem estoque</span></p> : null}
                   <p className="card-detail">Compra: {item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString("pt-BR") : "não informada"} {item.purchaseLink ? <a href={item.purchaseLink} target="_blank" rel="noreferrer">Abrir link</a> : null}</p>
                 </article>

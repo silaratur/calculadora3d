@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconTrash } from "@/components/Icons";
+import { brl } from "@/lib/money";
 
 type Settings = { energyRate: number; defaultPowerWatts: number; laborRate: number; monthlyRent: number; monthlySubscriptions: number; monthlyMaintenance: number; monthlyOtherCosts: number; monthlyPieces: number; defaultMarkup: number; defaultLossRate: number; companyName: string; companyContact: string; quoteValidityDays: number; quoteDeliveryText: string; quoteWarrantyText: string; quotePaymentText: string; storeProductionDays: number; storeQtyDiscounts: string; roundPricesTo90: boolean; storeFreeShippingMin: number; storeShippingText: string; storeCouponCode: string; storeCouponPercent: number };
 type Testimonial = { id: string; name: string; text: string; context: string };
@@ -24,7 +25,6 @@ function parseTiers(raw: string): Tier[] {
   }
 }
 const emptyChannel = { name: "", commissionRate: "0", fixedFee: "0", adsRate: "0", notes: "" };
-const money = (value: number) => `R$ ${value.toFixed(2).replace(".", ",")}`;
 const numberValue = (value: string) => { const clean = value.replace(/R\$\s?/g, "").replace(/\s/g, ""); return Number(clean.includes(",") ? clean.replace(/\./g, "").replace(",", ".") : clean) || 0; };
 
 export default function SettingsPage() {
@@ -233,7 +233,7 @@ export default function SettingsPage() {
                   </div>
                   <h3>{item.name}</h3>
                   <p>Comissão: {(item.commissionRate * 100).toFixed(1)}% · Ads: {(item.adsRate * 100).toFixed(1)}%</p>
-                  <strong>{money(item.fixedFee)} taxa fixa</strong>
+                  <strong>{brl(item.fixedFee)} taxa fixa</strong>
                 </article>
               ))}
             </div>

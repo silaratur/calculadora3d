@@ -7,6 +7,7 @@ import { canAccessPath } from "@/lib/roles";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconClock, IconDownload, IconTrash, IconUser } from "@/components/Icons";
 import { ProductPhotoLink } from "@/components/ProductPreview";
+import { brl } from "@/lib/money";
 
 type Quote = {
   id: string;
@@ -34,7 +35,6 @@ type SortField = "recent" | "client" | "value";
 type QuoteItem = { name: string; quantity: number };
 type ConvertForm = { shippingPaid: boolean; shippingCost: string; paymentMethod: string; plannedProductionDate: string; expectedPaymentDate: string };
 
-const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const n = (value: string) => Number(value.replace(",", ".")) || 0;
 const paymentMethods = ["PIX", "Cartão de Crédito", "Cartão de Débito", "Dinheiro", "Boleto"];
 const emptyConvertForm: ConvertForm = { shippingPaid: false, shippingCost: "0", paymentMethod: "PIX", plannedProductionDate: "", expectedPaymentDate: "" };

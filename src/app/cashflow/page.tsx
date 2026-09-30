@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconTrash } from "@/components/Icons";
+import { brl } from "@/lib/money";
 
 type CashEntry = {
   id: string;
@@ -21,7 +22,6 @@ type CashEntry = {
 
 type Summary = { totalIn: number; totalOut: number; balance: number; receivable: number; projectedBalance: number };
 
-const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const neg = (value: number) => (value < 0 ? "negative" : undefined);
 // Data local, não UTC — perto da meia-noite no Brasil toISOString() já mostraria o dia seguinte.
 const todayLocal = () => { const now = new Date(); const pad = (v: number) => String(v).padStart(2, "0"); return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`; };

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { evaluatePrice, isStale, STALE_DAYS, TARGET_MARGIN, unitPrice, type CompetitorEntry, type Position } from "@/lib/competitors";
+import { brl } from "@/lib/money";
 
 /**
  * Concorrência — aba do Catálogo. Registro manual de anúncios (Shopee, Mercado
@@ -13,7 +14,6 @@ type ProductRef = { id: string; sku: string; name: string; price: number; cost: 
 type Marketplace = { id: string; name: string; commissionRate: number; fixedFee: number; adsRate: number };
 
 const CHANNELS = ["Shopee", "Mercado Livre", "Elo7", "Instagram", "Loja própria", "Outro"];
-const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const n = (value: string) => Number(value.replace(",", ".")) || 0;
 const today = () => new Date().toISOString().slice(0, 10);
 const emptyForm = { productId: "", competitor: "", channel: "Shopee", price: "", quantity: "1", shipping: "0", url: "", checkedAt: today(), notes: "" };

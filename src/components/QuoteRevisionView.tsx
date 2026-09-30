@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { IconX } from "@/components/Icons";
+import { brl } from "@/lib/money";
 
 /**
  * Mostra uma revisão antiga do orçamento EXATAMENTE como foi salva — itens,
@@ -31,7 +32,6 @@ type Snapshot = {
   calculations?: { printTime?: number; productsCost?: number; suppliesCost?: number; costWithReserve?: number; price?: number; profit?: number };
 };
 
-const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const num = (value: unknown) => Number(String(value ?? 0).replace(",", ".")) || 0;
 const fmtHours = (hours: number) => `${Math.floor(hours)}h${String(Math.round((hours % 1) * 60)).padStart(2, "0")}`;
 

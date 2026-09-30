@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconTrash } from "@/components/Icons";
+import { brl } from "@/lib/money";
 
 type FixedCostMonth = {
   id: string;
@@ -55,7 +56,6 @@ type VariableCostEntry = {
   total: number;
 };
 
-const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const n = (value: string) => Number(value.replace(",", ".")) || 0;
 // Data local, não UTC — perto da meia-noite no Brasil (~21h em UTC-3)
 // toISOString() já mostraria o dia/mês seguinte.

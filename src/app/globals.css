@@ -348,18 +348,21 @@ textarea:focus {
 .cost-line { color: var(--admin-muted); display: flex; font-size: 12px; justify-content: space-between; margin: 9px 0; }
 .cost-line span { align-items: center; display: flex; font-family: var(--font-sans), Arial, sans-serif; gap: 7px; }
 .cost-dot { border-radius: 50%; flex-shrink: 0; height: 7px; width: 7px; }
-.cost-line strong { color: var(--admin-ink); font-family: var(--font-mono); font-weight: 600; }
+.cost-line strong { color: var(--admin-ink); font-family: var(--font-mono); font-weight: 600; text-align: right; white-space: nowrap; }
+/* Rótulo quebra se precisar; valor, nunca (sinal, "R$" e número juntos). */
+.cost-line span { min-width: 0; }
+.cost-line { gap: 12px; }
 .cost-line.bold { color: var(--admin-ink); font-weight: 700; }
 /* Subtotal (ex: Custo Base) — mesma fonte/tamanho do rótulo e valor usados
    em .profit-grid (PREÇO ATACADO etc.), só que mantendo a cor já usada aqui
    em vez de trocar pra cor de destaque. */
-.cost-line.subtotal span { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.cost-line.subtotal span { font-size: 12px; letter-spacing: .08em; line-height: 1.35; text-transform: uppercase; }
 .cost-line.subtotal strong { font-size: 16px; }
 /* Custo Base não é a informação que decide se o orçamento tá bom (quem decide
    é o Preço Final Sugerido, ver .final-highlight) — fica esmaecido de propósito. */
 .cost-line.muted { opacity: .55; }
 .cost-line.muted strong { font-weight: 500; }
-.summary-note { color: var(--calc-muted); font-size: 12px; line-height: 1.4; margin: -6px 0 12px; }
+.summary-note { color: var(--calc-muted); font-size: 12px; line-height: 1.4; margin: 2px 0 12px; }
 /* Repete o Preço Final Sugerido dentro da composição de custos — ele já
    aparece isolado no topo da tela, mas repetir aqui, destacado, evita que
    "Custo Base" pareça a informação principal deste bloco. */
@@ -1965,3 +1968,6 @@ button.competitor-row { cursor: pointer; }
 .competitor-missing ul { display: grid; gap: 6px; list-style: none; margin: 10px 0 0; padding: 0; }
 .competitor-missing li { align-items: center; display: flex; font-size: 13px; gap: 12px; justify-content: space-between; }
 @media (max-width: 900px) { .competitor-row, .competitor-entry { grid-template-columns: 1fr 1fr; } .competitor-head { display: none; } }
+
+/* Valores (dinheiro, horas, porcentagem) nunca se partem em duas linhas. */
+.num, .section-total strong, .product-line-info, .cost-pill, .metric-wide strong { white-space: nowrap; }

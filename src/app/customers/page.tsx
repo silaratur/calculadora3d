@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconTrash } from "@/components/Icons";
+import { brl } from "@/lib/money";
 
 type CustomerOrder = { id: string; totalAmount: number; paidAmount: number; createdAt: string };
 type Customer = { id: string; name: string; email: string; phone: string; notes: string; createdAt: string; orders: CustomerOrder[] };
@@ -11,7 +12,6 @@ type SortBy = "name" | "buyer" | "newest" | "oldest";
 const paidOf = (customer: Customer) => customer.orders.reduce((sum, order) => sum + order.paidAmount, 0);
 const boughtOf = (customer: Customer) => customer.orders.reduce((sum, order) => sum + order.totalAmount, 0);
 
-const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const emptyDraft = { name: "", email: "", phone: "", notes: "" };
 
 export default function CustomersPage() {

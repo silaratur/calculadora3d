@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { assessMargin } from "@/lib/costing";
 import { displayNumber } from "@/lib/sales";
+import { brl } from "@/lib/money";
 
 type DashboardData = {
   totalSold: number;
@@ -29,7 +30,6 @@ type DashboardData = {
 
 type Material = { id: string; name: string; stockGrams: number; lowStockThresholdGrams: number };
 
-const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 // Valor negativo (saldo, projeção, lucro) em vermelho — antes saía na mesma cor dos positivos.
 const neg = (value: number) => (value < 0 ? "negative" : undefined);
 const fmtMinutes = (minutes: number) => `${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, "0")}`;

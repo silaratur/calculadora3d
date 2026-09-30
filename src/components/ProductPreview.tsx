@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { IconX } from "@/components/Icons";
+import { brl } from "@/lib/money";
 
 /**
  * Popup de produto (fotos + descrição breve) — o mesmo em todo lugar que mostra
@@ -23,7 +24,6 @@ type PreviewProduct = {
   active: boolean;
 };
 
-const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 // O popup é um card compacto — descrição longa quebraria o layout, então vai
 // só um resumo (a completa continua no formulário do Catálogo).

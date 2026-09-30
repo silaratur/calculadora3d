@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconDownload } from "@/components/Icons";
 import { ProductPhotoLink } from "@/components/ProductPreview";
+import { brl } from "@/lib/money";
 
 type QuoteRecord = {
   id: string;
@@ -46,7 +47,6 @@ const emptySettings: Settings = {
   quotePaymentText: "",
 };
 
-const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dateLong = (value: string | Date) => new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
 const printTimeLabel = (hours: number) => `${Math.floor(hours)}h${hours % 1 ? ` ${Math.round((hours % 1) * 60)}min` : ""}`;
 
