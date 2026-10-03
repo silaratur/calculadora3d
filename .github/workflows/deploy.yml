@@ -54,7 +54,13 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
             "tar -xzf /tmp/calculadora3d.tar.gz -C /opt/calculadora3d && cd /opt/calculadora3d && npm install --omit=dev && npx prisma generate && npx prisma migrate deploy && docker compose restart"
 
+      # O container instala o openssl a cada boot antes de subir o Next, então
+      # pode levar mais de um minuto: tenta por até 3 min antes de dar falha.
       - name: Verificar se a produção respondeu
         run: |
-          sleep 5
-          curl -sf -o /dev/null https://calculadora3d.silaratur.cloud/ && echo "OK: produção respondeu" || (echo "FALHA: produção não respondeu" && exit 1)
+          for i in $(seq 1 18); do
+            if curl -sf -o /dev/null https://calculadora3d.silaratur.cloud/; then echo "OK: produção respondeu (tentativa $i)"; exit 0; fi
+            sleep 10
+          done
+          echo "FALHA: produção não respondeu em 3 minutos"
+          exit 1
