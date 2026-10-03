@@ -239,10 +239,75 @@ export default function AdminPage() {
     if (saved) setSupply(emptySupply);
   }
 
+  // Desativados ficam numa seção própria, recolhida, para não se misturarem
+  // com o que está em uso; a contagem das abas considera só os ativos.
+  const activeMaterials = materials.filter((item) => item.active);
+  const inactiveMaterials = materials.filter((item) => !item.active);
+  const activeSupplies = supplies.filter((item) => item.active);
+  const inactiveSupplies = supplies.filter((item) => !item.active);
+
+  function purchaseDetail(item: { purchaseDate: string | null; purchaseLink: string }) {
+    return <p className="card-detail">Compra: {item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString("pt-BR") : "não informada"} {item.purchaseLink ? <a href={item.purchaseLink} target="_blank" rel="noreferrer">Abrir link</a> : null}</p>;
+  }
+
+  function renderMaterialCard(item: Material) {
+    const lowStock = item.stockGrams <= item.lowStockThresholdGrams;
+    const cardClass = ["preset-card", lowStock && item.active ? "low-stock" : "", !item.active ? "inactive" : ""].filter(Boolean).join(" ");
+    return (
+      <article className={cardClass} key={item.id}>
+        <div className="card-top">
+          <span className="material-badge">{item.type}</span>
+          <span className="card-actions">
+            {item.active ? (
+              <>
+                <button className="edit-button" onClick={() => editPreset("filaments", item)}>Editar</button>
+                <button className="delete-button" onClick={() => deletePreset("/api/materials", item.id)} aria-label={`Excluir ${item.name}`}><IconTrash className="nav-icon" /></button>
+              </>
+            ) : (
+              <button className="edit-button" type="button" onClick={() => reactivatePreset("/api/materials", item.id)}>Reativar</button>
+            )}
+          </span>
+        </div>
+        <h3>{item.name}</h3>
+        <p>Marca: {item.brand || "Genérico"} {item.color ? `| ${item.color}` : ""}</p>
+        <strong>{brl(item.unitPrice || item.costPerKg)} <small>({item.unitWeightGrams}g)</small></strong>
+        <p className="card-detail">
+          {brl((item.unitPrice || item.costPerKg) / Math.max(item.unitWeightGrams, 1))}/g · Estoque: {Math.max(item.stockGrams, 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}g
+          {lowStock && item.active ? <span className="low-stock-badge">Estoque baixo</span> : null}
+        </p>
+        {purchaseDetail(item)}
+      </article>
+    );
+  }
+
+  function renderSupplyCard(item: Supply) {
+    return (
+      <article className={item.active ? "preset-card" : "preset-card inactive"} key={item.id}>
+        <div className="card-top">
+          <span className="material-badge supply-badge">{item.category}</span>
+          <span className="card-actions">
+            {item.active ? (
+              <>
+                <button className="edit-button" onClick={() => editPreset("supplies", item)}>Editar</button>
+                <button className="delete-button" onClick={() => deletePreset("/api/supplies", item.id)} aria-label={`Excluir ${item.name}`}><IconTrash className="nav-icon" /></button>
+              </>
+            ) : (
+              <button className="edit-button" type="button" onClick={() => reactivatePreset("/api/supplies", item.id)}>Reativar</button>
+            )}
+          </span>
+        </div>
+        <h3>{item.name}</h3>
+        <p>Categoria: {item.category}</p>
+        <strong>{brl(item.unitCost)} <small>por unidade</small></strong>
+        {purchaseDetail(item)}
+      </article>
+    );
+  }
+
   const tabs = [
-    { id: "filaments" as const, label: "Filamentos", count: materials.length, icon: "◉" },
+    { id: "filaments" as const, label: "Filamentos", count: activeMaterials.length, icon: "◉" },
     { id: "printers" as const, label: "Impressoras", count: printers.length, icon: "▣" },
-    { id: "supplies" as const, label: "Insumos", count: supplies.length, icon: "◇" },
+    { id: "supplies" as const, label: "Insumos", count: activeSupplies.length, icon: "◇" },
   ];
 
   return (
@@ -303,37 +368,17 @@ export default function AdminPage() {
               <label>Link da Compra<input type="url" value={filament.purchaseLink} onChange={(event) => setFilament({ ...filament, purchaseLink: event.target.value })} placeholder="https://loja.com/produto" /></label>
               <div className="form-actions"><button className="primary-button" type="submit">{editingId ? "Atualizar Filamento" : "Salvar na Biblioteca"}</button>{editingId ? <button className="secondary-button" type="button" onClick={() => { setEditingId(null); setFilament(emptyFilament); }}>Cancelar</button> : null}</div>
             </form>
-            <div className="preset-grid">
-              {materials.map((item) => {
-                const lowStock = item.stockGrams <= item.lowStockThresholdGrams;
-                const cardClass = ["preset-card", lowStock && item.active ? "low-stock" : "", !item.active ? "inactive" : ""].filter(Boolean).join(" ");
-                return (
-                  <article className={cardClass} key={item.id}>
-                    <div className="card-top">
-                      <span className="material-badge">{item.type}</span>
-                      <span className="card-actions">
-                        {item.active ? (
-                          <>
-                            <button className="edit-button" onClick={() => editPreset("filaments", item)}>Editar</button>
-                            <button className="delete-button" onClick={() => deletePreset("/api/materials", item.id)} aria-label={`Excluir ${item.name}`}><IconTrash className="nav-icon" /></button>
-                          </>
-                        ) : (
-                          <button className="edit-button" type="button" onClick={() => reactivatePreset("/api/materials", item.id)}>Reativar</button>
-                        )}
-                      </span>
-                    </div>
-                    <h3>{item.name}</h3>
-                    <p>Marca: {item.brand || "Genérico"} {item.color ? `| ${item.color}` : ""}</p>
-                    <strong>{brl(item.unitPrice || item.costPerKg)} <small>({item.unitWeightGrams}g)</small></strong>
-                    <p className="card-detail">
-                      {brl((item.unitPrice || item.costPerKg) / Math.max(item.unitWeightGrams, 1))}/g · Estoque: {item.stockGrams}g
-                      {lowStock && item.active ? <span className="low-stock-badge">Estoque baixo</span> : null}
-                      {!item.active ? <span className="inactive-badge">Desativado — sem estoque</span> : null}
-                    </p>
-                    <p className="card-detail">Compra: {item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString("pt-BR") : "não informada"} {item.purchaseLink ? <a href={item.purchaseLink} target="_blank" rel="noreferrer">Abrir link</a> : null}</p>
-                  </article>
-                );
-              })}
+            <div className="preset-column">
+              <div className="preset-grid">
+                {activeMaterials.map(renderMaterialCard)}
+                {!activeMaterials.length && !loading ? <p className="preset-empty">Nenhum filamento ativo.</p> : null}
+              </div>
+              {inactiveMaterials.length ? (
+                <details className="inactive-section">
+                  <summary>Desativados <strong>({inactiveMaterials.length})</strong><span>Sem estoque ou retirados de uso — não aparecem na calculadora</span></summary>
+                  <div className="preset-grid">{inactiveMaterials.map(renderMaterialCard)}</div>
+                </details>
+              ) : null}
             </div>
           </section>
         ) : null}
@@ -364,29 +409,17 @@ export default function AdminPage() {
               <div className="form-grid"><label>Data da Compra<input type="date" value={supply.purchaseDate} onChange={(event) => setSupply({ ...supply, purchaseDate: event.target.value })} /></label><label>Link da Compra<input type="url" value={supply.purchaseLink} onChange={(event) => setSupply({ ...supply, purchaseLink: event.target.value })} placeholder="https://loja.com/produto" /></label></div>
               <div className="form-actions"><button className="primary-button" type="submit">{editingId ? "Atualizar Insumo" : "Salvar Insumo Preset"}</button>{editingId ? <button className="secondary-button" type="button" onClick={() => { setEditingId(null); setSupply(emptySupply); }}>Cancelar</button> : null}</div>
             </form>
-            <div className="preset-grid">
-              {supplies.map((item) => (
-                <article className={item.active ? "preset-card" : "preset-card inactive"} key={item.id}>
-                  <div className="card-top">
-                    <span className="material-badge supply-badge">{item.category}</span>
-                    <span className="card-actions">
-                      {item.active ? (
-                        <>
-                          <button className="edit-button" onClick={() => editPreset("supplies", item)}>Editar</button>
-                          <button className="delete-button" onClick={() => deletePreset("/api/supplies", item.id)} aria-label={`Excluir ${item.name}`}><IconTrash className="nav-icon" /></button>
-                        </>
-                      ) : (
-                        <button className="edit-button" type="button" onClick={() => reactivatePreset("/api/supplies", item.id)}>Reativar</button>
-                      )}
-                    </span>
-                  </div>
-                  <h3>{item.name}</h3>
-                  <p>Categoria: {item.category}</p>
-                  <strong>{brl(item.unitCost)} <small>por unidade</small></strong>
-                  {!item.active ? <p className="card-detail"><span className="inactive-badge">Desativado — sem estoque</span></p> : null}
-                  <p className="card-detail">Compra: {item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString("pt-BR") : "não informada"} {item.purchaseLink ? <a href={item.purchaseLink} target="_blank" rel="noreferrer">Abrir link</a> : null}</p>
-                </article>
-              ))}
+            <div className="preset-column">
+              <div className="preset-grid">
+                {activeSupplies.map(renderSupplyCard)}
+                {!activeSupplies.length && !loading ? <p className="preset-empty">Nenhum insumo ativo.</p> : null}
+              </div>
+              {inactiveSupplies.length ? (
+                <details className="inactive-section">
+                  <summary>Desativados <strong>({inactiveSupplies.length})</strong><span>Sem estoque ou retirados de uso — não aparecem na calculadora</span></summary>
+                  <div className="preset-grid">{inactiveSupplies.map(renderSupplyCard)}</div>
+                </details>
+              ) : null}
             </div>
           </section>
         ) : null}

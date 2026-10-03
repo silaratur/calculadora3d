@@ -9,6 +9,7 @@ import { brl } from "@/lib/money";
 type Settings = { energyRate: number; defaultPowerWatts: number; laborRate: number; monthlyRent: number; monthlySubscriptions: number; monthlyMaintenance: number; monthlyOtherCosts: number; monthlyPieces: number; defaultMarkup: number; defaultLossRate: number; companyName: string; companyContact: string; quoteValidityDays: number; quoteDeliveryText: string; quoteWarrantyText: string; quotePaymentText: string; storeProductionDays: number; storeQtyDiscounts: string; roundPricesTo90: boolean; storeFreeShippingMin: number; storeShippingText: string; storeCouponCode: string; storeCouponPercent: number };
 type Testimonial = { id: string; name: string; text: string; context: string };
 type Tier = { minQty: string; percent: string };
+type InstagramStatus = { connected: false } | { connected: true; username: string; igUserId: string; tokenHint: string; tokenExpiresAt: string | null; lastCheckedAt: string | null };
 type Marketplace = { id: string; name: string; commissionRate: number; fixedFee: number; adsRate: number; notes: string };
 
 const emptySettings: Settings = { energyRate: 0.85, defaultPowerWatts: 250, laborRate: 25, monthlyRent: 0, monthlySubscriptions: 50, monthlyMaintenance: 40, monthlyOtherCosts: 0, monthlyPieces: 60, defaultMarkup: 40, defaultLossRate: 5, companyName: "AC3D", companyContact: "", quoteValidityDays: 7, quoteDeliveryText: "", quoteWarrantyText: "", quotePaymentText: "", storeProductionDays: 10, storeQtyDiscounts: "[]", roundPricesTo90: true, storeFreeShippingMin: 0, storeShippingText: "", storeCouponCode: "", storeCouponPercent: 0 };
@@ -37,6 +38,10 @@ export default function SettingsPage() {
   const [editingChannelId, setEditingChannelId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
   const [needsLogin, setNeedsLogin] = useState(false);
+  const [instagram, setInstagram] = useState<InstagramStatus | null>(null);
+  const [instagramToken, setInstagramToken] = useState("");
+  const [instagramFeedback, setInstagramFeedback] = useState("");
+  const [instagramBusy, setInstagramBusy] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -50,6 +55,8 @@ export default function SettingsPage() {
         setTiers(parseTiers(loaded.storeQtyDiscounts));
       }
       if (channelsResponse.ok) setChannels((await channelsResponse.json()) as Marketplace[]);
+      const instagramResponse = await fetch("/api/instagram");
+      if (instagramResponse.ok) setInstagram((await instagramResponse.json()) as InstagramStatus);
     }
     void load();
   }, []);
@@ -62,6 +69,29 @@ export default function SettingsPage() {
       .filter((tier) => tier.minQty >= 2 && tier.percent > 0);
     const response = await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...settings, storeQtyDiscounts }) });
     setFeedback(response.ok ? "Configurações salvas." : "Não foi possível salvar as configurações.");
+  }
+
+  // PUT salva um token novo (validado no Instagram antes de gravar), POST só
+  // testa o salvo e DELETE desconecta. A resposta nunca traz o token.
+  async function instagramRequest(method: "PUT" | "POST" | "DELETE", success: string) {
+    setInstagramBusy(true);
+    setInstagramFeedback("");
+    const response = await fetch("/api/instagram", {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: method === "PUT" ? JSON.stringify({ token: instagramToken }) : undefined,
+    });
+    const body = (await response.json().catch(() => null)) as (InstagramStatus & { error?: string }) | null;
+    setInstagramBusy(false);
+    if (!response.ok) { setInstagramFeedback(body?.error ?? "Não foi possível falar com o Instagram."); return; }
+    if (body) setInstagram(body);
+    setInstagramToken("");
+    setInstagramFeedback(success);
+  }
+
+  function saveInstagramToken(event: FormEvent) {
+    event.preventDefault();
+    void instagramRequest("PUT", "Token salvo e conexão confirmada.");
   }
 
   async function saveTestimonial(event: FormEvent) {
@@ -186,6 +216,27 @@ export default function SettingsPage() {
           </form>
 
           <div className="settings-side">
+            {instagram ? (
+              <form className="preset-form" onSubmit={saveInstagramToken}>
+                <h2>Instagram</h2>
+                <p className="settings-intro">Conexão do app &quot;AC3D Publicador&quot; para publicar os posts aprovados. O token fica guardado cifrado e não aparece de novo nesta tela.</p>
+                {instagram.connected ? (
+                  <div className="instagram-status">
+                    <strong>Conectado como @{instagram.username}</strong>
+                    <span>Token terminado em …{instagram.tokenHint}{instagram.tokenExpiresAt ? ` · vale até ${new Date(instagram.tokenExpiresAt).toLocaleDateString("pt-BR")}` : ""}</span>
+                    {instagram.lastCheckedAt ? <span>Última verificação: {new Date(instagram.lastCheckedAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</span> : null}
+                  </div>
+                ) : <p className="instagram-status">Nenhuma conta conectada.</p>}
+                <label>{instagram.connected ? "Trocar token" : "Token de acesso"}<input type="password" autoComplete="off" spellCheck={false} value={instagramToken} onChange={(event) => setInstagramToken(event.target.value)} placeholder="Cole aqui o token gerado no painel da Meta" /></label>
+                <div className="form-actions">
+                  <button className="primary-button" type="submit" disabled={instagramBusy || instagramToken.trim().length < 20}>{instagramBusy ? "Verificando..." : "Salvar token"}</button>
+                  {instagram.connected ? <button className="secondary-button" type="button" disabled={instagramBusy} onClick={() => void instagramRequest("POST", "Conexão funcionando.")}>Testar conexão</button> : null}
+                  {instagram.connected ? <button className="quiet-button" type="button" disabled={instagramBusy} onClick={() => { if (window.confirm("Desconectar o Instagram? O token salvo será apagado.")) void instagramRequest("DELETE", "Instagram desconectado."); }}>Desconectar</button> : null}
+                </div>
+                {instagramFeedback ? <p className="settings-intro">{instagramFeedback}</p> : null}
+              </form>
+            ) : null}
+
             <form id="channel-form" className="preset-form" onSubmit={saveChannel}>
               <h2>{editingChannelId ? "Editar canal de venda" : "Novo canal de venda"}</h2>
               <label>Nome do canal<input required value={channel.name} onChange={(event) => setChannel({ ...channel, name: event.target.value })} placeholder="Ex: Shopee" /></label>

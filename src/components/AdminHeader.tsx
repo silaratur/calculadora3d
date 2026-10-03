@@ -8,6 +8,7 @@ import {
   IconFileText,
   IconGrid,
   IconHome,
+  IconSparkles,
   IconLogout,
   IconMenu,
   IconPrinter,
@@ -35,7 +36,8 @@ type Section =
   | "costs"
   | "cashflow"
   | "settings"
-  | "users";
+  | "users"
+  | "divulgacao";
 
 type NavLink = {
   id: Section;
@@ -59,6 +61,7 @@ const groups: { label: string; links: NavLink[] }[] = [
       { id: "projects", hrefs: ["/projects", "/orcamentos"], label: "Orçamentos", icon: IconFileText, alsoActive: ["orcamentos", "calculator"] },
       { id: "sales", hrefs: ["/sales"], label: "Vendas", icon: IconTag },
       { id: "customers", hrefs: ["/customers"], label: "Clientes", icon: IconUser },
+      { id: "divulgacao", hrefs: ["/divulgacao"], label: "Divulgação", icon: IconSparkles },
     ],
   },
   {

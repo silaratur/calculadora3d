@@ -1019,20 +1019,32 @@ a.material-badge:hover { text-decoration: underline; }
 }
 
 /* Material/insumo desativado (Biblioteca) — some da seleção em
-   Orçamentos/Catálogo, mas continua visível aqui, esmaecido, com um jeito
-   rápido de reativar quando repuser o estoque. */
-.preset-card.inactive { opacity: .55; }
-.preset-card.inactive:hover { opacity: .85; }
-.inactive-badge {
-  background: var(--admin-border);
-  border-radius: 5px;
-  color: var(--admin-muted);
-  display: inline-block;
-  font-family: var(--font-sans), Arial, sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 2px 6px;
+   Orçamentos/Catálogo e fica numa seção própria, recolhida, abaixo dos
+   ativos, com um jeito rápido de reativar quando repuser o estoque. */
+.preset-column { display: grid; gap: 22px; min-width: 0; }
+.preset-empty { color: var(--admin-muted); grid-column: 1 / -1; margin: 0; }
+.inactive-section {
+  border-top: 1px dashed var(--admin-border);
+  padding-top: 16px;
 }
+.inactive-section > summary {
+  align-items: baseline;
+  color: var(--admin-muted);
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  font-weight: 700;
+  gap: 4px 10px;
+  list-style: none;
+  margin-bottom: 14px;
+}
+.inactive-section > summary::-webkit-details-marker { display: none; }
+.inactive-section > summary::before { content: "▸"; display: inline-block; transition: transform .15s; }
+.inactive-section[open] > summary::before { transform: rotate(90deg); }
+.inactive-section > summary strong { margin-left: -6px; }
+.inactive-section > summary span { font-size: 13px; font-weight: 400; }
+.preset-card.inactive { opacity: .6; }
+.preset-card.inactive:hover { opacity: .9; }
 
 .card-detail a {
   color: var(--admin-copper);
@@ -1971,3 +1983,47 @@ button.competitor-row { cursor: pointer; }
 
 /* Valores (dinheiro, horas, porcentagem) nunca se partem em duas linhas. */
 .num, .section-total strong, .product-line-info, .cost-pill, .metric-wide strong { white-space: nowrap; }
+
+/* Configurações → Instagram: estado da conexão (nunca mostra o token). */
+.instagram-status { color: var(--admin-muted); display: grid; font-size: 13px; gap: 2px; margin: 0; }
+.instagram-status strong { color: var(--admin-ink); font-size: 14px; }
+
+/* Divulgação (fila do Instagram) */
+.field-hint { color: var(--admin-muted); font-size: 12px; font-weight: 400; line-height: 1.45; margin: 0; }
+.social-feedback { color: var(--admin-ink); }
+.social-banner {
+  background: var(--admin-paper);
+  border: 1px solid var(--admin-border);
+  border-left: 4px solid var(--admin-copper);
+  border-radius: 10px;
+  color: var(--admin-muted);
+  font-size: 13px;
+  margin: 0 0 18px;
+  padding: 10px 14px;
+}
+.social-banner.ok { border-left-color: var(--admin-olive); }
+.social-banner a { color: var(--admin-copper); }
+.social-section { display: grid; gap: 12px; }
+.social-section > h2 { align-items: baseline; display: flex; flex-wrap: wrap; font-size: 16px; gap: 4px 10px; margin: 0; }
+.social-section > h2 strong { margin-left: -6px; }
+.social-section > h2 span { color: var(--admin-muted); font-size: 13px; font-weight: 400; }
+.social-thumbs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.social-thumbs figure { flex: 0 0 auto; margin: 0; width: 64px; }
+.social-thumbs.editable figure { width: 86px; }
+.social-thumbs img { aspect-ratio: 4 / 5; border: 1px solid var(--admin-border); border-radius: 6px; display: block; object-fit: cover; width: 100%; }
+.social-thumbs figure.story img { aspect-ratio: 9 / 16; }
+.social-thumbs figcaption { align-items: center; display: flex; font-size: 12px; justify-content: space-between; margin-top: 3px; }
+.social-thumbs figcaption button { background: none; border: 0; color: var(--admin-ink); cursor: pointer; font-size: 15px; line-height: 1; padding: 2px 4px; }
+.social-thumbs figcaption button:disabled { cursor: default; opacity: .3; }
+.social-caption {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  color: var(--admin-muted);
+  display: -webkit-box;
+  font-size: 13px;
+  overflow: hidden;
+  white-space: pre-line;
+}
+.social-error { background: rgba(176, 58, 46, .08); border-radius: 6px; color: #b03a2e; font-size: 13px; margin: 0; padding: 6px 8px; }
+.social-card.status-approved { border-color: var(--admin-copper); }
+.social-card .form-actions { flex-wrap: wrap; margin-top: auto; }

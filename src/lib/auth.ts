@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import { parseRoles } from "@/lib/roles";
 
 const secret = new TextEncoder().encode(
   process.env.JWT_SECRET ?? "dev-secret-change-me",
@@ -49,4 +51,12 @@ export async function getCurrentUser() {
   } catch {
     return null;
   }
+}
+
+/** Para rotas só de Administrador: devolve a resposta de erro, ou null se pode seguir. */
+export async function requireAdmin() {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  if (!parseRoles(user.role).includes("ADMIN")) return NextResponse.json({ error: "Apenas administradores" }, { status: 403 });
+  return null;
 }

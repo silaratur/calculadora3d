@@ -459,3 +459,41 @@ model Testimonial {
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
 }
+
+// Conexão com o Instagram (@ac3d_studio) para publicar pela API. Linha única
+// ("default"). O token fica cifrado (src/lib/instagram.ts) e nunca sai da API:
+// a tela só recebe usuário, validade e os últimos caracteres.
+model InstagramConnection {
+  id             String    @id @default("default")
+  tokenCipher    String    @default("")
+  tokenHint      String    @default("")
+  igUserId       String    @default("")
+  username       String    @default("")
+  tokenExpiresAt DateTime?
+  lastCheckedAt  DateTime?
+  updatedAt      DateTime  @updatedAt
+}
+
+// Fila de publicações do Instagram (área Divulgação). Só sai do rascunho com
+// aprovação; o agendador do servidor publica os APROVADOS na hora marcada.
+// status: DRAFT | APPROVED | PUBLISHING | PUBLISHED | FAILED
+// kind: CAROUSEL (2–10 imagens) | IMAGE (1) | STORY (1, 9:16, sem legenda)
+// media: JSON com os nomes dos arquivos JPEG, na ordem, guardados fora do
+// banco (src/lib/instagram-media.ts).
+model InstagramPost {
+  id          String    @id @default(cuid())
+  title       String
+  kind        String    @default("CAROUSEL")
+  caption     String    @default("")
+  media       String    @default("[]")
+  status      String    @default("DRAFT")
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  igMediaId   String    @default("")
+  permalink   String    @default("")
+  error       String    @default("")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, scheduledAt])
+}
