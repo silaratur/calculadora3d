@@ -2104,3 +2104,12 @@ button.competitor-row { cursor: pointer; }
 .social-form .approval-head { margin-bottom: 0; }
 .social-form .form-actions { justify-content: flex-end; margin-top: 4px; }
 .social-form-note { margin: 0; }
+
+/* Revisão de reel: vídeo 9:16 com a interface da aba Reels por cima. */
+.ig-reel > video { height: 100%; inset: 0; object-fit: cover; position: absolute; width: 100%; }
+.ig-reel-top { color: #fff; font-size: 15px; left: 14px; position: absolute; text-shadow: 0 1px 3px rgba(0, 0, 0, .5); top: 12px; }
+.ig-reel-side { color: #fff; display: grid; font-size: 18px; gap: 16px; position: absolute; right: 12px; bottom: 90px; text-shadow: 0 1px 3px rgba(0, 0, 0, .5); }
+.ig-reel-caption { bottom: 14px; color: #fff; left: 4px; position: absolute; right: 54px; text-shadow: 0 1px 3px rgba(0, 0, 0, .6); }
+.ig-reel-caption p { font-size: 12px; margin: 0; padding: 0 10px; }
+.ig-safe.bottom.reel { height: 18%; }
+.ig-safe.right { bottom: 18%; height: 34%; right: 0; width: 13%; }

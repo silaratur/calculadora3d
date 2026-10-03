@@ -478,8 +478,8 @@ model InstagramConnection {
 // aprovação; o agendador do servidor publica os APROVADOS na hora marcada.
 // status: DRAFT | APPROVED | REJECTED | PUBLISHING | PUBLISHED | FAILED
 // reviewNote: motivo da reprovação; fica visível no rascunho até ser aprovado.
-// kind: CAROUSEL (2–10 imagens) | IMAGE (1) | STORY (1, 9:16, sem legenda)
-// media: JSON com os nomes dos arquivos JPEG, na ordem, guardados fora do
+// kind: CAROUSEL (2–10 imagens) | IMAGE (1) | STORY (1, 9:16, sem legenda) | REEL (1 vídeo MP4)
+// media: JSON com os nomes dos arquivos (JPEG ou MP4), na ordem, guardados fora do
 // banco (src/lib/instagram-media.ts).
 model InstagramPost {
   id          String    @id @default(cuid())

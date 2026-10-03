@@ -9,7 +9,7 @@ import { IconClock, IconTrash, IconX } from "@/components/Icons";
 import { resizeImage } from "@/lib/image";
 import { ApprovalPreview } from "./ApprovalPreview";
 
-type Kind = "CAROUSEL" | "IMAGE" | "STORY";
+type Kind = "CAROUSEL" | "IMAGE" | "STORY" | "REEL";
 type Status = "DRAFT" | "APPROVED" | "REJECTED" | "PUBLISHING" | "PUBLISHED" | "FAILED";
 type Post = { id: string; title: string; kind: Kind; caption: string; media: string[]; status: Status; scheduledAt: string | null; publishedAt: string | null; permalink: string; error: string; reviewNote: string };
 type Connection = { connected: boolean; username?: string; canPublish: boolean; autopublish: boolean };
@@ -17,9 +17,28 @@ type Connection = { connected: boolean; username?: string; canPublish: boolean; 
 type FormImage = { key: string; src: string; preview: string };
 type Form = { id: string | null; title: string; kind: Kind; caption: string; scheduledAt: string; images: FormImage[] };
 
-const KIND_LABEL: Record<Kind, string> = { CAROUSEL: "Carrossel", IMAGE: "Post único", STORY: "Story" };
+const KIND_LABEL: Record<Kind, string> = { CAROUSEL: "Carrossel", IMAGE: "Post único", STORY: "Story", REEL: "Reel" };
 // Tarja sobre a arte, como a categoria no Catálogo — dá para bater o olho e saber o tipo.
-const KIND_COLOR: Record<Kind, string> = { CAROUSEL: "#777f5d", IMAGE: "#8a5a2e", STORY: "#602f32" };
+const KIND_COLOR: Record<Kind, string> = { CAROUSEL: "#777f5d", IMAGE: "#8a5a2e", STORY: "#602f32", REEL: "#4c6b7a" };
+
+const isVideo = (src: string) => src.startsWith("data:video/") || src.endsWith(".mp4");
+
+/** Arquivo → data URI sem mexer (vídeo vai como veio; imagem passa por resizeImage). */
+function readAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error ?? new Error("Falha ao ler o arquivo."));
+    reader.onload = () => resolve(String(reader.result));
+    reader.readAsDataURL(file);
+  });
+}
+
+/** Miniatura de imagem ou do primeiro quadro do vídeo. */
+function MediaThumb({ src, alt, lazy }: { src: string; alt: string; lazy?: boolean }) {
+  if (isVideo(src)) return <video src={`${src}${src.startsWith("data:") ? "" : "#t=0.5"}`} muted playsInline preload="metadata" aria-label={alt} />;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt={alt} loading={lazy ? "lazy" : undefined} />;
+}
 const emptyForm: Form = { id: null, title: "", kind: "CAROUSEL", caption: "", scheduledAt: "", images: [] };
 
 const mediaUrl = (postId: string, name: string) => `/api/public/instagram-media/${postId}/${name}`;
@@ -45,7 +64,7 @@ function parseCaptionFile(text: string): Partial<Form> {
   const [type, ...titleParts] = (lines[0] ?? "").split("·");
   if (titleParts.length) {
     result.title = titleParts.join("·").trim();
-    result.kind = /carrossel/i.test(type) ? "CAROUSEL" : /story/i.test(type) ? "STORY" : "IMAGE";
+    result.kind = /carrossel/i.test(type) ? "CAROUSEL" : /story/i.test(type) ? "STORY" : /reel/i.test(type) ? "REEL" : "IMAGE";
   }
   const when = /^quando:/i.test(lines[1] ?? "") ? /(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\D+(\d{1,2})h(\d{2})?/.exec(lines[1]) : null;
   if (when) {
@@ -95,14 +114,15 @@ export default function DivulgacaoPage() {
     const files = Array.from(event.target.files ?? []).sort((a, b) => a.name.localeCompare(b.name, "pt-BR", { numeric: true }));
     event.target.value = "";
     const captionFile = files.find((file) => file.name.toLowerCase().endsWith(".txt"));
-    const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+    const mediaFiles = files.filter((file) => file.type.startsWith("image/") || file.type === "video/mp4");
+    const hasVideo = mediaFiles.some((file) => file.type === "video/mp4");
     try {
-      const images = await Promise.all(imageFiles.map(async (file) => {
-        const src = await resizeImage(file, 1080, 0.92);
+      const images = await Promise.all(mediaFiles.map(async (file) => {
+        const src = file.type === "video/mp4" ? await readAsDataUrl(file) : await resizeImage(file, 1080, 0.92);
         return { key: `${file.name}-${Math.random().toString(36).slice(2)}`, src, preview: src };
       }));
       const fromCaption = captionFile ? parseCaptionFile(await captionFile.text()) : {};
-      setForm((current) => ({ ...current, ...fromCaption, images: [...current.images, ...images].slice(0, 10) }));
+      setForm((current) => ({ ...current, ...fromCaption, ...(hasVideo ? { kind: "REEL" as const } : {}), images: [...current.images, ...images].slice(0, 10) }));
       setFeedback(captionFile ? "Legenda, tipo e horário lidos do legenda.txt — confira antes de salvar." : "");
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Não foi possível ler as imagens.");
@@ -224,16 +244,15 @@ export default function DivulgacaoPage() {
           <h2>{form.id ? "Editar post" : "Novo post"}</h2>
           <button type="button" className="theme-toggle" onClick={closeForm} aria-label="Fechar"><IconX className="nav-icon" /></button>
         </div>
-        <label>Imagens e legenda
-          <input type="file" accept="image/*,.txt" multiple onChange={addFiles} />
-          <small className="field-hint">Dica: selecione tudo da pasta do post (imagens + legenda.txt) que o tipo, o horário e a legenda vêm juntos.</small>
+        <label>Imagens, vídeo e legenda
+          <input type="file" accept="image/*,video/mp4,.txt" multiple onChange={addFiles} />
+          <small className="field-hint">Dica: selecione tudo da pasta do post (imagens ou o reel.mp4 + legenda.txt) que o tipo, o horário e a legenda vêm juntos.</small>
         </label>
         {form.images.length ? (
           <div className="social-thumbs editable">
             {form.images.map((image, index) => (
-              <figure key={image.key} className={form.kind === "STORY" ? "story" : undefined}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={image.preview} alt={`Imagem ${index + 1}`} />
+              <figure key={image.key} className={form.kind === "STORY" || form.kind === "REEL" ? "story" : undefined}>
+                <MediaThumb src={image.preview} alt={`Arquivo ${index + 1}`} />
                 <figcaption>
                   <button type="button" onClick={() => moveImage(index, -1)} disabled={index === 0} aria-label="Mover para a esquerda">‹</button>
                   <span>{index + 1}</span>
@@ -269,10 +288,7 @@ export default function DivulgacaoPage() {
     return (
       <article key={post.id} className={`product-card social-card status-${post.status.toLowerCase()}`}>
         <div className="product-card-photo social-photo">
-          {post.media[0] ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={mediaUrl(post.id, post.media[0])} alt={post.title} loading="lazy" />
-          ) : null}
+          {post.media[0] ? <MediaThumb src={mediaUrl(post.id, post.media[0])} alt={post.title} lazy /> : null}
           <span className="product-card-category" style={{ background: KIND_COLOR[post.kind] }}>{KIND_LABEL[post.kind]}{post.kind === "CAROUSEL" ? ` · ${post.media.length}` : ""}</span>
           <span className="product-card-photo-actions">
             {editable ? <button className="edit-button" onClick={() => editPost(post)}>Editar</button> : null}

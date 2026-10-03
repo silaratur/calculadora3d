@@ -3,11 +3,13 @@
 //   node scripts/instagram-artes.cjs scripts/instagram/<pauta>.json [--conferir]
 //
 // --conferir só compara a pauta com o Catálogo de produção, sem gerar artes.
+// Reels (reel-carrossel / reel-vitrine) precisam do ffmpeg instalado.
 // Carrossel = slides 4:5 (1080×1350); story = 9:16 (1080×1920). Nome, preço e
 // cores vêm do Catálogo (banco), então a arte nunca sai com preço desatualizado.
 // Fotos-base = recortes 4:3 sem texto em public/Highsfield/. A saída vai para
 // public/Highsfield/instagram/<pauta>/<post>/ com a legenda em legenda.txt.
 const sharp = require("sharp");
+const { execFileSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const { PrismaClient } = require("@prisma/client");
@@ -1042,6 +1044,132 @@ async function ctaCheio(slide, index, total) {
   return sharp(canvas(CH, C.copperDeep)).composite(layers).jpeg({ quality: 92 }).toBuffer();
 }
 
+// ── Reels (opção B, aprovada em 03/10/2026) ─────────────────────────────────
+// Vídeo 1080×1920 a 30 fps montado com ffmpeg a partir das artes/fotos da
+// pauta, com trilha calma embutida (as músicas do Instagram não podem ser
+// escolhidas pela API). Dois formatos:
+//   reel-carrossel: os slides de um carrossel da mesma pauta (source), com zoom
+//                   lento sobre fundo desfocado.
+//   reel-vitrine:   foto inteira de cada produto (nunca corta a peça) + nome e
+//                   preço do Catálogo, e cartão final com o link da bio.
+const FPS = 30;
+const XFADE = 0.4;
+const ff = (args) => execFileSync("ffmpeg", ["-y", "-loglevel", "error", ...args], { stdio: "inherit" });
+
+// zoompan recebe UMA imagem (sem -loop) e gera exatamente `frames` quadros; o
+// -t no segmento garante a duração mesmo se o filtro sobrar quadros.
+function zoomSegment(input, filter, seconds, out) {
+  ff(["-i", input, "-filter_complex", filter, "-map", "[v]", "-t", String(seconds), "-r", String(FPS), "-c:v", "libx264", "-pix_fmt", "yuv420p", out]);
+}
+
+function joinWithFades(segments, durations, out) {
+  let filter = "";
+  let last = "[0:v]";
+  let offset = 0;
+  for (let i = 1; i < segments.length; i++) {
+    offset += durations[i - 1] - XFADE;
+    const label = i === segments.length - 1 ? "[v]" : `[x${i}]`;
+    filter += `${last}[${i}:v]xfade=transition=fade:duration=${XFADE}:offset=${offset.toFixed(2)}${label};`;
+    last = label;
+  }
+  ff([...segments.flatMap((file) => ["-i", file]), "-filter_complex", filter.replace(/;$/, ""), "-map", "[v]", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", String(FPS), out]);
+  return durations.reduce((sum, d) => sum + d, 0) - XFADE * (durations.length - 1);
+}
+
+// Trilha em loop até a duração do vídeo, com entrada e saída suaves.
+function addMusic(video, music, seconds, out) {
+  const track = path.join(PHOTOS, music);
+  if (!fs.existsSync(track)) throw new Error(`Trilha não encontrada: ${music}`);
+  ff(["-i", video, "-stream_loop", "-1", "-i", track, "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k",
+    "-af", `volume=0.8,afade=t=in:st=0:d=0.6,afade=t=out:st=${Math.max(0, seconds - 1.4).toFixed(2)}:d=1.4`, "-t", seconds.toFixed(2), "-movflags", "+faststart", out]);
+}
+
+async function reelEndCard(file) {
+  const layers = [];
+  const big = await logo(LOGO_LIGHT, 260);
+  const meta = await sharp(big).metadata();
+  layers.push({ input: big, left: Math.round((W - meta.width) / 2), top: 560 });
+  const lines = [
+    [await text("Peça seu orçamento", { size: 76, weight: 800, color: C.cream }), 920],
+    [await text("pelo link da bio", { size: 64, weight: "hand", color: "#f2c9b8" }), 1020],
+    [await text(SITE, { size: 40, weight: "mono", color: C.cream }), 1180],
+    [await text("Produção limitada · feito à mão no estúdio", { size: 34, weight: 500, color: C.cream }), 1260],
+  ];
+  for (const [line, top] of lines) layers.push({ ...line, left: Math.round((W - line.width) / 2), top });
+  await sharp(canvas(1920, C.copperDeep)).composite(layers).png().toFile(file);
+}
+
+async function reelCarousel(post, outRoot, dir) {
+  const sourceDir = path.join(outRoot, post.source);
+  const slides = fs.existsSync(sourceDir) ? fs.readdirSync(sourceDir).filter((f) => f.endsWith(".jpg")).sort() : [];
+  if (!slides.length) throw new Error(`${post.id}: gere antes o carrossel ${post.source} (não achei os slides).`);
+  const tmp = fs.mkdtempSync(path.join(require("os").tmpdir(), "reel-"));
+  const segments = [];
+  const durations = [];
+  for (const [i, file] of slides.entries()) {
+    const d = i === 0 ? 2.4 : i === slides.length - 1 ? 2.6 : 1.7;
+    const frames = Math.round(d * FPS);
+    const seg = path.join(tmp, `${i}.mp4`);
+    zoomSegment(path.join(sourceDir, file),
+      `[0:v]split[a][b];[a]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=30:2,eq=brightness=-0.12[bg];` +
+      `[b]scale=2160:-1,zoompan=z='1+0.05*on/${frames}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=1080x1350:fps=${FPS}[fg];[bg][fg]overlay=0:285,format=yuv420p[v]`,
+      d, seg);
+    segments.push(seg);
+    durations.push(d);
+  }
+  const silent = path.join(tmp, "silent.mp4");
+  const total = joinWithFades(segments, durations, silent);
+  addMusic(silent, post.music, total, path.join(dir, "reel.mp4"));
+  fs.rmSync(tmp, { recursive: true, force: true });
+}
+
+async function reelShowcase(post, products, dir) {
+  const tmp = fs.mkdtempSync(path.join(require("os").tmpdir(), "reel-"));
+  const segments = [];
+  const durations = [];
+  const mark = await logo(LOGO_LIGHT, 140);
+  const shade = Buffer.from(`<svg width="1080" height="1920"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".45"/><stop offset=".25" stop-color="#000" stop-opacity="0"/><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#2a1416" stop-opacity=".85"/></linearGradient></defs><rect width="1080" height="1920" fill="url(#g)"/></svg>`);
+  for (const [i, scene] of post.scenes.entries()) {
+    const product = products[scene.sku];
+    if (!product) throw new Error(`${post.id}: ${scene.sku} fora do Catálogo`);
+    const d = i === 0 ? 2.8 : 2.2;
+    const frames = Math.round(d * FPS);
+    const layers = [{ input: shade, left: 0, top: 0 }, { input: mark, left: 60, top: 260 }];
+    let y = 1300;
+    if (i === 0 && post.hook) {
+      const hook = await text(post.hook, { size: 62, weight: "hand", color: "#f2c9b8", width: 960 });
+      layers.push({ ...hook, left: 60, top: 1285 });
+      y = 1285 + hook.height + 6;
+    }
+    const name = await text(scene.label || product.name, { size: 58, weight: 800, color: C.cream, width: 960 });
+    const price = await text(money(product.price), { size: 80, weight: "mono", color: C.ink });
+    layers.push({ ...name, left: 60, top: y });
+    y += name.height + 26;
+    layers.push({ input: pill("", { width: price.width + 70, height: price.height + 34, fill: C.cream }), left: 50, top: y });
+    layers.push({ ...price, left: 85, top: y + 17 });
+    const overlay = path.join(tmp, `ov${i}.png`);
+    await sharp({ create: { width: W, height: 1920, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).composite(layers).png().toFile(overlay);
+    const seg = path.join(tmp, `${i}.mp4`);
+    ff(["-i", path.join(PHOTOS, scene.photo), "-loop", "1", "-t", String(d), "-i", overlay, "-filter_complex",
+      `[0:v]split[a][b];[a]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=28:2,eq=brightness=-0.18[bg];` +
+      `[b]scale=2160:-1,zoompan=z='1+0.05*on/${frames}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=1080x810:fps=${FPS}[fg];` +
+      `[bg][fg]overlay=0:440[c];[c][1:v]overlay=0:0,format=yuv420p[v]`,
+      "-map", "[v]", "-t", String(d), "-r", String(FPS), "-c:v", "libx264", "-pix_fmt", "yuv420p", seg]);
+    segments.push(seg);
+    durations.push(d);
+  }
+  const endPng = path.join(tmp, "end.png");
+  await reelEndCard(endPng);
+  const endSeg = path.join(tmp, "end.mp4");
+  ff(["-loop", "1", "-t", "2.6", "-i", endPng, "-vf", "format=yuv420p", "-r", String(FPS), "-c:v", "libx264", endSeg]);
+  segments.push(endSeg);
+  durations.push(2.6);
+  const silent = path.join(tmp, "silent.mp4");
+  const total = joinWithFades(segments, durations, silent);
+  addMusic(silent, post.music, total, path.join(dir, "reel.mp4"));
+  fs.rmSync(tmp, { recursive: true, force: true });
+}
+
 // Preço e cores SEMPRE iguais aos do Catálogo de produção (a mesma API que a
 // loja lê): sobrescreve o banco local, que costuma estar desatualizado, e para
 // a geração se um produto da pauta não estiver à venda na loja ou se a legenda
@@ -1059,7 +1187,8 @@ async function syncWithCatalog(spec, products) {
   };
   const problems = [];
   for (const post of spec.posts) {
-    const skus = skusOf(post);
+    const source = post.source ? spec.posts.find((item) => item.id === post.source) : null;
+    const skus = [...new Set([...skusOf(post), ...(source ? skusOf(source) : [])])];
     for (const sku of skus) {
       const item = catalog[sku];
       if (!item) { problems.push(`${post.id}: ${sku} não está à venda na loja`); continue; }
@@ -1120,6 +1249,10 @@ async function syncWithCatalog(spec, products) {
       const slide = await ctaCheio(post);
       const pad = (1920 - CH) / 2;
       fs.writeFileSync(path.join(dir, "story.jpg"), await sharp(slide).extend({ top: pad, bottom: pad, background: C.copperDeep }).jpeg({ quality: 92 }).toBuffer());
+    } else if (post.type === "reel-carrossel") {
+      await reelCarousel(post, outRoot, dir);
+    } else if (post.type === "reel-vitrine") {
+      await reelShowcase(post, products, dir);
     } else if (post.type === "story") {
       const buffer = post.kind === "cta" ? await ctaSlide(post, 1920) : await storySlide(post, productOf(post.sku));
       fs.writeFileSync(path.join(dir, "story.jpg"), buffer);

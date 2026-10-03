@@ -12,12 +12,13 @@ import { parseMedia } from "@/lib/instagram-media";
 
 type Container = { id: string };
 
-async function waitReady(containerId: string, token: string) {
-  for (let attempt = 0; attempt < 20; attempt += 1) {
+// Imagem fica pronta em segundos; vídeo pode levar alguns minutos na Meta.
+async function waitReady(containerId: string, token: string, attempts = 20, intervalMs = 3000) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
     const { status_code: status } = await graphGet<{ status_code?: string }>(`/${containerId}`, { fields: "status_code", access_token: token });
     if (status === "FINISHED" || status === "PUBLISHED") return;
-    if (status === "ERROR" || status === "EXPIRED") throw new Error(`O Instagram recusou a imagem (${status}). Confira formato e proporção.`);
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    if (status === "ERROR" || status === "EXPIRED") throw new Error(`O Instagram recusou o arquivo (${status}). Confira formato, proporção e duração.`);
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
   }
   throw new Error("O Instagram demorou demais para processar as imagens. Tente de novo.");
 }
@@ -39,7 +40,12 @@ export async function publishInstagramPost(postId: string) {
     const create = (params: Record<string, string>) => graphPost<Container>(`/${igUserId}/media`, { ...params, access_token: token });
 
     let creationId: string;
-    if (post.kind === "CAROUSEL") {
+    if (post.kind === "REEL") {
+      if (media.length !== 1 || !media[0].endsWith(".mp4")) throw new Error("Reel usa exatamente 1 vídeo MP4.");
+      // share_to_feed: o reel também aparece no feed, não só na aba Reels.
+      creationId = (await create({ media_type: "REELS", video_url: imageUrl(media[0]), caption: post.caption, share_to_feed: "true" })).id;
+      await waitReady(creationId, token, 60, 5000);
+    } else if (post.kind === "CAROUSEL") {
       if (media.length < 2 || media.length > 10) throw new Error("Carrossel precisa de 2 a 10 imagens.");
       const children: string[] = [];
       for (const name of media) {
@@ -54,7 +60,7 @@ export async function publishInstagramPost(postId: string) {
       const params: Record<string, string> = post.kind === "STORY" ? { image_url: imageUrl(media[0]), media_type: "STORIES" } : { image_url: imageUrl(media[0]), caption: post.caption };
       creationId = (await create(params)).id;
     }
-    await waitReady(creationId, token);
+    if (post.kind !== "REEL") await waitReady(creationId, token);
 
     const published = await graphPost<Container>(`/${igUserId}/media_publish`, { creation_id: creationId, access_token: token });
     const details = await graphGet<{ permalink?: string }>(`/${published.id}`, { fields: "permalink", access_token: token }).catch(() => ({ permalink: "" }));

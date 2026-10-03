@@ -19,7 +19,7 @@ export async function PUT(request: Request, { params }: Params) {
   const parsed = postSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Confira título, tipo, legenda e imagens." }, { status: 400 });
   const { images, scheduledAt, ...data } = parsed.data;
-  const problem = mediaProblem(data.kind, images.length);
+  const problem = mediaProblem(data.kind, images);
   if (problem) return NextResponse.json({ error: problem }, { status: 400 });
 
   const existing = parseMedia(current.media);
@@ -58,7 +58,7 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!EDITABLE.includes(current.status)) return NextResponse.json({ error: "Post publicado ou em publicação não muda de status." }, { status: 409 });
   if (parsed.data.status === "APPROVED") {
     if (!current.scheduledAt) return NextResponse.json({ error: "Defina data e hora antes de aprovar." }, { status: 400 });
-    const problem = mediaProblem(current.kind, parseMedia(current.media).length);
+    const problem = mediaProblem(current.kind, parseMedia(current.media));
     if (problem) return NextResponse.json({ error: problem }, { status: 400 });
   }
   const reviewNote = parsed.data.status === "REJECTED" ? parsed.data.note ?? "" : parsed.data.status === "APPROVED" ? "" : current.reviewNote;

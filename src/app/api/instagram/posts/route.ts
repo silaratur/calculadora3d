@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   const parsed = postSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Confira título, tipo, legenda e imagens." }, { status: 400 });
   const { images, scheduledAt, ...data } = parsed.data;
-  const problem = mediaProblem(data.kind, images.length);
+  const problem = mediaProblem(data.kind, images);
   if (problem) return NextResponse.json({ error: problem }, { status: 400 });
 
   const post = await prisma.instagramPost.create({ data: { ...data, scheduledAt: scheduledAt ? new Date(scheduledAt) : null } });

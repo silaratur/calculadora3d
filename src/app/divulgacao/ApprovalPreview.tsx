@@ -12,9 +12,9 @@ import { IconX } from "@/components/Icons";
  * aprovar, reprovar (com motivo) ou mandar para edição.
  */
 
-type Kind = "CAROUSEL" | "IMAGE" | "STORY";
+type Kind = "CAROUSEL" | "IMAGE" | "STORY" | "REEL";
 export type PreviewPost = { id: string; title: string; kind: Kind; caption: string; media: string[]; scheduledAt: string | null };
-type Meta = { width: number; height: number; bytes: number; type: string };
+type Meta = { width: number; height: number; bytes: number; type: string; duration?: number };
 type Check = { level: "error" | "warn" | "ok"; text: string };
 
 const FEED_MIN = 4 / 5;
@@ -35,6 +35,21 @@ const formatBytes = (bytes: number) => (bytes >= 1024 * 1024 ? `${(bytes / 1024 
 
 async function loadMeta(url: string): Promise<Meta> {
   const blob = await (await fetch(url)).blob();
+  if (url.endsWith(".mp4")) {
+    const objectUrl = URL.createObjectURL(blob);
+    try {
+      const { width, height, duration } = await new Promise<{ width: number; height: number; duration: number }>((resolve, reject) => {
+        const video = document.createElement("video");
+        video.preload = "metadata";
+        video.onloadedmetadata = () => resolve({ width: video.videoWidth, height: video.videoHeight, duration: video.duration });
+        video.onerror = () => reject(new Error("Vídeo ilegível"));
+        video.src = objectUrl;
+      });
+      return { width, height, duration, bytes: blob.size, type: blob.type || "video/mp4" };
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
   const objectUrl = URL.createObjectURL(blob);
   try {
     const { width, height } = await new Promise<{ width: number; height: number }>((resolve, reject) => {
@@ -52,9 +67,21 @@ async function loadMeta(url: string): Promise<Meta> {
 function runChecks(post: PreviewPost, metas: Meta[]): Check[] {
   const checks: Check[] = [];
   const story = post.kind === "STORY";
+  if (post.kind === "REEL") {
+    const meta = metas[0];
+    if (!meta || metas.length !== 1) checks.push({ level: "error", text: "Reel usa exatamente 1 vídeo." });
+    else {
+      if (meta.type !== "video/mp4") checks.push({ level: "error", text: `Formato ${meta.type} — o reel precisa ser MP4.` });
+      if (meta.bytes > 300 * 1024 * 1024) checks.push({ level: "error", text: `${formatBytes(meta.bytes)} — acima do limite de 300 MB.` });
+      if (meta.duration !== undefined && meta.duration < 3) checks.push({ level: "error", text: "Reel precisa ter pelo menos 3 segundos." });
+      if (meta.duration !== undefined && meta.duration > 90) checks.push({ level: "warn", text: `${Math.round(meta.duration)} s — reels de até 90 s costumam ter mais alcance.` });
+      if (Math.abs(meta.width / meta.height - STORY) / STORY > 0.02) checks.push({ level: "warn", text: `Proporção ${ratioLabel(meta.width, meta.height)} — reel é 9:16; vai aparecer com corte ou faixas.` });
+      if (meta.width < 720) checks.push({ level: "warn", text: `${meta.width} px de largura — abaixo de 720 px, perde nitidez.` });
+    }
+  }
   if (post.kind === "CAROUSEL" && (metas.length < 2 || metas.length > 10)) checks.push({ level: "error", text: `Carrossel precisa de 2 a 10 imagens (tem ${metas.length}).` });
 
-  metas.forEach((meta, index) => {
+  if (post.kind !== "REEL") metas.forEach((meta, index) => {
     const label = metas.length > 1 ? `Imagem ${index + 1}: ` : "";
     const ratio = meta.width / meta.height;
     if (meta.type && meta.type !== "image/jpeg") checks.push({ level: "error", text: `${label}formato ${meta.type} — o Instagram só aceita JPEG.` });
@@ -114,6 +141,7 @@ export function ApprovalPreview({ post, mediaUrl, busy, onCancel, onApprove, onR
   const [note, setNote] = useState("");
   const urls = post.media.map((name) => mediaUrl(post.id, name));
   const story = post.kind === "STORY";
+  const reel = post.kind === "REEL";
 
   useEffect(() => {
     let cancelled = false;
@@ -139,7 +167,8 @@ export function ApprovalPreview({ post, mediaUrl, busy, onCancel, onApprove, onR
   const feedRatio = metas?.[0] ? Math.min(Math.max(metas[0].width / metas[0].height, FEED_MIN), FEED_MAX) : FEED_MIN;
   const caption = post.caption.trim();
   const needsMore = caption.length > FEED_PREVIEW_CHARS || caption.split("\n").length > 2;
-  const shortCaption = needsMore ? caption.slice(0, FEED_PREVIEW_CHARS).split("\n").slice(0, 2).join("\n").trimEnd() : caption;
+  // Corta por caractere (Array.from), não por unidade UTF-16, para não partir emoji ao meio.
+  const shortCaption = needsMore ? Array.from(caption).slice(0, FEED_PREVIEW_CHARS).join("").split("\n").slice(0, 2).join("\n").trimEnd() : caption;
   const when = post.scheduledAt ? new Date(post.scheduledAt).toLocaleString("pt-BR", { weekday: "long", day: "2-digit", month: "long", hour: "2-digit", minute: "2-digit" }) : "sem data";
   const hashtags = post.caption.match(/#[\p{L}\p{N}_]+/gu)?.length ?? 0;
   const mentions = post.caption.match(/@[\w.]+/g)?.length ?? 0;
@@ -150,14 +179,33 @@ export function ApprovalPreview({ post, mediaUrl, busy, onCancel, onApprove, onR
         <div className="approval-head">
           <div>
             <h2>Revisar post</h2>
-            <p>{post.title} · {story ? "Story" : post.kind === "CAROUSEL" ? `Carrossel com ${post.media.length} imagens` : "Post único"}</p>
+            <p>{post.title} · {reel ? "Reel" : story ? "Story" : post.kind === "CAROUSEL" ? `Carrossel com ${post.media.length} imagens` : "Post único"}</p>
           </div>
           <button type="button" className="theme-toggle" onClick={onCancel} aria-label="Fechar"><IconX className="nav-icon" /></button>
         </div>
 
         <div className="approval-body">
-          <div className={`ig-phone${story ? " story" : ""}`}>
-            {story ? (
+          <div className={`ig-phone${story || reel ? " story" : ""}`}>
+            {reel ? (
+              <div className="ig-story ig-reel">
+                <video src={urls[0]} autoPlay muted loop playsInline controls />
+                <div className="ig-reel-top"><strong>Reels</strong></div>
+                <div className="ig-reel-side" aria-hidden="true"><span>♡</span><span>◯</span><span>➤</span><span>⌑</span></div>
+                <div className="ig-reel-caption">
+                  <div className="ig-user light">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/logo-ac3d-monograma.png" alt="" /><strong>ac3d_studio</strong>
+                  </div>
+                  {caption ? <p>{Array.from(caption.split("\n")[0]).slice(0, 70).join("")}{Array.from(caption).length > 70 ? "… mais" : ""}</p> : null}
+                </div>
+                {showSafeZones ? (
+                  <>
+                    <div className="ig-safe bottom reel">Coberto pelo nome e pela legenda</div>
+                    <div className="ig-safe right">Botões</div>
+                  </>
+                ) : null}
+              </div>
+            ) : story ? (
               <div className="ig-story">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={urls[0]} alt="Story" />
@@ -212,14 +260,19 @@ export function ApprovalPreview({ post, mediaUrl, busy, onCancel, onApprove, onR
           <div className="approval-info">
             <dl className="approval-facts">
               <div><dt>Quando</dt><dd>{when}</dd></div>
-              <div><dt>Som</dt><dd>Sem som — imagem estática. Música não pode ser incluída pela API.</dd></div>
+              {reel ? (
+                <div><dt>Som</dt><dd>A trilha que está embutida no vídeo (dê play na prévia). Música da biblioteca do Instagram não pode ser escolhida pela API.</dd></div>
+              ) : (
+                <div><dt>Som</dt><dd>Sem som — imagem estática. Música não pode ser incluída pela API.</dd></div>
+              )}
+              {reel && metas?.[0]?.duration ? <div><dt>Duração</dt><dd>{metas[0].duration.toFixed(1).replace(".", ",")} s</dd></div> : null}
               {story ? (
                 <div><dt>Interação</dt><dd>Sem link, enquete ou figurinhas (limite da API). O texto precisa estar na arte.</dd></div>
               ) : (
                 <div><dt>Legenda</dt><dd>{post.caption.length}/2.200 caracteres · {hashtags}/30 hashtags · {mentions}/20 menções. No feed aparecem só as ~125 primeiras letras antes do &quot;mais&quot;.</dd></div>
               )}
             </dl>
-            {story ? <label className="checkbox-field"><input type="checkbox" checked={showSafeZones} onChange={(event) => setShowSafeZones(event.target.checked)} /> Mostrar áreas cobertas pela interface</label> : null}
+            {story || reel ? <label className="checkbox-field"><input type="checkbox" checked={showSafeZones} onChange={(event) => setShowSafeZones(event.target.checked)} /> Mostrar áreas cobertas pela interface</label> : null}
 
             <table className="approval-table">
               <thead><tr><th>#</th><th>Dimensões</th><th>Proporção</th><th>Peso</th></tr></thead>
@@ -237,7 +290,7 @@ export function ApprovalPreview({ post, mediaUrl, busy, onCancel, onApprove, onR
                 })}
               </tbody>
             </table>
-            <p className="field-hint">Ideal: {story ? "1080 × 1920 (9:16)" : "1080 × 1350 (4:5), JPEG, até 8 MB"}.</p>
+            <p className="field-hint">Ideal: {reel ? "1080 × 1920 (9:16), MP4, de 3 a 90 s" : story ? "1080 × 1920 (9:16)" : "1080 × 1350 (4:5), JPEG, até 8 MB"}.</p>
 
             <ul className="approval-checks">
               {loadError ? <li className="error">{loadError}</li> : null}
