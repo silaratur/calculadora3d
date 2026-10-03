@@ -17,7 +17,7 @@ const DAYS = { segunda: 1, terca: 2, terça: 2, quarta: 3, quinta: 4, sexta: 5, 
     const kind = /carrossel/i.test(type) ? "CAROUSEL" : /story/i.test(type) ? "STORY" : "IMAGE";
     const when = /(\d{1,2})\/(\d{1,2}),?\s*(\d{1,2})h(\d{2})?/.exec(lines[1] || "");
     // Horário de Brasília (UTC−3).
-    const scheduledAt = when ? new Date(Date.UTC(2026, Number(when[2]) - 1, Number(when[1]), Number(when[3]) + 3, Number(when[4] || 0))).toISOString() : null;
+    const scheduledAt = when ? new Date(Date.UTC(new Date().getFullYear(), Number(when[2]) - 1, Number(when[1]), Number(when[3]) + 3, Number(when[4] || 0))).toISOString() : null;
     const caption = kind === "STORY" ? "" : lines.slice(2).join("\n").trim();
     const images = fs.readdirSync(full).filter((f) => f.endsWith(".jpg")).sort().map((f) => `data:image/jpeg;base64,${fs.readFileSync(path.join(full, f)).toString("base64")}`);
     const response = await fetch(`${base}/api/instagram/posts`, { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ title: rest.join("·").trim(), kind, caption, scheduledAt, images }) });
