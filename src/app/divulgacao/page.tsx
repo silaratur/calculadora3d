@@ -179,11 +179,14 @@ export default function DivulgacaoPage() {
     void action(post, () => fetch(`/api/instagram/posts/${post.id}`, { method: "DELETE" }), "Post removido da fila.");
   }
 
+  // Cada seção segue a data/hora do agendamento (o próximo primeiro; sem data no fim).
+  const bySchedule = (a: Post, b: Post) => (a.scheduledAt ?? "9999").localeCompare(b.scheduledAt ?? "9999");
+  const withStatus = (...statuses: Status[]) => posts.filter((post) => statuses.includes(post.status)).sort(bySchedule);
   const sections: { title: string; hint: string; items: Post[] }[] = [
-    { title: "Com erro", hint: "Não foram publicados — veja o motivo, ajuste e tente de novo.", items: posts.filter((post) => post.status === "FAILED") },
-    { title: "Reprovados", hint: "Edite para corrigir (volta para rascunho) ou exclua.", items: posts.filter((post) => post.status === "REJECTED") },
-    { title: "Agendados", hint: "Aprovados: saem sozinhos na hora marcada.", items: posts.filter((post) => post.status === "APPROVED" || post.status === "PUBLISHING") },
-    { title: "Rascunhos", hint: "Só são publicados depois de aprovados.", items: posts.filter((post) => post.status === "DRAFT") },
+    { title: "Com erro", hint: "Não foram publicados — veja o motivo, ajuste e tente de novo.", items: withStatus("FAILED") },
+    { title: "Reprovados", hint: "Edite para corrigir (volta para rascunho) ou exclua.", items: withStatus("REJECTED") },
+    { title: "Agendados", hint: "Aprovados: saem sozinhos na hora marcada.", items: withStatus("APPROVED", "PUBLISHING") },
+    { title: "Rascunhos", hint: "Só são publicados depois de aprovados.", items: withStatus("DRAFT") },
     { title: "Publicados", hint: "", items: posts.filter((post) => post.status === "PUBLISHED").sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? "")) },
   ];
 
