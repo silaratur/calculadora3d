@@ -476,7 +476,8 @@ model InstagramConnection {
 
 // Fila de publicações do Instagram (área Divulgação). Só sai do rascunho com
 // aprovação; o agendador do servidor publica os APROVADOS na hora marcada.
-// status: DRAFT | APPROVED | PUBLISHING | PUBLISHED | FAILED
+// status: DRAFT | APPROVED | REJECTED | PUBLISHING | PUBLISHED | FAILED
+// reviewNote: motivo da reprovação; fica visível no rascunho até ser aprovado.
 // kind: CAROUSEL (2–10 imagens) | IMAGE (1) | STORY (1, 9:16, sem legenda)
 // media: JSON com os nomes dos arquivos JPEG, na ordem, guardados fora do
 // banco (src/lib/instagram-media.ts).
@@ -492,6 +493,7 @@ model InstagramPost {
   igMediaId   String    @default("")
   permalink   String    @default("")
   error       String    @default("")
+  reviewNote  String    @default("")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

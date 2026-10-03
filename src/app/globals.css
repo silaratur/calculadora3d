@@ -2027,3 +2027,67 @@ button.competitor-row { cursor: pointer; }
 .social-error { background: rgba(176, 58, 46, .08); border-radius: 6px; color: #b03a2e; font-size: 13px; margin: 0; padding: 6px 8px; }
 .social-card.status-approved { border-color: var(--admin-copper); }
 .social-card .form-actions { flex-wrap: wrap; margin-top: auto; }
+
+/* Divulgação → revisão antes de aprovar: prévia no celular + ficha técnica. */
+.approval-card { max-height: 92vh; max-width: 900px; overflow-y: auto; }
+.approval-head { align-items: flex-start; display: flex; gap: 12px; justify-content: space-between; margin-bottom: 14px; }
+.approval-head h2 { margin: 0 0 2px; }
+.approval-head p { color: var(--admin-muted); font-size: 13px; margin: 0; }
+.approval-body { align-items: start; display: grid; gap: 22px; grid-template-columns: 340px minmax(0, 1fr); }
+.ig-phone { background: #fff; border: 10px solid #1d1516; border-radius: 34px; color: #111; font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; overflow: hidden; width: 100%; }
+.ig-user { align-items: center; display: flex; font-size: 13px; gap: 8px; padding: 10px 12px; }
+.ig-user img { background: #f3ece6; border-radius: 50%; height: 30px; object-fit: contain; width: 30px; }
+.ig-user small { color: rgba(255, 255, 255, .75); }
+.ig-user.light { color: #fff; }
+.ig-media { background: #000; overflow: hidden; position: relative; width: 100%; }
+.ig-media > img { display: block; height: 100%; object-fit: cover; width: 100%; }
+.ig-counter { background: rgba(0, 0, 0, .6); border-radius: 12px; color: #fff; font-size: 12px; padding: 3px 8px; position: absolute; right: 10px; top: 10px; }
+.ig-nav { align-items: center; background: rgba(255, 255, 255, .85); border: 0; border-radius: 50%; color: #111; cursor: pointer; display: flex; font-size: 18px; height: 26px; justify-content: center; position: absolute; top: 50%; transform: translateY(-50%); width: 26px; }
+.ig-nav.prev { left: 8px; }
+.ig-nav.next { right: 8px; }
+.ig-actions { align-items: center; display: flex; font-size: 18px; justify-content: space-between; padding: 8px 12px 4px; }
+.ig-dots { display: flex; gap: 4px; }
+.ig-dots i { background: #c7c7c7; border-radius: 50%; height: 6px; width: 6px; }
+.ig-dots i.on { background: #0095f6; }
+.ig-caption { font-size: 13px; line-height: 1.4; margin: 0; padding: 2px 12px 14px; white-space: pre-line; }
+.ig-caption button { background: none; border: 0; color: #737373; cursor: pointer; font: inherit; padding: 0; }
+.ig-tag { color: #00376b; }
+.ig-story { aspect-ratio: 9 / 16; background: #000; position: relative; }
+.ig-story > img { height: 100%; inset: 0; object-fit: cover; position: absolute; width: 100%; }
+.ig-story-top { left: 0; position: absolute; right: 0; top: 0; }
+.ig-progress { background: rgba(255, 255, 255, .35); border-radius: 2px; height: 2px; margin: 8px 8px 0; }
+.ig-progress span { background: #fff; display: block; height: 100%; width: 35%; }
+.ig-story-bottom { bottom: 12px; left: 12px; position: absolute; right: 12px; }
+.ig-story-bottom span { border: 1px solid rgba(255, 255, 255, .7); border-radius: 22px; color: #fff; display: block; font-size: 12px; padding: 9px 14px; }
+/* Faixas que a interface do story cobre (≈ 250 px no topo e 340 px na base, em 1080×1920). */
+.ig-safe { align-items: center; background: repeating-linear-gradient(45deg, rgba(163, 64, 42, .35) 0 8px, rgba(163, 64, 42, .18) 8px 16px); color: #fff; display: flex; font-size: 11px; font-weight: 700; justify-content: center; left: 0; position: absolute; right: 0; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
+.ig-safe.top { height: 13%; top: 0; }
+.ig-safe.bottom { bottom: 0; height: 17.7%; }
+.approval-info { display: grid; gap: 12px; }
+.approval-facts { display: grid; gap: 8px; margin: 0; }
+.approval-facts div { display: grid; gap: 2px; }
+.approval-facts dt { color: var(--admin-muted); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.approval-facts dd { font-size: 13px; margin: 0; }
+.approval-table { border-collapse: collapse; font-size: 13px; width: 100%; }
+.approval-table th { color: var(--admin-muted); font-size: 11px; font-weight: 700; text-align: left; text-transform: uppercase; }
+.approval-table th, .approval-table td { border-bottom: 1px solid var(--admin-border); padding: 5px 6px; white-space: nowrap; }
+.approval-table tr { cursor: pointer; }
+.approval-table tr.current td { background: var(--sunk); }
+.approval-checks { display: grid; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.approval-checks li { border-radius: 8px; font-size: 13px; padding: 7px 10px 7px 30px; position: relative; }
+.approval-checks li::before { left: 10px; position: absolute; }
+.approval-checks li.error { background: var(--danger-soft); color: var(--danger); }
+.approval-checks li.error::before { content: "✕"; }
+.approval-checks li.warn { background: rgba(163, 116, 58, .12); color: #8a5a2e; }
+.approval-checks li.warn::before { content: "!"; font-weight: 700; }
+.approval-checks li.ok { background: rgba(119, 127, 93, .14); color: var(--admin-olive); }
+.approval-checks li.ok::before { content: "✓"; }
+@media (max-width: 760px) {
+  .approval-body { grid-template-columns: 1fr; }
+  .ig-phone { margin: 0 auto; max-width: 320px; }
+}
+.approval-actions { justify-content: flex-end; }
+.approval-actions .primary-button { flex: 0 1 220px; }
+.approval-reject-button { border-color: var(--danger) !important; color: var(--danger) !important; }
+.approval-reject { border-top: 1px solid var(--admin-border); margin-top: 16px; padding-top: 14px; }
+.approval-reject label { color: var(--admin-muted); display: grid; font-size: 12px; gap: 6px; }

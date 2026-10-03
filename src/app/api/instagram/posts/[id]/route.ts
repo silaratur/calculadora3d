@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { mediaProblem, postSchema, serializePost } from "../shared";
 
 type Params = { params: Promise<{ id: string }> };
-const EDITABLE = ["DRAFT", "APPROVED", "FAILED"];
+const EDITABLE = ["DRAFT", "APPROVED", "FAILED", "REJECTED"];
 
 /** Editar devolve o post para rascunho: o que muda precisa ser aprovado de novo. */
 export async function PUT(request: Request, { params }: Params) {
@@ -41,9 +41,12 @@ export async function PUT(request: Request, { params }: Params) {
   }
 }
 
-const statusSchema = z.object({ status: z.enum(["APPROVED", "DRAFT"]) });
+const statusSchema = z.object({ status: z.enum(["APPROVED", "DRAFT", "REJECTED"]), note: z.string().trim().max(500).optional() });
 
-/** Aprovar (agenda) ou voltar para rascunho. Falha também pode ser reaprovada para tentar de novo. */
+/**
+ * Revisão: aprovar (agenda), reprovar (com motivo) ou voltar para rascunho.
+ * Falha também pode ser reaprovada para tentar de novo.
+ */
 export async function PATCH(request: Request, { params }: Params) {
   const denied = await requireAdmin();
   if (denied) return denied;
@@ -58,7 +61,8 @@ export async function PATCH(request: Request, { params }: Params) {
     const problem = mediaProblem(current.kind, parseMedia(current.media).length);
     if (problem) return NextResponse.json({ error: problem }, { status: 400 });
   }
-  const post = await prisma.instagramPost.update({ where: { id }, data: { status: parsed.data.status, error: "" } });
+  const reviewNote = parsed.data.status === "REJECTED" ? parsed.data.note ?? "" : parsed.data.status === "APPROVED" ? "" : current.reviewNote;
+  const post = await prisma.instagramPost.update({ where: { id }, data: { status: parsed.data.status, error: "", reviewNote } });
   return NextResponse.json(serializePost(post));
 }
 

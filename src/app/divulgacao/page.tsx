@@ -6,10 +6,11 @@ import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconTrash } from "@/components/Icons";
 import { resizeImage } from "@/lib/image";
+import { ApprovalPreview } from "./ApprovalPreview";
 
 type Kind = "CAROUSEL" | "IMAGE" | "STORY";
-type Status = "DRAFT" | "APPROVED" | "PUBLISHING" | "PUBLISHED" | "FAILED";
-type Post = { id: string; title: string; kind: Kind; caption: string; media: string[]; status: Status; scheduledAt: string | null; publishedAt: string | null; permalink: string; error: string };
+type Status = "DRAFT" | "APPROVED" | "REJECTED" | "PUBLISHING" | "PUBLISHED" | "FAILED";
+type Post = { id: string; title: string; kind: Kind; caption: string; media: string[]; status: Status; scheduledAt: string | null; publishedAt: string | null; permalink: string; error: string; reviewNote: string };
 type Connection = { connected: boolean; username?: string; canPublish: boolean; autopublish: boolean };
 // src: nome do arquivo já salvo no servidor ou data URI de uma imagem nova.
 type FormImage = { key: string; src: string; preview: string };
@@ -60,6 +61,8 @@ export default function DivulgacaoPage() {
   const [feedback, setFeedback] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [needsLogin, setNeedsLogin] = useState(false);
+  // Post aberto na revisão (prévia no celular + checagens) — aprovar passa sempre por ela.
+  const [review, setReview] = useState<Post | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -143,13 +146,26 @@ export default function DivulgacaoPage() {
     setFeedback(success);
   }
 
-  const setStatus = (post: Post, status: "APPROVED" | "DRAFT", success: string) =>
-    action(post, () => fetch(`/api/instagram/posts/${post.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) }), success);
+  const setStatus = (post: Post, status: "APPROVED" | "DRAFT" | "REJECTED", success: string, note?: string) =>
+    action(post, () => fetch(`/api/instagram/posts/${post.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status, note }) }), success);
 
-  function approve(post: Post) {
-    const late = post.scheduledAt && new Date(post.scheduledAt).getTime() < Date.now();
-    if (late && !window.confirm("O horário marcado já passou: aprovado agora, o post sai em até 1 minuto. Continuar?")) return;
-    void setStatus(post, "APPROVED", "Aprovado e agendado.");
+  async function confirmApproval() {
+    if (!review) return;
+    const retry = review.status === "FAILED";
+    await setStatus(review, "APPROVED", retry ? "Aprovado de novo — sai na próxima volta do agendador." : "Aprovado e agendado.");
+    setReview(null);
+  }
+
+  async function rejectReview(note: string) {
+    if (!review) return;
+    await setStatus(review, "REJECTED", "Post reprovado.", note);
+    setReview(null);
+  }
+
+  function editFromReview() {
+    if (!review) return;
+    editPost(review);
+    setReview(null);
   }
 
   function publishNow(post: Post) {
@@ -165,6 +181,7 @@ export default function DivulgacaoPage() {
 
   const sections: { title: string; hint: string; items: Post[] }[] = [
     { title: "Com erro", hint: "Não foram publicados — veja o motivo, ajuste e tente de novo.", items: posts.filter((post) => post.status === "FAILED") },
+    { title: "Reprovados", hint: "Edite para corrigir (volta para rascunho) ou exclua.", items: posts.filter((post) => post.status === "REJECTED") },
     { title: "Agendados", hint: "Aprovados: saem sozinhos na hora marcada.", items: posts.filter((post) => post.status === "APPROVED" || post.status === "PUBLISHING") },
     { title: "Rascunhos", hint: "Só são publicados depois de aprovados.", items: posts.filter((post) => post.status === "DRAFT") },
     { title: "Publicados", hint: "", items: posts.filter((post) => post.status === "PUBLISHED").sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? "")) },
@@ -245,7 +262,7 @@ export default function DivulgacaoPage() {
                       <div className="card-top">
                         <span className="material-badge">{KIND_LABEL[post.kind]}{post.kind === "CAROUSEL" ? ` · ${post.media.length}` : ""}</span>
                         <span className="card-actions">
-                          {post.status === "DRAFT" || post.status === "FAILED" || post.status === "APPROVED" ? <button className="edit-button" onClick={() => editPost(post)}>Editar</button> : null}
+                          {post.status === "DRAFT" || post.status === "FAILED" || post.status === "APPROVED" || post.status === "REJECTED" ? <button className="edit-button" onClick={() => editPost(post)}>Editar</button> : null}
                           {post.status !== "PUBLISHING" ? <button className="delete-button" onClick={() => deletePost(post)} aria-label={`Excluir ${post.title}`}><IconTrash className="nav-icon" /></button> : null}
                         </span>
                       </div>
@@ -261,9 +278,10 @@ export default function DivulgacaoPage() {
                       <p className="card-detail">{post.status === "PUBLISHED" ? `Publicado ${formatWhen(post.publishedAt)}` : post.status === "PUBLISHING" ? "Publicando agora..." : formatWhen(post.scheduledAt)}</p>
                       {post.caption ? <p className="social-caption">{post.caption}</p> : null}
                       {post.status === "FAILED" ? <p className="social-error">{post.error}</p> : null}
+                      {(post.status === "REJECTED" || post.status === "DRAFT") && post.reviewNote ? <p className="social-error">Reprovado: {post.reviewNote}</p> : null}
+                      {post.status === "REJECTED" && !post.reviewNote ? <p className="social-error">Reprovado na revisão.</p> : null}
                       <div className="form-actions">
-                        {post.status === "DRAFT" ? <button className="primary-button" disabled={busy === post.id || !post.scheduledAt} title={post.scheduledAt ? undefined : "Defina data e hora (Editar)"} onClick={() => approve(post)}>Aprovar</button> : null}
-                        {post.status === "FAILED" ? <button className="primary-button" disabled={busy === post.id} onClick={() => void setStatus(post, "APPROVED", "Aprovado de novo — sai na próxima volta do agendador.")}>Tentar de novo</button> : null}
+                        {post.status === "DRAFT" || post.status === "FAILED" ? <button className="primary-button" disabled={busy === post.id} onClick={() => setReview(post)}>Revisar</button> : null}
                         {post.status === "APPROVED" ? <button className="secondary-button" disabled={busy === post.id} onClick={() => void setStatus(post, "DRAFT", "Voltou para rascunho.")}>Voltar para rascunho</button> : null}
                         {post.status === "APPROVED" && connection?.canPublish ? <button className="primary-button" disabled={busy === post.id} onClick={() => publishNow(post)}>{busy === post.id ? "Publicando..." : "Publicar agora"}</button> : null}
                         {post.status === "PUBLISHED" && post.permalink ? <a className="secondary-button" href={post.permalink} target="_blank" rel="noreferrer">Ver no Instagram</a> : null}
@@ -276,6 +294,7 @@ export default function DivulgacaoPage() {
           </div>
         </section>
       </div>
+      {review ? <ApprovalPreview post={review} mediaUrl={mediaUrl} busy={busy === review.id} onCancel={() => setReview(null)} onApprove={() => void confirmApproval()} onReject={(note) => void rejectReview(note)} onEdit={editFromReview} /> : null}
     </main>
   );
 }
