@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
-import { IconTrash } from "@/components/Icons";
+import { IconClock, IconTrash, IconX } from "@/components/Icons";
 import { resizeImage } from "@/lib/image";
 import { ApprovalPreview } from "./ApprovalPreview";
 
@@ -17,6 +18,8 @@ type FormImage = { key: string; src: string; preview: string };
 type Form = { id: string | null; title: string; kind: Kind; caption: string; scheduledAt: string; images: FormImage[] };
 
 const KIND_LABEL: Record<Kind, string> = { CAROUSEL: "Carrossel", IMAGE: "Post único", STORY: "Story" };
+// Tarja sobre a arte, como a categoria no Catálogo — dá para bater o olho e saber o tipo.
+const KIND_COLOR: Record<Kind, string> = { CAROUSEL: "#777f5d", IMAGE: "#8a5a2e", STORY: "#602f32" };
 const emptyForm: Form = { id: null, title: "", kind: "CAROUSEL", caption: "", scheduledAt: "", images: [] };
 
 const mediaUrl = (postId: string, name: string) => `/api/public/instagram-media/${postId}/${name}`;
@@ -63,6 +66,8 @@ export default function DivulgacaoPage() {
   const [needsLogin, setNeedsLogin] = useState(false);
   // Post aberto na revisão (prévia no celular + checagens) — aprovar passa sempre por ela.
   const [review, setReview] = useState<Post | null>(null);
+  // Formulário (novo/editar) abre numa janela para a fila usar a largura toda.
+  const [formOpen, setFormOpen] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -73,6 +78,13 @@ export default function DivulgacaoPage() {
     }
     void load();
   }, []);
+
+  useEffect(() => {
+    if (!formOpen) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") closeForm(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [formOpen]);
 
   function upsert(post: Post) {
     setPosts((current) => (current.some((item) => item.id === post.id) ? current.map((item) => (item.id === post.id ? post : item)) : [...current, post]));
@@ -110,7 +122,19 @@ export default function DivulgacaoPage() {
   function editPost(post: Post) {
     setForm({ id: post.id, title: post.title, kind: post.kind, caption: post.caption, scheduledAt: toLocalInput(post.scheduledAt), images: post.media.map((name) => ({ key: name, src: name, preview: mediaUrl(post.id, name) })) });
     setFeedback(post.status === "APPROVED" ? "Ao salvar, o post volta para rascunho e precisa ser aprovado de novo." : "");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setFormOpen(true);
+  }
+
+  function openNewPost() {
+    setForm(emptyForm);
+    setFeedback("");
+    setFormOpen(true);
+  }
+
+  function closeForm() {
+    setFormOpen(false);
+    setForm(emptyForm);
+    setFeedback("");
   }
 
   async function savePost(event: FormEvent) {
@@ -126,7 +150,8 @@ export default function DivulgacaoPage() {
     if (!response.ok || !body) { setFeedback(body?.error ?? "Não foi possível salvar o post."); return; }
     upsert(body);
     setForm(emptyForm);
-    setFeedback("Rascunho salvo. Confira e aprove para agendar.");
+    setFormOpen(false);
+    setFeedback("Rascunho salvo. Clique em Revisar para aprovar.");
   }
 
   async function action(post: Post, request: () => Promise<Response>, success: string) {
@@ -192,6 +217,81 @@ export default function DivulgacaoPage() {
 
   const captionLength = form.caption.length;
 
+  const postForm = (
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={form.id ? "Editar post" : "Novo post"} onClick={closeForm}>
+      <form className="modal-card modal-card-wide social-form" onSubmit={savePost} onClick={(event) => event.stopPropagation()}>
+        <div className="approval-head">
+          <h2>{form.id ? "Editar post" : "Novo post"}</h2>
+          <button type="button" className="theme-toggle" onClick={closeForm} aria-label="Fechar"><IconX className="nav-icon" /></button>
+        </div>
+        <label>Imagens e legenda
+          <input type="file" accept="image/*,.txt" multiple onChange={addFiles} />
+          <small className="field-hint">Dica: selecione tudo da pasta do post (imagens + legenda.txt) que o tipo, o horário e a legenda vêm juntos.</small>
+        </label>
+        {form.images.length ? (
+          <div className="social-thumbs editable">
+            {form.images.map((image, index) => (
+              <figure key={image.key} className={form.kind === "STORY" ? "story" : undefined}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={image.preview} alt={`Imagem ${index + 1}`} />
+                <figcaption>
+                  <button type="button" onClick={() => moveImage(index, -1)} disabled={index === 0} aria-label="Mover para a esquerda">‹</button>
+                  <span>{index + 1}</span>
+                  <button type="button" onClick={() => moveImage(index, 1)} disabled={index === form.images.length - 1} aria-label="Mover para a direita">›</button>
+                  <button type="button" onClick={() => setForm({ ...form, images: form.images.filter((item) => item.key !== image.key) })} aria-label={`Remover imagem ${index + 1}`}>×</button>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        ) : null}
+        <div className="form-grid">
+          <label>Tipo<select value={form.kind} onChange={(event) => setForm({ ...form, kind: event.target.value as Kind })}>{(Object.keys(KIND_LABEL) as Kind[]).map((kind) => <option key={kind} value={kind}>{KIND_LABEL[kind]}</option>)}</select></label>
+          <label>Data e hora<input type="datetime-local" value={form.scheduledAt} onChange={(event) => setForm({ ...form, scheduledAt: event.target.value })} /></label>
+        </div>
+        <label>Título (só para você)<input required value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="Ex: Carrossel Dia das Crianças" /></label>
+        {form.kind === "STORY" ? (
+          <p className="field-hint social-form-note">Story não leva legenda nem figurinhas (link, enquete) pela API do Instagram — o texto precisa estar na arte.</p>
+        ) : (
+          <label>Legenda ({captionLength}/2200)<textarea rows={8} maxLength={2200} value={form.caption} onChange={(event) => setForm({ ...form, caption: event.target.value })} /></label>
+        )}
+        {feedback ? <p className="field-hint social-feedback">{feedback}</p> : null}
+        <div className="form-actions">
+          <button className="secondary-button" type="button" onClick={closeForm}>Cancelar</button>
+          <button className="primary-button" type="submit" disabled={busy === "form" || !form.images.length}>{busy === "form" ? "Salvando..." : form.id ? "Salvar alterações" : "Salvar rascunho"}</button>
+        </div>
+      </form>
+    </div>
+  );
+
+  function renderCard(post: Post) {
+    const editable = post.status === "DRAFT" || post.status === "FAILED" || post.status === "APPROVED" || post.status === "REJECTED";
+    const note = post.status === "FAILED" ? post.error : (post.status === "REJECTED" || post.status === "DRAFT") && post.reviewNote ? `Reprovado: ${post.reviewNote}` : post.status === "REJECTED" ? "Reprovado na revisão." : "";
+    return (
+      <article key={post.id} className={`product-card social-card status-${post.status.toLowerCase()}`}>
+        <div className="product-card-photo social-photo">
+          {post.media[0] ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={mediaUrl(post.id, post.media[0])} alt={post.title} loading="lazy" />
+          ) : null}
+          <span className="product-card-category" style={{ background: KIND_COLOR[post.kind] }}>{KIND_LABEL[post.kind]}{post.kind === "CAROUSEL" ? ` · ${post.media.length}` : ""}</span>
+          <span className="product-card-photo-actions">
+            {editable ? <button className="edit-button" onClick={() => editPost(post)}>Editar</button> : null}
+            {post.status !== "PUBLISHING" ? <button className="delete-button" onClick={() => deletePost(post)} aria-label={`Excluir ${post.title}`}><IconTrash className="nav-icon" /></button> : null}
+          </span>
+        </div>
+        <h2>{post.title}</h2>
+        <p className="social-when"><IconClock className="nav-icon" />{post.status === "PUBLISHED" ? `Publicado ${formatWhen(post.publishedAt)}` : post.status === "PUBLISHING" ? "Publicando agora..." : formatWhen(post.scheduledAt)}</p>
+        {note ? <p className="social-error">{note}</p> : null}
+        <div className="social-card-actions">
+          {post.status === "DRAFT" || post.status === "FAILED" ? <button className="mini-button" disabled={busy === post.id} onClick={() => setReview(post)}>Revisar</button> : null}
+          {post.status === "APPROVED" && connection?.canPublish ? <button className="mini-button" disabled={busy === post.id} onClick={() => publishNow(post)}>{busy === post.id ? "Publicando..." : "Publicar agora"}</button> : null}
+          {post.status === "APPROVED" ? <button className="mini-button ghost" disabled={busy === post.id} onClick={() => void setStatus(post, "DRAFT", "Voltou para rascunho.")} title="Voltar para rascunho">Desaprovar</button> : null}
+          {post.status === "PUBLISHED" && post.permalink ? <a className="mini-button ghost" href={post.permalink} target="_blank" rel="noreferrer">Ver no Instagram ↗</a> : null}
+        </div>
+      </article>
+    );
+  }
+
   return (
     <main className="admin-shell">
       <AdminHeader active="divulgacao" />
@@ -201,8 +301,9 @@ export default function DivulgacaoPage() {
         <section className="library-heading">
           <div>
             <h1>Divulgação</h1>
-            <p>Fila de posts do Instagram: rascunho → aprovado → publicado na hora marcada.</p>
+            <p>Fila de posts do Instagram: rascunho → revisão → publicado na hora marcada.</p>
           </div>
+          <button className="primary-button social-new" type="button" onClick={openNewPost}>＋ Novo post</button>
         </section>
 
         {connection ? (
@@ -214,89 +315,19 @@ export default function DivulgacaoPage() {
           </p>
         ) : null}
 
-        <section className="library-layout">
-          <form className="preset-form" onSubmit={savePost}>
-            <h2><span>＋</span> {form.id ? "Editar post" : "Novo post"}</h2>
-            <label>Imagens e legenda
-              <input type="file" accept="image/*,.txt" multiple onChange={addFiles} />
-              <small className="field-hint">Dica: selecione tudo da pasta do post (imagens + legenda.txt) que o tipo, o horário e a legenda vêm juntos.</small>
-            </label>
-            {form.images.length ? (
-              <div className="social-thumbs editable">
-                {form.images.map((image, index) => (
-                  <figure key={image.key} className={form.kind === "STORY" ? "story" : undefined}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={image.preview} alt={`Imagem ${index + 1}`} />
-                    <figcaption>
-                      <button type="button" onClick={() => moveImage(index, -1)} disabled={index === 0} aria-label="Mover para a esquerda">‹</button>
-                      <span>{index + 1}</span>
-                      <button type="button" onClick={() => moveImage(index, 1)} disabled={index === form.images.length - 1} aria-label="Mover para a direita">›</button>
-                      <button type="button" onClick={() => setForm({ ...form, images: form.images.filter((item) => item.key !== image.key) })} aria-label={`Remover imagem ${index + 1}`}>×</button>
-                    </figcaption>
-                  </figure>
-                ))}
-              </div>
-            ) : null}
-            <div className="form-grid">
-              <label>Tipo<select value={form.kind} onChange={(event) => setForm({ ...form, kind: event.target.value as Kind })}>{(Object.keys(KIND_LABEL) as Kind[]).map((kind) => <option key={kind} value={kind}>{KIND_LABEL[kind]}</option>)}</select></label>
-              <label>Data e hora<input type="datetime-local" value={form.scheduledAt} onChange={(event) => setForm({ ...form, scheduledAt: event.target.value })} /></label>
-            </div>
-            <label>Título (só para você)<input required value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="Ex: Carrossel Dia das Crianças" /></label>
-            {form.kind === "STORY" ? (
-              <p className="field-hint">Story não leva legenda nem figurinhas (link, enquete) pela API do Instagram — o texto precisa estar na arte.</p>
-            ) : (
-              <label>Legenda <span className="field-hint">{captionLength}/2200</span><textarea rows={9} maxLength={2200} value={form.caption} onChange={(event) => setForm({ ...form, caption: event.target.value })} /></label>
-            )}
-            <div className="form-actions">
-              <button className="primary-button" type="submit" disabled={busy === "form" || !form.images.length}>{busy === "form" ? "Salvando..." : form.id ? "Salvar alterações" : "Salvar rascunho"}</button>
-              {form.id || form.images.length ? <button className="secondary-button" type="button" onClick={() => { setForm(emptyForm); setFeedback(""); }}>Cancelar</button> : null}
-            </div>
-            {feedback ? <p className="field-hint social-feedback">{feedback}</p> : null}
-          </form>
+        {feedback && !formOpen ? <p className="admin-feedback social-top-feedback">{feedback}</p> : null}
 
-          <div className="preset-column">
-            {!posts.length && !needsLogin ? <p className="preset-empty">Nenhum post na fila ainda. Comece pelo formulário ao lado.</p> : null}
-            {sections.filter((section) => section.items.length).map((section) => (
-              <section key={section.title} className="social-section">
-                <h2>{section.title} <strong>({section.items.length})</strong>{section.hint ? <span>{section.hint}</span> : null}</h2>
-                <div className="preset-grid">
-                  {section.items.map((post) => (
-                    <article key={post.id} className={`preset-card social-card status-${post.status.toLowerCase()}`}>
-                      <div className="card-top">
-                        <span className="material-badge">{KIND_LABEL[post.kind]}{post.kind === "CAROUSEL" ? ` · ${post.media.length}` : ""}</span>
-                        <span className="card-actions">
-                          {post.status === "DRAFT" || post.status === "FAILED" || post.status === "APPROVED" || post.status === "REJECTED" ? <button className="edit-button" onClick={() => editPost(post)}>Editar</button> : null}
-                          {post.status !== "PUBLISHING" ? <button className="delete-button" onClick={() => deletePost(post)} aria-label={`Excluir ${post.title}`}><IconTrash className="nav-icon" /></button> : null}
-                        </span>
-                      </div>
-                      <div className="social-thumbs">
-                        {post.media.slice(0, 4).map((name, index) => (
-                          <figure key={name} className={post.kind === "STORY" ? "story" : undefined}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={mediaUrl(post.id, name)} alt={`${post.title} — imagem ${index + 1}`} loading="lazy" />
-                          </figure>
-                        ))}
-                      </div>
-                      <h3>{post.title}</h3>
-                      <p className="card-detail">{post.status === "PUBLISHED" ? `Publicado ${formatWhen(post.publishedAt)}` : post.status === "PUBLISHING" ? "Publicando agora..." : formatWhen(post.scheduledAt)}</p>
-                      {post.caption ? <p className="social-caption">{post.caption}</p> : null}
-                      {post.status === "FAILED" ? <p className="social-error">{post.error}</p> : null}
-                      {(post.status === "REJECTED" || post.status === "DRAFT") && post.reviewNote ? <p className="social-error">Reprovado: {post.reviewNote}</p> : null}
-                      {post.status === "REJECTED" && !post.reviewNote ? <p className="social-error">Reprovado na revisão.</p> : null}
-                      <div className="form-actions">
-                        {post.status === "DRAFT" || post.status === "FAILED" ? <button className="primary-button" disabled={busy === post.id} onClick={() => setReview(post)}>Revisar</button> : null}
-                        {post.status === "APPROVED" ? <button className="secondary-button" disabled={busy === post.id} onClick={() => void setStatus(post, "DRAFT", "Voltou para rascunho.")}>Voltar para rascunho</button> : null}
-                        {post.status === "APPROVED" && connection?.canPublish ? <button className="primary-button" disabled={busy === post.id} onClick={() => publishNow(post)}>{busy === post.id ? "Publicando..." : "Publicar agora"}</button> : null}
-                        {post.status === "PUBLISHED" && post.permalink ? <a className="secondary-button" href={post.permalink} target="_blank" rel="noreferrer">Ver no Instagram</a> : null}
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        </section>
+        <div className="social-sections">
+          {!posts.length && !needsLogin ? <p className="preset-empty">Nenhum post na fila ainda. Clique em &quot;Novo post&quot; para começar.</p> : null}
+          {sections.filter((section) => section.items.length).map((section) => (
+            <section key={section.title} className="social-section">
+              <h2>{section.title} <strong>({section.items.length})</strong>{section.hint ? <span>{section.hint}</span> : null}</h2>
+              <div className="product-grid product-grid-compact">{section.items.map(renderCard)}</div>
+            </section>
+          ))}
+        </div>
       </div>
+      {formOpen ? createPortal(postForm, document.body) : null}
       {review ? <ApprovalPreview post={review} mediaUrl={mediaUrl} busy={busy === review.id} onCancel={() => setReview(null)} onApprove={() => void confirmApproval()} onReject={(note) => void rejectReview(note)} onEdit={editFromReview} /> : null}
     </main>
   );

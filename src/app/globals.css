@@ -2015,18 +2015,8 @@ button.competitor-row { cursor: pointer; }
 .social-thumbs figcaption { align-items: center; display: flex; font-size: 12px; justify-content: space-between; margin-top: 3px; }
 .social-thumbs figcaption button { background: none; border: 0; color: var(--admin-ink); cursor: pointer; font-size: 15px; line-height: 1; padding: 2px 4px; }
 .social-thumbs figcaption button:disabled { cursor: default; opacity: .3; }
-.social-caption {
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  color: var(--admin-muted);
-  display: -webkit-box;
-  font-size: 13px;
-  overflow: hidden;
-  white-space: pre-line;
-}
 .social-error { background: rgba(176, 58, 46, .08); border-radius: 6px; color: #b03a2e; font-size: 13px; margin: 0; padding: 6px 8px; }
 .social-card.status-approved { border-color: var(--admin-copper); }
-.social-card .form-actions { flex-wrap: wrap; margin-top: auto; }
 
 /* Divulgação → revisão antes de aprovar: prévia no celular + ficha técnica. */
 .approval-card { max-height: 92vh; max-width: 900px; overflow-y: auto; }
@@ -2091,3 +2081,25 @@ button.competitor-row { cursor: pointer; }
 .approval-reject-button { border-color: var(--danger) !important; color: var(--danger) !important; }
 .approval-reject { border-top: 1px solid var(--admin-border); margin-top: 16px; padding-top: 14px; }
 .approval-reject label { color: var(--admin-muted); display: grid; font-size: 12px; gap: 6px; }
+
+/* Divulgação → fila no mesmo grid compacto do Catálogo (5 por linha):
+   a arte é a "foto" do card, o tipo vira tarja e só uma ação pequena embaixo. */
+.social-new { flex: 0 0 auto; padding: 10px 18px; }
+.social-top-feedback { margin: 0 0 14px; }
+.social-sections { display: grid; gap: 26px; }
+.product-grid-compact .social-photo { aspect-ratio: 4 / 5; }
+.social-card h2 { font-size: 14px; margin: 2px 0 0; overflow-wrap: anywhere; }
+.social-when { align-items: center; color: var(--admin-muted); display: flex; font-size: 12px; gap: 5px; margin: 0; }
+.social-when .nav-icon { flex: 0 0 auto; height: 13px; width: 13px; }
+.social-card .social-error { -webkit-box-orient: vertical; -webkit-line-clamp: 3; display: -webkit-box; font-size: 12px; line-height: 1.35; overflow: hidden; padding: 5px 7px; }
+.social-card-actions { border-top: 1px solid var(--admin-border); display: flex; gap: 6px; margin-top: auto; padding-top: 8px; }
+.social-card-actions:empty { display: none; }
+.mini-button { background: var(--admin-copper); border: 1px solid var(--admin-copper); border-radius: 8px; color: var(--on-accent); cursor: pointer; flex: 1 1 0; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; font-weight: 700; padding: 6px 8px; text-align: center; text-decoration: none; white-space: nowrap; }
+.mini-button:hover { background: var(--admin-copper-hover); }
+.mini-button.ghost { background: transparent; border-color: var(--admin-border-strong); color: var(--admin-ink); font-weight: 600; }
+.mini-button.ghost:hover { background: var(--sunk); }
+.mini-button:disabled { cursor: default; opacity: .5; }
+.social-form { display: grid; gap: 12px; }
+.social-form .approval-head { margin-bottom: 0; }
+.social-form .form-actions { justify-content: flex-end; margin-top: 4px; }
+.social-form-note { margin: 0; }
