@@ -22,6 +22,9 @@ const C = { copper: "#602f32", copperDeep: "#4c2528", olive: "#777f5d", cream: "
 const HANDLE = "@ac3d_studio";
 const SITE = "ac3d.silaratur.cloud";
 const W = 1080;
+// Story 1080×1920: o Instagram cobre ~250 px no topo (barra e nome) e ~250 px
+// na base (caixa de resposta). O que importa precisa terminar antes daqui.
+const STORY_SAFE_BOTTOM = 1920 - 250;
 
 // Mesmo mapa de src/lib/filament-colors.ts (bolinhas iguais às da loja).
 const SWATCHES = [
@@ -672,22 +675,22 @@ async function storyFull(story, product, products) {
   if (cards.length) {
     const gap = 14;
     const cw = Math.floor((W - 88 - gap * (cards.length - 1)) / cards.length);
-    const photoH = 150;
+    const photoH = 116;
     for (const [i, card] of cards.entries()) {
       const cx = 44 + i * (cw + gap);
-      const ch = photoH + 86;
+      const ch = photoH + 82;
       const frame = Buffer.from(`<svg width="${cw}" height="${ch}"><rect x="1" y="1" width="${cw - 2}" height="${ch - 2}" rx="18" fill="${T.card}" stroke="${C.cream}" stroke-opacity=".6" stroke-width="2"/></svg>`);
       layers.push({ input: frame, left: cx, top: cy });
       layers.push({ input: await roundedPhoto(card.photo, cw - 12, photoH, 13), left: cx + 6, top: cy + 6 });
       const title = await text(card.title.toUpperCase(), { size: 19, weight: 800, color: T.cardInk, spacing: 0.06 });
       const ic = 28;
       const rowW = ic + 8 + title.width;
-      layers.push({ input: icon(card.icon, ic, T.cardInk, 2), left: cx + Math.round((cw - rowW) / 2), top: cy + photoH + 16 });
-      layers.push({ ...title, left: cx + Math.round((cw - rowW) / 2) + ic + 8, top: cy + photoH + 16 + Math.round((ic - title.height) / 2) });
+      layers.push({ input: icon(card.icon, ic, T.cardInk, 2), left: cx + Math.round((cw - rowW) / 2), top: cy + photoH + 14 });
+      layers.push({ ...title, left: cx + Math.round((cw - rowW) / 2) + ic + 8, top: cy + photoH + 14 + Math.round((ic - title.height) / 2) });
       const sub = await text(card.sub, { size: 18, weight: 400, color: T.cardInk, width: cw - 20, align: "centre", lineHeight: 1.05 });
-      layers.push({ ...sub, left: cx + Math.round((cw - sub.width) / 2), top: cy + photoH + 50 });
+      layers.push({ ...sub, left: cx + Math.round((cw - sub.width) / 2), top: cy + photoH + 47 });
     }
-    cy += photoH + 86 + 18;
+    cy += photoH + 82 + 12;
   }
 
   // Preço (ou combos) + cores/tamanho numa faixa.
@@ -696,7 +699,7 @@ async function storyFull(story, product, products) {
     const kit = products[story.combos.kit];
     const save = unit.price * story.combos.kitQty - kit.price;
     const half = Math.floor((W - 88 - 14) / 2);
-    const boxH = 116;
+    const boxH = 108;
     const boxes = [
       { x: 44, fill: T.panel, ink: T.panelInk, label: "1 unidade", price: unit.price },
       { x: 44 + half + 14, fill: C.copper, ink: C.cream, label: `Kit ${story.combos.kitQty} unidades`, price: kit.price, save },
@@ -722,7 +725,7 @@ async function storyFull(story, product, products) {
       const sw = sv ? sv.width + 32 : 0;
       const pr = await text(money(box.price), { size: priceSize, weight: "mono", color: box.ink });
       // Fonte reduzida fica alinhada pela base, onde estaria a de 46.
-      layers.push({ ...pr, left: box.x + 26, top: cy + 50 + fullH - pr.height });
+      layers.push({ ...pr, left: box.x + 26, top: cy + 46 + fullH - pr.height });
       if (sv) {
         layers.push({ input: pill('', { width: sw, height: 40, fill: '#5f6549' }), left: box.x + half - sw - 16, top: cy + boxH - 40 - 16 });
         layers.push({ ...sv, left: box.x + half - sw - 16 + 16, top: cy + boxH - 40 - 16 + Math.round((40 - sv.height) / 2) });
@@ -732,7 +735,7 @@ async function storyFull(story, product, products) {
         layers.push({ ...best, left: box.x + half - bw - 16 + 15, top: cy + 14 + Math.round((34 - best.height) / 2) });
       }
     }
-    cy += boxH + 16;
+    cy += boxH + 12;
   } else {
     const pr = await text(money(product.price), { size: 70, weight: "mono", color: T.ink });
     let px = 44;
@@ -753,17 +756,17 @@ async function storyFull(story, product, products) {
       const rowW = cell * Math.min(colors.length, 8);
       const x0 = right - rowW;
       const cap = await text(story.colorsNote || `${colors.length} cores`, { size: 32, weight: "hand", color: T.accent });
-      layers.push({ ...cap, left: x0 + Math.round((rowW - cap.width) / 2), top: cy - 18 });
+      layers.push({ ...cap, left: x0 + Math.round((rowW - cap.width) / 2), top: cy - 6 });
       for (const [i, color] of colors.slice(0, 8).entries()) {
         const x = x0 + i * cell;
-        layers.push({ input: shadedSwatch(color, dot), left: x + Math.round((cell - dot) / 2), top: cy + 26 });
+        layers.push({ input: shadedSwatch(color, dot), left: x + Math.round((cell - dot) / 2), top: cy + 32 });
         if (colors.length <= 5) {
           const nm = await text(shortColor(color), { size: 17, weight: 500, color: T.ink });
-          layers.push({ ...nm, left: x + Math.round((cell - nm.width) / 2), top: cy + 26 + dot + 4 });
+          layers.push({ ...nm, left: x + Math.round((cell - nm.width) / 2), top: cy + 32 + dot + 3 });
         }
       }
     }
-    cy += pr.height + 36;
+    cy += pr.height + 28;
   }
   if (story.size) {
     const sz = await text(`${story.size}`, { size: 22, weight: 700, color: T.ink });
@@ -773,17 +776,21 @@ async function storyFull(story, product, products) {
   }
 
   // Botão para o link da bio (a loja registra o orçamento direto no sistema; nenhum telefone na arte).
-  const ctaH = 96;
-  const ctaTop = Math.max(cy, 1630);
+  // Os 250 px de baixo do story ficam sob a caixa "Enviar mensagem": o botão
+  // tem de terminar antes disso, senão a gente não deixa gerar (achado na
+  // revisão de 03/10 — nos stories da semana 29/09 ele ficava meio coberto).
+  const ctaH = 88;
+  const ctaTop = cy;
+  if (ctaTop + ctaH > STORY_SAFE_BOTTOM) throw new Error(`${story.id}: o botão do link da bio termina em y=${ctaTop + ctaH}, dentro da área coberta pelo Instagram (a partir de ${STORY_SAFE_BOTTOM}). Tire um cartão de cenário ou o tamanho.`);
   layers.push({ input: pill("", { width: W - 88, height: ctaH, fill: T.cta }), left: 44, top: ctaTop });
-  layers.push({ input: icon("link", 50, T.ctaInk, 2), left: 79, top: ctaTop + 23 });
-  layers.push({ input: Buffer.from(`<svg width="2" height="60"><rect width="2" height="60" fill="${T.ctaInk}" opacity=".5"/></svg>`), left: 152, top: ctaTop + 18 });
+  layers.push({ input: icon("link", 50, T.ctaInk, 2), left: 79, top: ctaTop + 19 });
+  layers.push({ input: Buffer.from(`<svg width="2" height="60"><rect width="2" height="60" fill="${T.ctaInk}" opacity=".5"/></svg>`), left: 152, top: ctaTop + 14 });
   const l1 = await text("PEÇA SEU ORÇAMENTO PELO LINK DA BIO", { size: 25, weight: 800, color: T.ctaInk, spacing: 0.04 });
   const l2 = await text(`loja completa em ${SITE}`, { size: 22, weight: 500, color: T.ctaInk });
   const th = l1.height + 8 + l2.height;
   layers.push({ ...l1, left: 176, top: ctaTop + Math.round((ctaH - th) / 2) });
   layers.push({ ...l2, left: 176, top: ctaTop + Math.round((ctaH - th) / 2) + l1.height + 8 });
-  layers.push({ input: icon("seta", 34, T.ctaInk, 2.4), left: W - 44 - 58, top: ctaTop + 31 });
+  layers.push({ input: icon("seta", 34, T.ctaInk, 2.4), left: W - 44 - 58, top: ctaTop + 27 });
   const tl = doodle.ticks("left", T.doodle, rand);
   const tr = doodle.ticks("right", T.doodle, rand);
   layers.push({ ...tl, left: -10, top: ctaTop + 12 }, { ...tr, left: W - 50, top: ctaTop + 12 });

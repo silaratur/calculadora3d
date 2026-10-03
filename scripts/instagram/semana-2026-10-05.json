@@ -1,0 +1,883 @@
+{
+  "pack": "semana-2026-10-05",
+  "posts": [
+    {
+      "id": "01-story-macaquinhos",
+      "type": "story-cheio",
+      "title": "Story · Kit 4 Mini Macacos (lançamento)",
+      "when": "segunda 05/10, 12h",
+      "sku": "B.019",
+      "background": "stories-fundo/B.019.png",
+      "tag": "Lançamento",
+      "headline": "Macaquinhos",
+      "script": "articulados",
+      "subline": "Kit com 4 chaveiros que se mexem",
+      "uses": [],
+      "fomo": "Lançamento · produção limitada",
+      "scenes": [
+        {
+          "photo": "b019/B.019-2.png",
+          "icon": "mao",
+          "title": "Na mão",
+          "sub": "8 cm de diversão"
+        },
+        {
+          "photo": "b019/B.019-3.png",
+          "icon": "chave",
+          "title": "Na mochila",
+          "sub": "Vai junto pra escola"
+        },
+        {
+          "photo": "b019/B.019-4.png",
+          "icon": "presente",
+          "title": "Na festa",
+          "sub": "Sacolinha surpresa"
+        }
+      ],
+      "size": "8 cm cada",
+      "signature": "Diversão que cabe no bolso",
+      "productBox": [
+        80,
+        650,
+        905,
+        1246
+      ],
+      "bgScale": 1.03,
+      "bgShift": 29,
+      "fomoTop": 330
+    },
+    {
+      "id": "02-story-ponteira-nome",
+      "type": "story-cheio",
+      "title": "Story · Ponteira de lápis com nome",
+      "when": "terça 06/10, 12h",
+      "sku": "B.018",
+      "background": "stories-fundo/B.018.png",
+      "tag": "Personalizado",
+      "headline": "Com o nome",
+      "script": "de cada um",
+      "subline": "Ponteira de lápis personalizada",
+      "uses": [
+        {
+          "icon": "livro",
+          "label": "Material escolar"
+        },
+        {
+          "icon": "estrela",
+          "label": "Nome em relevo"
+        },
+        {
+          "icon": "presente",
+          "label": "Lembrancinha da turma"
+        }
+      ],
+      "note": "ninguém troca\no lápis!",
+      "fomo": "Para a turma toda · produção limitada",
+      "scenes": [
+        {
+          "photo": "carrossel/B.018-3.png",
+          "icon": "livro",
+          "title": "No estojo",
+          "sub": "Fácil de achar"
+        },
+        {
+          "photo": "carrossel/B.018-4.png",
+          "icon": "paleta",
+          "title": "8 cores",
+          "sub": "Uma para cada um"
+        },
+        {
+          "photo": "carrossel/B.018-5.png",
+          "icon": "estrela",
+          "title": "Na escola",
+          "sub": "Ninguém troca"
+        }
+      ],
+      "colorsNote": "8 cores",
+      "signature": "Cada um com o seu",
+      "productBox": [
+        290,
+        627,
+        862,
+        1215
+      ],
+      "bgScale": 1.06,
+      "bgShift": -57,
+      "fomoTop": 316,
+      "noteTarget": [
+        0.24,
+        0.56
+      ]
+    },
+    {
+      "id": "03-carrossel-lembrancinhas",
+      "type": "carousel",
+      "title": "Carrossel · Lembrancinhas que as crianças amam",
+      "when": "terça 06/10, 19h",
+      "slides": [
+        {
+          "kind": "cover-cheio",
+          "title": "lembrancinhas",
+          "tag": "Dia das Crianças",
+          "headline": "Lembrancinhas",
+          "script": "fofinhas",
+          "subline": "Para a festa, a escola e a sacolinha",
+          "fomo": "Produção limitada",
+          "items": [
+            {
+              "sku": "B.019",
+              "photo": "b019/B.019-4.png",
+              "name": "Kit 4 Mini Macacos"
+            },
+            {
+              "sku": "B.018",
+              "photo": "carrossel/B.018-2.png",
+              "name": "Ponteira com Nome"
+            },
+            {
+              "sku": "B.015",
+              "photo": "carrossel/B.015-2.png",
+              "name": "Mini Capivara"
+            },
+            {
+              "sku": "B.016",
+              "photo": "carrossel/B.016-4.png",
+              "name": "Mini Panda"
+            },
+            {
+              "sku": "B.017",
+              "photo": "carrossel/B.017-2.png",
+              "name": "Mini Orca"
+            },
+            {
+              "sku": "B.013",
+              "photo": "carrossel/B.013-3.png",
+              "name": "Guia de Leitura"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.019",
+          "photo": "b019/B.019-1.png",
+          "label": "Lançamento",
+          "name": "Kit 4 Mini Macacos",
+          "accent": "chegou o kit com 4",
+          "line": "Chaveiros articulados que se mexem inteirinhos.",
+          "size": "8 cm cada",
+          "uses": [
+            {
+              "icon": "mao",
+              "label": "Articulados"
+            },
+            {
+              "icon": "chave",
+              "label": "Chave ou mochila"
+            },
+            {
+              "icon": "presente",
+              "label": "Lembrancinha"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.018",
+          "photo": "carrossel/B.018-4.png",
+          "label": "Personalizado",
+          "name": "Ponteira com Nome",
+          "accent": "ninguém troca o lápis",
+          "line": "O nome da criança em relevo, em 8 cores.",
+          "uses": [
+            {
+              "icon": "livro",
+              "label": "Material escolar"
+            },
+            {
+              "icon": "estrela",
+              "label": "Nome em relevo"
+            },
+            {
+              "icon": "presente",
+              "label": "Para a turma"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.015",
+          "photo": "carrossel/B.015-2.png",
+          "label": "Mini articulados",
+          "name": "Mini Capivara",
+          "accent": "cabe na palma da mão",
+          "line": "Articulada, para colecionar ou dar de lembrancinha.",
+          "uses": [
+            {
+              "icon": "mao",
+              "label": "Articulada"
+            },
+            {
+              "icon": "coracao",
+              "label": "Para colecionar"
+            },
+            {
+              "icon": "presente",
+              "label": "Sacolinha surpresa"
+            }
+          ],
+          "size": "2,7 cm"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.016",
+          "photo": "carrossel/B.016-2.png",
+          "label": "Mini articulados",
+          "name": "Mini Panda",
+          "accent": "fofura em miniatura",
+          "line": "O mascote da mesa de estudos.",
+          "uses": [
+            {
+              "icon": "mao",
+              "label": "Articulado"
+            },
+            {
+              "icon": "livro",
+              "label": "Mesa de estudos"
+            },
+            {
+              "icon": "presente",
+              "label": "Lembrancinha"
+            }
+          ],
+          "size": "3 cm"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.017",
+          "photo": "carrossel/B.017-2.png",
+          "label": "Mini articulados",
+          "name": "Mini Orca",
+          "accent": "do mar para a sua mão",
+          "line": "Articulada e gostosa de mexer.",
+          "uses": [
+            {
+              "icon": "mao",
+              "label": "Articulada"
+            },
+            {
+              "icon": "sorriso",
+              "label": "Para crianças e adultos"
+            },
+            {
+              "icon": "presente",
+              "label": "Sacolinha surpresa"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.013",
+          "photo": "carrossel/B.013-2.png",
+          "label": "Escola",
+          "name": "Guia de Leitura",
+          "accent": "ajuda a seguir a linha",
+          "line": "Destaca a linha do livro para quem está aprendendo a ler.",
+          "uses": [
+            {
+              "icon": "livro",
+              "label": "Leitura"
+            },
+            {
+              "icon": "sorriso",
+              "label": "Mais foco"
+            },
+            {
+              "icon": "presente",
+              "label": "Lembrancinha da escola"
+            }
+          ]
+        },
+        {
+          "kind": "cta-cheio",
+          "heading": "Lembrancinhas em quantidade",
+          "accent": "para festa e escola",
+          "note": "A partir de 10 unidades do mesmo item, 10% de desconto na loja.",
+          "fomo": "Lembrancinhas: produção limitada",
+          "signature": "Diversão que cabe no bolso"
+        }
+      ],
+      "caption": "Lembrancinhas de Dia das Crianças a partir de R$ 3,90 — impressas em 3D aqui no estúdio. 🧸\n\nSeparamos as que mais fazem sucesso na sacolinha e na escola:\n\n• Kit 4 Mini Macacos (lançamento!)\n• Ponteira de lápis com o nome da criança\n• Mini Capivara, Mini Panda e Mini Orca articulados\n• Guia de Leitura\n\nVai montar sacolinha para a festa ou presente para a turma? A partir de 10 unidades do mesmo item, tem 10% de desconto na loja.\n\n📌 Salve este post para a próxima festa e envie para quem está organizando.\nPedidos pelo link da bio.\n\n#lembrancinhas #diadascriancas #lembrancinhasdefesta #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "04-story-porta-joias",
+      "type": "story-cheio",
+      "title": "Story · Porta-Joias Redondo",
+      "when": "quarta 07/10, 12h",
+      "sku": "D.005",
+      "background": "stories-fundo/D.005.png",
+      "tag": "Organização",
+      "headline": "Tudo no",
+      "script": "lugar certo",
+      "subline": "Bandeja redonda com borda de esferas",
+      "uses": [
+        {
+          "icon": "chave",
+          "label": "Joias, chaves e relógio"
+        },
+        {
+          "icon": "casa",
+          "label": "Penteadeira ou lavabo"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente delicado"
+        }
+      ],
+      "fomo": "Feito à mão · produção limitada",
+      "scenes": [
+        {
+          "photo": "carrossel/D.005-3.png",
+          "icon": "chave",
+          "title": "Na entrada",
+          "sub": "Chaves e óculos à mão"
+        },
+        {
+          "photo": "carrossel/D.005-2.png",
+          "icon": "coracao",
+          "title": "Na penteadeira",
+          "sub": "Joias sempre juntas"
+        },
+        {
+          "photo": "carrossel/D.005-4.png",
+          "icon": "paleta",
+          "title": "3 cores",
+          "sub": "Branco, bege ou marrom"
+        }
+      ],
+      "size": "15 cm de diâmetro",
+      "signature": "Delicadeza em cada detalhe",
+      "productBox": [
+        210,
+        717,
+        836,
+        1185
+      ]
+    },
+    {
+      "id": "05-story-tigelas",
+      "type": "story-cheio",
+      "title": "Story · Tigelas Árvore de Natal",
+      "when": "quinta 08/10, 12h",
+      "sku": "D.013",
+      "background": "stories-fundo/D.013.png",
+      "tag": "Mesa de Natal",
+      "headline": "A ceia mais",
+      "script": "gostosa",
+      "subline": "Tigelas em forma de árvore, empilháveis",
+      "uses": [
+        {
+          "icon": "mesa",
+          "label": "Petiscos da ceia"
+        },
+        {
+          "icon": "folha",
+          "label": "Empilháveis"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente para quem recebe"
+        }
+      ],
+      "fomo": "Produção limitada para o Natal",
+      "scenes": [
+        {
+          "photo": "carrossel/D.013-2.png",
+          "icon": "mesa",
+          "title": "Na ceia",
+          "sub": "Petiscos à mão"
+        },
+        {
+          "photo": "carrossel/D.013-4.png",
+          "icon": "folha",
+          "title": "Empilha",
+          "sub": "Guarda fácil"
+        },
+        {
+          "photo": "carrossel/D.013-5.png",
+          "icon": "estrela",
+          "title": "Em conjunto",
+          "sub": "Viram centro de mesa"
+        }
+      ],
+      "signature": "Detalhes que fazem a ceia",
+      "productBox": [
+        125,
+        735,
+        690,
+        1242
+      ]
+    },
+    {
+      "id": "06-carrossel-mesa-de-natal",
+      "type": "carousel",
+      "title": "Carrossel · Mesa de Natal",
+      "when": "quinta 08/10, 19h",
+      "slides": [
+        {
+          "kind": "cover-cheio",
+          "title": "mesa-natal",
+          "tag": "Mesa de Natal",
+          "headline": "Sua mesa de",
+          "script": "Natal",
+          "subline": "Peças impressas em 3D aqui no estúdio",
+          "fomo": "Produção limitada para o Natal",
+          "items": [
+            {
+              "sku": "N.001",
+              "photo": "carrossel/N.001-3.png",
+              "name": "Quebra-Nozes Vermelho"
+            },
+            {
+              "sku": "D.009",
+              "photo": "carrossel/D.009-4.png",
+              "name": "Porta-Velas Escultural"
+            },
+            {
+              "sku": "D.013",
+              "photo": "carrossel/D.013-2.png",
+              "name": "Tigelas Árvore"
+            },
+            {
+              "sku": "D.012",
+              "photo": "carrossel/D.012-2.png",
+              "name": "Porta-Guardanapo Árvore"
+            },
+            {
+              "sku": "D.010",
+              "photo": "carrossel/D.010-3.png",
+              "name": "Renas Natalinas"
+            },
+            {
+              "sku": "D.002",
+              "photo": "carrossel/D.002-3.png",
+              "name": "Placa Feliz Natal"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "N.001",
+          "photo": "carrossel/N.001-2.png",
+          "label": "Mesa de Natal",
+          "name": "Quebra-Nozes Vermelho",
+          "accent": "o soldadinho clássico",
+          "line": "Chapéu alto e linhas retas, em 5 cores.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Aparador ou estante"
+            },
+            {
+              "icon": "paleta",
+              "label": "Combine as cores"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente de Natal"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.009",
+          "photo": "carrossel/D.009-2.png",
+          "label": "Mesa de Natal",
+          "name": "Porta-Velas Escultural",
+          "accent": "luz suave na ceia",
+          "line": "Jogo de porta-velas com textura canelada.",
+          "uses": [
+            {
+              "icon": "vela",
+              "label": "Velas de réchaud"
+            },
+            {
+              "icon": "mesa",
+              "label": "Centro de mesa"
+            },
+            {
+              "icon": "casa",
+              "label": "Decora o ano todo"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.013",
+          "photo": "carrossel/D.013-2.png",
+          "label": "Mesa de Natal",
+          "name": "Tigelas Árvore de Natal",
+          "accent": "a ceia fica ainda mais bonita",
+          "line": "Para biscoitos, castanhas e petiscos. Empilháveis.",
+          "uses": [
+            {
+              "icon": "mesa",
+              "label": "Mesa da ceia"
+            },
+            {
+              "icon": "folha",
+              "label": "Empilháveis"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente para quem recebe"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.012",
+          "photo": "carrossel/D.012-4.png",
+          "label": "Mesa de Natal",
+          "name": "Porta-Guardanapo Árvore",
+          "accent": "organiza e ainda decora",
+          "line": "Para guardanapos de papel ou de tecido.",
+          "size": "15 × 15 cm",
+          "uses": [
+            {
+              "icon": "mesa",
+              "label": "Mesa posta"
+            },
+            {
+              "icon": "estrela",
+              "label": "Decora a ceia"
+            },
+            {
+              "icon": "folha",
+              "label": "Reutilizável todo ano"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.010",
+          "photo": "carrossel/D.010-4.png",
+          "label": "Mesa de Natal",
+          "name": "Renas Natalinas",
+          "accent": "um trio que encanta",
+          "line": "Conjunto com 3 renas de linhas modernas.",
+          "size": "17,5 cm de altura",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Aparador ou estante"
+            },
+            {
+              "icon": "paleta",
+              "label": "Escolha a sua cor"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente de Natal"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.002",
+          "photo": "carrossel/D.002-4.png",
+          "label": "Mesa de Natal",
+          "name": "Placa Feliz Natal",
+          "accent": "o Natal já começa aqui",
+          "line": "Com floco de neve, para mesa, estante ou perto da árvore.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Mesa ou estante"
+            },
+            {
+              "icon": "paleta",
+              "label": "Várias cores"
+            },
+            {
+              "icon": "presente",
+              "label": "Lembrancinha de Natal"
+            }
+          ]
+        },
+        {
+          "kind": "cta-cheio",
+          "heading": "Como pedir",
+          "accent": "é rapidinho",
+          "fomo": "Produção limitada — garanta a sua mesa de Natal",
+          "signature": "Detalhes que fazem a ceia"
+        }
+      ],
+      "caption": "Mesa de Natal pronta, do centro de mesa aos petiscos — tudo impresso em 3D aqui no estúdio. 🎄\n\nO que tem neste carrossel:\n\n• Quebra-Nozes Soldadinho Vermelho\n• Porta-Velas Escultural\n• Tigelas Árvore de Natal (empilháveis)\n• Porta-Guardanapo Árvore\n• Renas Natalinas\n• Placa Feliz Natal\n\nCada peça tem várias cores para combinar com a sua decoração. Arraste para ver preços.\n\n📌 Salve para montar a sua mesa e envie para quem vai receber a família no Natal.\nA produção é limitada — pedidos pelo link da bio.\n\n#mesadenatal #decoracaodenatal #natal #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "07-story-vasinho",
+      "type": "story-cheio",
+      "title": "Story · Vasinho Mãozinhas de Coração",
+      "when": "sexta 09/10, 12h",
+      "sku": "D.003",
+      "background": "stories-fundo/D.003.png",
+      "tag": "Presente com carinho",
+      "headline": "Um abraço",
+      "script": "em forma de vaso",
+      "subline": "Vasinho com mãozinhas de coração",
+      "uses": [
+        {
+          "icon": "folha",
+          "label": "Para suculentas"
+        },
+        {
+          "icon": "monitor",
+          "label": "Mesa de trabalho"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente fofo"
+        }
+      ],
+      "note": "sorriso\ngarantido",
+      "fomo": "Feito à mão · produção limitada",
+      "scenes": [
+        {
+          "photo": "carrossel/D.003-2.png",
+          "icon": "monitor",
+          "title": "No trabalho",
+          "sub": "Mais leveza no dia"
+        },
+        {
+          "photo": "carrossel/D.003-3.png",
+          "icon": "casa",
+          "title": "Na estante",
+          "sub": "Verde em casa"
+        },
+        {
+          "photo": "carrossel/D.003-4.png",
+          "icon": "paleta",
+          "title": "3 cores",
+          "sub": "Branco, bege ou marrom"
+        }
+      ],
+      "signature": "Carinho em cada detalhe",
+      "productBox": [
+        340,
+        680,
+        725,
+        1162
+      ],
+      "noteTarget": [
+        0.29,
+        0.52
+      ]
+    },
+    {
+      "id": "08-story-como-pedir",
+      "type": "story",
+      "kind": "cta-cheio",
+      "title": "Story · Como pedir",
+      "when": "sábado 10/10, 12h",
+      "heading": "Como pedir",
+      "accent": "é rapidinho",
+      "fomo": "Produção limitada — garanta o seu",
+      "signature": "Feito à mão, camada por camada"
+    },
+    {
+      "id": "09-carrossel-casa",
+      "type": "carousel",
+      "title": "Carrossel · Decoração que organiza",
+      "when": "domingo 11/10, 19h",
+      "slides": [
+        {
+          "kind": "cover-cheio",
+          "title": "casa",
+          "tag": "Casa e presentes",
+          "headline": "Decoração que",
+          "script": "organiza",
+          "subline": "Peças minimalistas impressas em 3D",
+          "fomo": "Feito à mão · produção limitada",
+          "items": [
+            {
+              "sku": "D.003",
+              "photo": "carrossel/D.003-2.png",
+              "name": "Vasinho Mãozinhas"
+            },
+            {
+              "sku": "D.006",
+              "photo": "carrossel/D.006-2.png",
+              "name": "Porta-Joias Oval"
+            },
+            {
+              "sku": "D.007",
+              "photo": "carrossel/D.007-2.png",
+              "name": "Saboneteira"
+            },
+            {
+              "sku": "D.021",
+              "photo": "carrossel/D.021-2.png",
+              "name": "Porta-Copos Rattan"
+            },
+            {
+              "sku": "D.004",
+              "photo": "carrossel/D.004-2.png",
+              "name": "Porta-Copos Canelado"
+            },
+            {
+              "sku": "D.001",
+              "photo": "carrossel/D.001-2.png",
+              "name": "Bandeja Oval"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.003",
+          "photo": "carrossel/D.003-2.png",
+          "label": "Presente com carinho",
+          "name": "Vasinho Mãozinhas",
+          "accent": "um abraço em forma de vaso",
+          "line": "Para suculentas, na mesa de trabalho ou na estante.",
+          "uses": [
+            {
+              "icon": "folha",
+              "label": "Para suculentas"
+            },
+            {
+              "icon": "monitor",
+              "label": "Mesa de trabalho"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente fofo"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.006",
+          "photo": "carrossel/D.006-2.png",
+          "label": "Organização",
+          "name": "Porta-Joias Oval",
+          "accent": "joias sempre juntas",
+          "line": "Bandejinha canelada para anéis, brincos e relógio.",
+          "uses": [
+            {
+              "icon": "coracao",
+              "label": "Penteadeira"
+            },
+            {
+              "icon": "chave",
+              "label": "Chaves e óculos"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente delicado"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.007",
+          "photo": "carrossel/D.007-2.png",
+          "label": "Banheiro e cozinha",
+          "name": "Saboneteira com Drenagem",
+          "accent": "o sabonete fica sequinho",
+          "line": "Frisos que escorrem a água. Serve para esponja também.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Pia do banheiro"
+            },
+            {
+              "icon": "folha",
+              "label": "Esponja na cozinha"
+            },
+            {
+              "icon": "paleta",
+              "label": "4 cores"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.021",
+          "photo": "carrossel/D.021-3.png",
+          "label": "Mesa posta",
+          "name": "Porta-Copos Rattan",
+          "accent": "textura de palhinha",
+          "line": "Efeito rattan impresso em 3D, com suporte.",
+          "uses": [
+            {
+              "icon": "mesa",
+              "label": "Mesa do café"
+            },
+            {
+              "icon": "casa",
+              "label": "Sala de estar"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente para a casa"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.004",
+          "photo": "carrossel/D.004-3.png",
+          "label": "Mesa posta",
+          "name": "Porta-Copos Canelado",
+          "accent": "protege e decora",
+          "line": "Kit de porta-copos com suporte, textura canelada.",
+          "uses": [
+            {
+              "icon": "mesa",
+              "label": "Mesa do café"
+            },
+            {
+              "icon": "paleta",
+              "label": "3 cores"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente para a casa"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.001",
+          "photo": "carrossel/D.001-3.png",
+          "label": "Organização",
+          "name": "Bandeja Oval Minimalista",
+          "accent": "organiza com leveza",
+          "line": "Para perfumes, joias ou a mesinha de cabeceira.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Penteadeira ou lavabo"
+            },
+            {
+              "icon": "coracao",
+              "label": "Minimalista"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente"
+            }
+          ]
+        },
+        {
+          "kind": "cta-cheio",
+          "heading": "Como pedir",
+          "accent": "é rapidinho",
+          "fomo": "Feito à mão · produção limitada",
+          "signature": "Carinho em cada detalhe"
+        }
+      ],
+      "caption": "Decoração minimalista que organiza a casa — e vira presente fácil. 🏡\n\nNeste carrossel:\n\n• Vasinho Mãozinhas de Coração\n• Porta-Joias Oval Canelado\n• Saboneteira com Drenagem\n• Porta-Copos Rattan\n• Kit Porta-Copos Canelado\n• Bandeja Oval Minimalista\n\nTodas impressas em 3D aqui no estúdio, em cores neutras que combinam com qualquer canto. Arraste para ver preços.\n\n📌 Salve para a sua próxima lista de presentes.\nPedidos pelo link da bio.\n\n#decoracaominimalista #organizacao #presentecriativo #impressao3d #ac3dstudio"
+    }
+  ]
+}
