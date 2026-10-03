@@ -47,3 +47,5 @@ next-env.d.ts
 # scratch
 tmp-verify.mts
 /prisma/instagram-media/
+/prisma/backups-antigos-*.tar.gz
+/prisma/dev.db.backup-*
