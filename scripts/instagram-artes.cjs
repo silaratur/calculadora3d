@@ -1,7 +1,8 @@
 // Gera as artes do Instagram (@ac3d_studio) a partir de uma pauta em JSON:
 //
-//   node scripts/instagram-artes.cjs scripts/instagram/<pauta>.json
+//   node scripts/instagram-artes.cjs scripts/instagram/<pauta>.json [--conferir]
 //
+// --conferir só compara a pauta com o Catálogo de produção, sem gerar artes.
 // Carrossel = slides 4:5 (1080×1350); story = 9:16 (1080×1920). Nome, preço e
 // cores vêm do Catálogo (banco), então a arte nunca sai com preço desatualizado.
 // Fotos-base = recortes 4:3 sem texto em public/Highsfield/. A saída vai para
@@ -1041,6 +1042,39 @@ async function ctaCheio(slide, index, total) {
   return sharp(canvas(CH, C.copperDeep)).composite(layers).jpeg({ quality: 92 }).toBuffer();
 }
 
+// Preço e cores SEMPRE iguais aos do Catálogo de produção (a mesma API que a
+// loja lê): sobrescreve o banco local, que costuma estar desatualizado, e para
+// a geração se um produto da pauta não estiver à venda na loja ou se a legenda
+// citar um valor em R$ que não é preço de nenhum produto daquele post.
+const CATALOG_URL = process.env.INSTAGRAM_CATALOG_URL || "https://calculadora3d.silaratur.cloud/api/public/products";
+async function syncWithCatalog(spec, products) {
+  const response = await fetch(CATALOG_URL, { signal: AbortSignal.timeout(15000) }).catch((error) => ({ ok: false, statusText: error.message }));
+  if (!response.ok) throw new Error(`Não consegui ler o Catálogo (${CATALOG_URL}): ${response.statusText}. Sem ele não dá para garantir os preços.`);
+  const body = await response.json();
+  const catalog = Object.fromEntries((Array.isArray(body) ? body : body.products).map((item) => [item.sku, item]));
+  const skusOf = (post) => {
+    const found = new Set();
+    JSON.stringify(post).replace(/"(?:sku|unit|kit)":"([A-Z]\.\d+)"/g, (_, sku) => found.add(sku));
+    return [...found];
+  };
+  const problems = [];
+  for (const post of spec.posts) {
+    const skus = skusOf(post);
+    for (const sku of skus) {
+      const item = catalog[sku];
+      if (!item) { problems.push(`${post.id}: ${sku} não está à venda na loja`); continue; }
+      products[sku] = { ...(products[sku] || { sku, name: item.name, description: item.description || "" }), price: item.price, colors: JSON.stringify(item.colors || []) };
+    }
+    const prices = new Set(skus.filter((sku) => catalog[sku]).map((sku) => money(catalog[sku].price)));
+    for (const [value] of (post.caption || "").matchAll(/R\$\s?\d+(?:,\d{2})?/g)) {
+      const normalized = `R$ ${value.replace(/R\$\s?/, "")}${/,\d{2}$/.test(value) ? "" : ",00"}`;
+      if (!prices.has(normalized)) problems.push(`${post.id}: a legenda cita ${value}, que não é preço de nenhum produto deste post (${[...prices].join(", ")})`);
+    }
+  }
+  if (problems.length) throw new Error(`Pauta não bate com o Catálogo:\n- ${problems.join("\n- ")}`);
+  console.log(`preços e cores conferidos com o Catálogo (${Object.keys(catalog).length} produtos na loja)`);
+}
+
 (async () => {
   const specFile = process.argv[2];
   if (!specFile) return console.log("uso: node scripts/instagram-artes.cjs scripts/instagram/<pauta>.json");
@@ -1048,6 +1082,8 @@ async function ctaCheio(slide, index, total) {
   const prisma = new PrismaClient();
   const products = Object.fromEntries((await prisma.product.findMany()).map((p) => [p.sku, p]));
   await prisma.$disconnect();
+  await syncWithCatalog(spec, products);
+  if (process.argv.includes("--conferir")) return;
   const outRoot = path.join(PHOTOS, "instagram", spec.pack);
   // Stories sem tema fixo alternam claro/escuro, começando por um lado sorteado.
   let dark = Math.random() < 0.5;
