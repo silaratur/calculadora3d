@@ -1430,7 +1430,7 @@ button.new-quote-button { border: 0; cursor: pointer; }
    insumo raramente passa de poucas unidades. */
 .supply-line { grid-template-columns: minmax(0, 1fr) 78px 56px auto; }
 .supply-line .supply-price { width: 100%; }
-.material-lines-actions { display: flex; justify-content: flex-end; }
+.material-lines-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .product-card-prices { border-top: 1px solid var(--admin-border); display: grid; gap: 10px; grid-template-columns: 1fr 1fr; margin-top: 13px; padding-top: 11px; text-align: center; }
 .product-card-prices span { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; }
 .product-card-prices strong { color: var(--admin-copper); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 16px; margin-top: 3px; }
@@ -2114,10 +2114,8 @@ button.competitor-row { cursor: pointer; }
 .ig-safe.bottom.reel { height: 18%; }
 .ig-safe.right { bottom: 18%; height: 34%; right: 0; width: 13%; }
 
-/* Orçamentos → peça sob medida: exceção, sem seção própria — um link em
+/* Orçamentos → peça sob medida: exceção, sem seção própria — um botão em
    Produtos abre a janela e a peça entra como linha com a etiqueta SOB MEDIDA. */
-.text-link-button { background: none; border: 0; color: var(--admin-copper); cursor: pointer; font-family: var(--font-sans), Arial, sans-serif; font-size: 13px; font-weight: 600; padding: 6px 4px; text-decoration: underline; text-underline-offset: 3px; }
-.text-link-button:disabled { cursor: default; opacity: .5; }
 .custom-piece-line { display: grid; gap: 2px; min-width: 0; }
 .custom-piece-title { align-items: center; display: flex; font-size: 13px; font-weight: 600; gap: 6px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .custom-piece-line small { color: var(--admin-muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

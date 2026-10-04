@@ -958,7 +958,7 @@ function OrcamentosForm() {
               {products.length === 0 ? <div className="empty-note">Nenhum produto cadastrado no Catálogo ainda.</div> : null}
               <div className="material-lines-actions">
                 <button type="button" className="secondary-button" onClick={addProductLine} disabled={!products.length}>+ Adicionar produto</button>
-                <button type="button" className="text-link-button" onClick={openNewPiece} disabled={!pricingSettings} title="Para uma peça que ainda não está no Catálogo">Orçar peça sob medida</button>
+                <button type="button" className="secondary-button" onClick={openNewPiece} disabled={!pricingSettings} title="Para uma peça que ainda não está no Catálogo">+ Peça sob medida</button>
               </div>
               {productLines.length || customPieces.length ? (
                 <div className="metric-wide">
