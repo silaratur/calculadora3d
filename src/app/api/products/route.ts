@@ -127,18 +127,25 @@ export async function GET(request: Request) {
     return NextResponse.json(product);
   }
 
-  const [products, sales] = await Promise.all([
+  const [products, soldItems, legacySales] = await Promise.all([
     prisma.product.findMany({
       where: { active: true },
       orderBy: { createdAt: "desc" },
       include: { materials: true, supplies: true, printer: true, marketplaceChannel: true },
     }),
-    // Total vendido por produto (soma da quantidade de todos os pedidos, sem
-    // filtrar por status) — pro card do catálogo mostrar tração de vendas.
-    prisma.salesOrder.groupBy({ by: ["productId"], _sum: { quantity: true }, where: { productId: { not: null } } }),
+    // Total vendido por produto (sem filtrar por status) — pro card do catálogo
+    // e o filtro "Mais Vendas". Pedido vindo de orçamento com vários itens não
+    // guarda produto no próprio pedido (productId vazio): o que foi vendido
+    // está nas peças da produção dele, uma por produto do orçamento.
+    prisma.productionItem.groupBy({ by: ["productId"], _sum: { quantity: true }, where: { productId: { not: null } } }),
+    // Pedido antigo de um produto só, sem lista de peças: conta pelo próprio pedido.
+    prisma.salesOrder.groupBy({ by: ["productId"], _sum: { quantity: true }, where: { productId: { not: null }, production: { is: null } } }),
   ]);
 
-  const salesByProduct = new Map(sales.map((row) => [row.productId, row._sum.quantity ?? 0]));
+  const salesByProduct = new Map<string, number>();
+  for (const row of [...soldItems, ...legacySales]) {
+    if (row.productId) salesByProduct.set(row.productId, (salesByProduct.get(row.productId) ?? 0) + (row._sum.quantity ?? 0));
+  }
   const withSales = products.map((product) => ({ ...product, salesCount: salesByProduct.get(product.id) ?? 0 }));
 
   return NextResponse.json(withSales);
