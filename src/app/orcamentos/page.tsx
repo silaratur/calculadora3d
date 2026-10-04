@@ -265,11 +265,11 @@ function OrcamentosForm() {
     return [...matches].sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  // A linha nasce vazia (sem produto pré-escolhido) e com a busca aberta —
+  // antes vinha com o primeiro produto do Catálogo e era preciso apagar.
   function addProductLine() {
-    const usedIds = new Set(productLines.map((line) => line.productId));
-    const next = products.find((item) => !usedIds.has(item.id)) ?? products[0];
-    if (!next) return;
-    setProductLines((current) => [...current, { productId: next.id, quantity: "1" }]);
+    if (!products.length) return;
+    setProductLines((current) => [...current, { productId: "", quantity: "1" }]);
   }
   function updateProductLine(index: number, patch: Partial<ProductLine>) {
     setProductLines((current) => current.map((line, i) => (i === index ? { ...line, ...patch } : line)));
@@ -873,7 +873,9 @@ function OrcamentosForm() {
                           onChange={(event) => setProductPickerQuery(event.target.value)}
                           onFocus={() => { setProductPickerOpenIndex(index); setProductPickerQuery(product?.name ?? ""); }}
                           onBlur={() => setProductPickerOpenIndex(null)}
-                          placeholder="Selecione um produto..."
+                          // Linha recém-adicionada (sem produto) já abre a busca.
+                          autoFocus={!line.productId}
+                          placeholder="Busque ou escolha um produto..."
                           autoComplete="off"
                         />
                         {productPickerOpenIndex === index ? (
