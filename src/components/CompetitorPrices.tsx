@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { evaluatePrice, isStale, STALE_DAYS, TARGET_MARGIN, unitPrice, type CompetitorEntry, type Position } from "@/lib/competitors";
+import { effectiveQuantity, evaluatePrice, isStale, STALE_DAYS, TARGET_MARGIN, unitPrice, type CompetitorEntry, type Position } from "@/lib/competitors";
 import { brl } from "@/lib/money";
 
 /**
@@ -147,7 +147,7 @@ export function CompetitorPrices({ search, products, marketplaces }: { search: s
       competitor: form.competitor.trim(),
       channel: form.channel,
       price: n(form.price),
-      quantity: Math.max(n(form.quantity), 1),
+      quantity: effectiveQuantity(n(form.quantity)),
       shipping: n(form.shipping),
       url: form.url.trim(),
       checkedAt: form.checkedAt,
@@ -173,7 +173,7 @@ export function CompetitorPrices({ search, products, marketplaces }: { search: s
   }
 
   if (!loaded) return <p className="library-loading">Carregando...</p>;
-  const preview = form.price ? unitPrice({ price: n(form.price), quantity: Math.max(n(form.quantity), 1), shipping: n(form.shipping) }) : null;
+  const preview = form.price ? unitPrice({ price: n(form.price), quantity: effectiveQuantity(n(form.quantity)), shipping: n(form.shipping) }) : null;
   const formProduct = products.find((item) => item.id === form.productId);
 
   return (
@@ -207,7 +207,7 @@ export function CompetitorPrices({ search, products, marketplaces }: { search: s
           </div>
           <div className="form-grid three">
             <label>Preço do anúncio (R$)<input required inputMode="decimal" value={form.price} onChange={(event) => setForm({ ...form, price: event.target.value })} placeholder="Ex.: 49,90" /></label>
-            <label>Peças no anúncio<input inputMode="decimal" value={form.quantity} onChange={(event) => setForm({ ...form, quantity: event.target.value })} /><small>Kit de 10 = 10</small></label>
+            <label>Peças no anúncio<input inputMode="decimal" value={form.quantity} onChange={(event) => setForm({ ...form, quantity: event.target.value })} /><small>Peças do anúncio ÷ peças do seu produto: kit de 10 contra sua peça avulsa = 10; anúncio de 1 contra seu kit de 4 = 0,25</small></label>
             <label>Frete (R$)<input inputMode="decimal" value={form.shipping} onChange={(event) => setForm({ ...form, shipping: event.target.value })} /><small>0 = frete grátis</small></label>
           </div>
           <div className="form-grid">
@@ -289,8 +289,8 @@ export function CompetitorPrices({ search, products, marketplaces }: { search: s
                           {isUnavailable(entry) ? <em className="today-tag urgent">fora do ar — fora da mediana</em> : changedRecently(entry) ? <em className="today-tag">preço mudou</em> : null}
                           {entry.notes ? <small>{entry.notes}</small> : null}
                         </span>
-                        <span className="num">{brl(entry.price)}{entry.quantity > 1 ? ` / ${entry.quantity} un.` : ""}{entry.shipping ? ` + ${brl(entry.shipping)} frete` : " · frete grátis"}</span>
-                        <span className="num">= {brl(unitPrice(entry))}/un.{rate !== null ? <small>recebe ~{brl((entry.price * (1 - rate)) / Math.max(entry.quantity, 1))}/un. líquido</small> : null}</span>
+                        <span className="num">{brl(entry.price)}{entry.quantity > 1 ? ` / ${entry.quantity} un.` : entry.quantity < 1 ? ` (= ${String(entry.quantity).replace(".", ",")} do seu kit)` : ""}{entry.shipping ? ` + ${brl(entry.shipping)} frete` : " · frete grátis"}</span>
+                        <span className="num">= {brl(unitPrice(entry))}/un.{rate !== null ? <small>recebe ~{brl((entry.price * (1 - rate)) / effectiveQuantity(entry.quantity))}/un. líquido</small> : null}</span>
                         <span>{new Date(entry.checkedAt).toLocaleDateString("pt-BR")}{isStale(entry) ? <small>desatualizado</small> : null}</span>
                         <span className="competitor-entry-actions">
                           {entry.url ? <a href={entry.url} target="_blank" rel="noreferrer">Abrir</a> : null}

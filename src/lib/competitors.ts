@@ -12,8 +12,15 @@ export type Position = "abaixo" | "media" | "acima" | "mercado-abaixo-do-custo";
 export const TARGET_MARGIN = 30; // % — mesma meta usada nos reajustes de 28/09/2026
 export const STALE_DAYS = 30;
 
+/**
+ * Quantidade = peças do anúncio ÷ peças do meu produto. Kit 10 contra minha peça
+ * avulsa = 10; anúncio de 1 unidade contra meu kit de 4 = 0,25 (o anúncio vale
+ * um quarto do meu kit, então o kit equivalente custa 4× o preço dele).
+ */
+export const effectiveQuantity = (quantity: number) => (quantity > 0 ? quantity : 1);
+
 /** "Kit 10 por R$ 49 + R$ 15 de frete" → R$ 6,40 por unidade. */
-export const unitPrice = (entry: Pick<CompetitorEntry, "price" | "quantity" | "shipping">) => (entry.price + entry.shipping) / Math.max(entry.quantity, 1);
+export const unitPrice = (entry: Pick<CompetitorEntry, "price" | "quantity" | "shipping">) => (entry.price + entry.shipping) / effectiveQuantity(entry.quantity);
 
 export const isStale = (entry: Pick<CompetitorEntry, "checkedAt">, now = Date.now()) => now - new Date(entry.checkedAt).getTime() > STALE_DAYS * 86400000;
 

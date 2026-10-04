@@ -9,7 +9,7 @@ const competitorSchema = z.object({
   competitor: z.string().min(2),
   channel: z.string().optional(),
   price: z.number().min(0),
-  quantity: z.number().min(1).optional(),
+  quantity: z.number().positive().optional(), // peças do anúncio ÷ peças do meu produto (pode ser < 1)
   shipping: z.number().min(0).optional(),
   notes: z.string().max(300).optional(),
   url: z.string().url().or(z.literal("")).optional(),
