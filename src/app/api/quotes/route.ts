@@ -7,9 +7,8 @@ import { nextSharedCode } from "@/lib/codes";
 export const quoteSchema = z.object({
   productId: z.string().optional().nullable(),
   productName: z.string().min(2),
-  // Orçamentos (a tela atual) já exige nome/telefone/e-mail no formulário —
-  // aqui fica permissivo pro /calculator legado (mantido fora do menu, ver
-  // memória do projeto) continuar salvando como sempre salvou.
+  // Orçamentos já exige nome/telefone/e-mail no formulário; aqui fica
+  // permissivo para orçamentos antigos salvos sem esses dados.
   customerName: z.string().optional(),
   customerPhone: z.string().optional(),
   customerEmail: z.string().email("E-mail do cliente inválido").or(z.literal("")).optional(),

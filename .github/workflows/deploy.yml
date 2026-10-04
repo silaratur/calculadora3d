@@ -42,7 +42,7 @@ jobs:
         run: |
           BRANCH_SEGURA=$(echo "${{ github.ref_name }}" | tr -c 'a-zA-Z0-9_-' '-')
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
-            "cp /opt/calculadora3d/data/prod.db /opt/calculadora3d/data/backup-\$(date +%Y%m%d-%H%M%S)-ci-${BRANCH_SEGURA}.db 2>/dev/null || true"
+            "cp /opt/calculadora3d/data/prod.db /opt/calculadora3d/data/backup-\$(date +%Y%m%d-%H%M%S)-ci-${BRANCH_SEGURA}.db 2>/dev/null || true; ls -t /opt/calculadora3d/data/backup-*.db 2>/dev/null | tail -n +11 | xargs -r rm -f"
 
       - name: Enviar pacote
         run: |

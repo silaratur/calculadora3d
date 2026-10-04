@@ -25,7 +25,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 type Section =
   | "dashboard"
-  | "calculator"
   | "orcamentos"
   | "library"
   | "catalog"
@@ -58,7 +57,7 @@ const groups: { label: string; links: NavLink[] }[] = [
   {
     label: "Vender",
     links: [
-      { id: "projects", hrefs: ["/projects", "/orcamentos"], label: "Orçamentos", icon: IconFileText, alsoActive: ["orcamentos", "calculator"] },
+      { id: "projects", hrefs: ["/projects", "/orcamentos"], label: "Orçamentos", icon: IconFileText, alsoActive: ["orcamentos"] },
       { id: "sales", hrefs: ["/sales"], label: "Vendas", icon: IconTag },
       { id: "customers", hrefs: ["/customers"], label: "Clientes", icon: IconUser },
       { id: "divulgacao", hrefs: ["/divulgacao"], label: "Divulgação", icon: IconSparkles },

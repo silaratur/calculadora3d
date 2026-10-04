@@ -5,7 +5,7 @@ import { canAccessPath } from "@/lib/roles";
 const secret = new TextEncoder().encode(process.env.JWT_SECRET ?? "dev-secret-change-me");
 
 /**
- * Sem isto, uma página protegida (ex: /calculator) renderizava normalmente
+ * Sem isto, uma página protegida (ex: /orcamentos) renderizava normalmente
  * no navegador — com o menu inteiro visível — e só descobria "não
  * autenticado" depois, quando as chamadas de API voltavam 401. O sistema
  * inteiro só pode ficar disponível pra quem já tem sessão válida: aqui

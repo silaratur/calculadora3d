@@ -69,9 +69,9 @@ const ROLE_ALLOWED_PREFIXES: Record<Exclude<Role, "ADMIN">, string[]> = {
   CATALOG: ["/catalog"],
   // /quotes = orçamento em PDF (/quotes/[id]/print) — quem gera ou consulta
   // orçamento precisa conseguir abrir o PDF dele.
-  CALCULATOR: ["/calculator", "/orcamentos", "/quotes"],
+  CALCULATOR: ["/orcamentos", "/quotes"],
   PRODUCTION: ["/production"],
-  SALES: ["/customers", "/sales", "/projects", "/calculator", "/orcamentos", "/quotes"],
+  SALES: ["/customers", "/sales", "/projects", "/orcamentos", "/quotes"],
   // Recebimentos viraram uma ação dentro do card do pedido em Vendas (não uma
   // tela própria) — dar Financeiro sem Vendas deixaria sem como registrar um
   // recebimento; a contrapartida é que esse perfil também edita pedidos.
