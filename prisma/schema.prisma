@@ -541,6 +541,25 @@ model StoreBanner {
   updatedAt   DateTime  @updatedAt
 }
 
+// Medição própria da loja (Loja → Campanhas): um evento por ação do visitante.
+// Sem dado pessoal: sessionId é aleatório por visita (sessionStorage do navegador).
+// type: page_view | view_item | add_to_cart | begin_checkout | generate_lead | select_promotion | search
+// campaign: de onde veio a ação ("destaque", "colecao:<id>", "data:<id>", "banner:<id>",
+// "lancamentos", "categoria", "busca", "link"); source: canal da primeira visita.
+model StoreEvent {
+  id        String   @id @default(cuid())
+  type      String
+  sessionId String
+  productId String?
+  campaign  String   @default("")
+  source    String   @default("")
+  value     Float    @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([type, createdAt])
+}
+
 // Cupons da loja (Loja → Promoções). O código fica em maiúsculas e só é
 // conferido no servidor; a loja nunca recebe a lista de códigos.
 model Coupon {

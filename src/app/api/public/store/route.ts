@@ -32,6 +32,7 @@ export async function GET() {
   const bannerProduct = bannerRow?.productId ? visible.get(bannerRow.productId) : undefined;
   const banner = bannerRow
     ? {
+        id: bannerRow.id,
         title: bannerRow.title,
         subtitle: bannerRow.subtitle,
         buttonLabel: bannerRow.buttonLabel,

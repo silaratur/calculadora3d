@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   IconBook,
+  IconBookmark,
   IconCirclePlus,
   IconExternalLink,
   IconFileText,
@@ -41,6 +42,7 @@ type Section =
   | "loja"
   | "loja-promocoes"
   | "loja-vitrine"
+  | "loja-campanhas"
   | "loja-config";
 
 type NavLink = {
@@ -69,12 +71,13 @@ const storeGroups: Group[] = [
     links: [
       { id: "loja-vitrine", hrefs: ["/loja/vitrine"], label: "Vitrine", icon: IconGrid },
       { id: "loja-promocoes", hrefs: ["/loja/promocoes"], label: "Promoções", icon: IconTag },
+      { id: "loja-campanhas", hrefs: ["/loja/campanhas"], label: "Campanhas", icon: IconBookmark },
       { id: "divulgacao", hrefs: ["/divulgacao"], label: "Divulgação", icon: IconSparkles },
       { id: "loja-config", hrefs: ["/loja/configuracoes"], label: "Configurações da loja", icon: IconSettings },
     ],
   },
 ];
-const storeSections: Section[] = ["loja", "loja-vitrine", "loja-promocoes", "loja-config", "divulgacao"];
+const storeSections: Section[] = ["loja", "loja-vitrine", "loja-promocoes", "loja-campanhas", "loja-config", "divulgacao"];
 const groups: Group[] = [
   {
     label: "Vender",
