@@ -2134,3 +2134,6 @@ button.competitor-row { cursor: pointer; }
 /* Catálogo → revisão de marca (fotos e texto próprios): selo no cartão. */
 .brand-review-badge { align-self: flex-start; background: var(--warn-soft, #f4e8da); border-radius: 6px; color: #8a5a2e; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; font-weight: 700; padding: 3px 7px; text-decoration: none; }
 .brand-review-badge.proposed { background: rgba(119, 127, 93, .16); color: var(--admin-olive); }
+.publish-ask { align-items: center; background: rgba(119, 127, 93, .12); border: 1px solid rgba(119, 127, 93, .35); border-radius: 8px; display: flex; flex-wrap: wrap; gap: 10px 16px; justify-content: space-between; padding: 10px 12px; }
+.publish-ask span { color: var(--admin-olive); font-size: 13px; font-weight: 700; }
+.publish-ask > div { display: flex; flex-wrap: wrap; gap: 8px; }

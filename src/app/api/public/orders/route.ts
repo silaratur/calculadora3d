@@ -143,7 +143,7 @@ export async function POST(request: Request) {
 
   if (!order.items.length) return NextResponse.json({ error: "Sacola vazia" }, { status: 400 });
   const products = await prisma.product.findMany({
-    where: { sku: { in: order.items.map((item) => item.sku) }, active: true, showInStore: true },
+    where: { sku: { in: order.items.map((item) => item.sku) }, active: true, showInStore: true, brandReview: "DONE" },
     include: { materials: true },
   });
   const materials = await prisma.material.findMany();

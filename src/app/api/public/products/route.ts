@@ -22,7 +22,7 @@ const BEST_SELLERS = 3;
 export async function GET() {
   const [products, sales] = await Promise.all([
     prisma.product.findMany({
-      where: { active: true, showInStore: true },
+      where: { active: true, showInStore: true, brandReview: "DONE" },
       orderBy: { createdAt: "desc" },
       select: { id: true, sku: true, name: true, category: true, description: true, price: true, imageUrl: true, extraImages: true, colors: true, personalizable: true, createdAt: true, updatedAt: true },
     }),

@@ -147,7 +147,8 @@ const defaultSortDirection: Record<"name" | "recent" | "category" | "sales" | "p
   price: "asc",
 };
 
-const maxProductImages = 5;
+const maxProductImages = 8;
+const minProductImages = 5;
 
 function normalizeCategory(value: string) {
   return value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -179,6 +180,8 @@ export default function CatalogPage() {
   const [itemsPerPage, setItemsPerPage] = useState(15);
   const [page, setPage] = useState(1);
   const [feedback, setFeedback] = useState("");
+  // Revisão de marca aprovada agora: a loja só recebe o produto depois de o usuário responder se publica.
+  const [publishAsk, setPublishAsk] = useState(false);
   const [imageError, setImageError] = useState("");
   const [needsLogin, setNeedsLogin] = useState(false);
   const [categorySuggestionsOpen, setCategorySuggestionsOpen] = useState(false);
@@ -499,6 +502,7 @@ export default function CatalogPage() {
   }
 
   function edit(product: Product) {
+    setPublishAsk(false);
     setEditingId(product.id);
     setDraft({
       name: product.name,
@@ -531,6 +535,7 @@ export default function CatalogPage() {
   async function save(event: FormEvent) {
     event.preventDefault();
     setFeedback("");
+    if (publishAsk) { setFeedback("Responda se o produto deve ser publicado na loja antes de salvar."); return; }
     // Só cria categoria nova se não existir nenhuma equivalente — "natal" ou
     // "Decoracao" reaproveitam "NATAL"/"Decoração" em vez de duplicar.
     const typedCategory = draft.category.trim();
@@ -575,6 +580,7 @@ export default function CatalogPage() {
       body: JSON.stringify(payload),
     });
     if (!response.ok) { setFeedback("Não foi possível salvar o produto. Verifique o login e os campos."); return; }
+    setPublishAsk(false);
     setDraft(emptyDraft);
     setEditingId(null);
     setView("list");
@@ -757,15 +763,29 @@ export default function CatalogPage() {
                   <label>Link de origem do modelo (opcional)<input type="url" value={draft.sourceUrl} onChange={(event) => setDraft({ ...draft, sourceUrl: event.target.value })} placeholder="https://makerworld.com/... — para checar a licença de venda" /></label>
                   {editingId ? (
                     <label className="checkbox-field">
-                      <input type="checkbox" checked={draft.brandReviewDone} onChange={(event) => setDraft({ ...draft, brandReviewDone: event.target.checked })} />
+                      <input type="checkbox" checked={draft.brandReviewDone} onChange={(event) => {
+                        const wasDone = (products.find((item) => item.id === editingId)?.brandReview ?? "DONE") === "DONE";
+                        setPublishAsk(event.target.checked && !wasDone);
+                        setDraft({ ...draft, brandReviewDone: event.target.checked, ...(event.target.checked || wasDone ? {} : { showInStore: false }) });
+                      }} />
                       Revisão de marca concluída (fotos e texto próprios da AC3D)
                     </label>
+                  ) : null}
+                  {publishAsk ? (
+                    <div className="publish-ask" role="group" aria-label="Publicar na loja">
+                      <span>Revisão aprovada. Publicar este produto na loja agora?</span>
+                      <div>
+                        <button type="button" className="primary-button" onClick={() => { setDraft({ ...draft, showInStore: true }); setPublishAsk(false); }}>Sim, publicar</button>
+                        <button type="button" className="secondary-button" onClick={() => { setDraft({ ...draft, showInStore: false }); setPublishAsk(false); }}>Ainda não</button>
+                      </div>
+                    </div>
                   ) : null}
                   <label className="notes-field description-field">Descrição<textarea rows={15} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Aparece no card do catálogo" /></label>
                   <label className="checkbox-field">
                     <input type="checkbox" checked={draft.showInStore} onChange={(event) => setDraft({ ...draft, showInStore: event.target.checked })} />
                     Mostrar na loja (ac3d.silaratur.cloud) — nome, descrição, fotos e preço ficam públicos
                   </label>
+                  {!draft.brandReviewDone ? <p className="field-hint">Fica fora da loja enquanto a revisão de marca não for concluída.</p> : null}
                   <fieldset className="color-options">
                     <legend>
                       Cores disponíveis na loja — nenhuma marcada = sem escolha de cor
@@ -798,7 +818,7 @@ export default function CatalogPage() {
                     Aceita personalização na loja (nome ou frase escrita pelo cliente)
                   </label>
                   <label>
-                    Fotos do produto ({draft.images.length}/{maxProductImages}) — a primeira é a capa
+                    Fotos do produto ({draft.images.length}/{maxProductImages}) — a primeira é a capa; mínimo {minProductImages}, uma com as medidas e a régua
                     <input type="file" accept="image/*" multiple disabled={draft.images.length >= maxProductImages} onChange={handleImage} />
                   </label>
                   {draft.images.length ? (

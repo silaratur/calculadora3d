@@ -14,7 +14,7 @@ const productSchema = z.object({
   description: z.string().optional(),
   imageUrl: z.string().optional(),
   // Até 4 fotos além da capa (imageUrl) — o Catálogo aceita 5 no total.
-  extraImages: z.array(z.string().min(1)).max(4).optional(),
+  extraImages: z.array(z.string().min(1)).max(7).optional(),
   material: z.string().optional(),
   materials: z.array(z.object({ materialId: z.string().min(1), grams: z.number().min(0) })).optional(),
   // Insumos e acessórios por unidade (argola, corrente, embalagem…), da Biblioteca.

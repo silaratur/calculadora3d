@@ -5,7 +5,7 @@ import { corsHeaders, parseExtraImages } from "../../../route";
 export async function GET(request: Request, { params }: { params: Promise<{ id: string; index: string }> }) {
   const { id, index } = await params;
   const product = await prisma.product.findFirst({
-    where: { id, active: true, showInStore: true },
+    where: { id, active: true, showInStore: true, brandReview: "DONE" },
     select: { imageUrl: true, extraImages: true },
   });
   if (!product) return new Response("Not found", { status: 404, headers: corsHeaders });
