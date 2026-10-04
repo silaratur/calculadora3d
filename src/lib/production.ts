@@ -23,7 +23,7 @@ export function rollupStatus(itemStatuses: string[]): ProductionStatus {
 
 import type { PrismaClient } from "@prisma/client";
 
-export type SnapshotProductLine = { id?: string; name: string; quantity?: number; color?: string; materialId?: string };
+export type SnapshotProductLine = { id?: string; name: string; quantity?: number; color?: string; materialId?: string; custom?: boolean; grams?: number };
 
 /**
  * Quebra o snapshot de um orçamento (Quote.snapshotJson) na lista real de
@@ -42,7 +42,7 @@ export function parseSnapshotProductLines(snapshotJson: string | null | undefine
   }
 }
 
-export type ProductionItemDraft = { name: string; quantity: number; productId: string | null; color?: string; materialId?: string | null };
+export type ProductionItemDraft = { name: string; quantity: number; productId: string | null; color?: string; materialId?: string | null; gramsPerUnit?: number };
 
 /**
  * Monta a lista de ProductionItem a criar para um pedido novo: uma peça por
@@ -72,5 +72,7 @@ export async function buildProductionItemDrafts(
     productId: line.id && validIds.has(line.id) ? line.id : null,
     color: line.color ?? "",
     materialId: line.materialId ?? null,
+    // Peça sob medida não tem receita no Catálogo: a baixa usa as gramas do orçamento.
+    gramsPerUnit: line.custom ? Number(line.grams) || 0 : 0,
   }));
 }

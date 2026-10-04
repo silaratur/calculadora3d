@@ -64,7 +64,7 @@ export function quoteRealCost(snapshotJson: string): number | null {
 }
 
 type SnapshotPrices = {
-  products?: { id?: string; name?: string; quantity?: number; unitPrice?: number }[];
+  products?: { id?: string; name?: string; quantity?: number; unitPrice?: number; custom?: boolean }[];
   calculations?: { productsCost?: number; subtotal?: number };
 };
 
@@ -95,6 +95,11 @@ export function catalogPriceDrift(snapshotJson: string, currentPrice: (productId
   let currentBase = 0;
   const changes: CatalogPriceDrift["changes"] = [];
   for (const line of lines) {
+    // Peça sob medida não está no Catálogo: entra pelo preço salvo e nunca "muda".
+    if (line.custom) {
+      currentBase += (line.unitPrice ?? 0) * (Number(line.quantity) || 1);
+      continue;
+    }
     const now = line.id ? currentPrice(line.id) : undefined;
     if (now === undefined) return null;
     currentBase += now * (Number(line.quantity) || 1);

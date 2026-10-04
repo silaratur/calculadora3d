@@ -2113,3 +2113,22 @@ button.competitor-row { cursor: pointer; }
 .ig-reel-caption p { font-size: 12px; margin: 0; padding: 0 10px; }
 .ig-safe.bottom.reel { height: 18%; }
 .ig-safe.right { bottom: 18%; height: 34%; right: 0; width: 13%; }
+
+/* Orçamentos → peça sob medida: exceção, sem seção própria — um link em
+   Produtos abre a janela e a peça entra como linha com a etiqueta SOB MEDIDA. */
+.text-link-button { background: none; border: 0; color: var(--admin-copper); cursor: pointer; font-family: var(--font-sans), Arial, sans-serif; font-size: 13px; font-weight: 600; padding: 6px 4px; text-decoration: underline; text-underline-offset: 3px; }
+.text-link-button:disabled { cursor: default; opacity: .5; }
+.custom-piece-line { display: grid; gap: 2px; min-width: 0; }
+.custom-piece-title { align-items: center; display: flex; font-size: 13px; font-weight: 600; gap: 6px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.custom-piece-line small { color: var(--admin-muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.custom-piece-links { display: flex; gap: 12px; }
+.custom-piece-links button, .custom-piece-links a { background: none; border: 0; color: var(--admin-copper); cursor: pointer; font-size: 12px; padding: 0; text-decoration: underline; text-underline-offset: 2px; }
+.custom-piece-modal { display: grid; gap: 10px; }
+.custom-piece-modal > label, .custom-piece-modal .form-grid { margin-top: 0; }
+.custom-piece-grid { display: grid; gap: 10px; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.custom-piece-preview { background: var(--sunk); border-radius: 10px; display: flex; flex-wrap: wrap; font-size: 14px; gap: 6px 18px; padding: 10px 12px; }
+.custom-piece-preview strong { color: var(--admin-copper); }
+@media (max-width: 560px) { .custom-piece-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.custom-piece-modal { overflow-x: hidden; }
+.custom-piece-grid label { min-width: 0; }
+.custom-piece-grid input, .custom-piece-modal select, .custom-piece-modal > label input { box-sizing: border-box; min-width: 0; width: 100%; }

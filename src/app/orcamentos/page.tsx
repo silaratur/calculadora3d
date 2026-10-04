@@ -1,13 +1,13 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AdminHeader } from "@/components/AdminHeader";
 import { IconBookmark, IconChevronDown, IconChevronUp, IconClock, IconCopy, IconDownload, IconSave, IconShoppingBag, IconTrash } from "@/components/Icons";
 import { ProductPhotoLink } from "@/components/ProductPreview";
 import { catalogPriceDrift, quoteStatusLabel } from "@/lib/quotes";
 import { QuoteRevisionView } from "@/components/QuoteRevisionView";
-import { calculateSuggestedPrice, markupPercentForFinalPrice, type PricingMethod } from "@/lib/costing";
+import { calculatePieceCost, calculateSuggestedPrice, effectiveMonthlyFixedCost, fixedCostPerPiece, markupPercentForFinalPrice, type PricingMethod, type PricingSettingsLike } from "@/lib/costing";
 import { defaultColor, productColors, resolveColorLine, singleFilamentRecipe, filamentForColor, type VariantMaterial } from "@/lib/color-variants";
 import { swatch } from "@/lib/filament-colors";
 import { brl } from "@/lib/money";
@@ -26,12 +26,19 @@ type CustomerLead = { id: string; name: string; phone: string; email: string };
 // produto pode aparecer em várias linhas, uma por cor (2 brancas + 3 beges).
 type ProductLine = { productId: string; quantity: string; color?: string };
 type SupplyLine = { supplyId: string; quantity: string; unitCost: string };
+// Peça sob medida: ainda não existe no Catálogo — custo calculado aqui com a
+// mesma fórmula do Catálogo (filamento, energia, máquina, custo fixo rateado
+// por hora, mão de obra de acabamento e reserva de perdas das Configurações).
+type CustomPiece = { id: string; name: string; materialId: string; grams: string; hours: string; minutes: string; finish: string; quantity: string };
+type PricingSettings = PricingSettingsLike & { roundPricesTo90?: boolean };
+type Printer = { id: string; model: string; powerWatts: number; purchasePrice: number; usefulLifeHours: number; maintenancePerHour: number };
 type Settings = { companyName: string; companyContact: string; quoteDeliveryText: string; quoteWarrantyText: string; quotePaymentText: string };
 // Formato salvo em Quote.snapshotJson — precisa bater com o que saveQuote()
 // grava, senão "Carregar no Editor" não restaura tudo exatamente como foi
 // criado.
 type QuoteSnapshot = {
-  products?: { id: string; name: string; quantity: number; unitCost: number; unitPrice?: number; printTimeHours: number; imageUrl?: string; color?: string; materialId?: string }[];
+  // custom: peça sob medida (id "sob-medida-…", sem produto no Catálogo) — grams/finishMinutes reabrem o editor.
+  products?: { id: string; name: string; quantity: number; unitCost: number; unitPrice?: number; printTimeHours: number; imageUrl?: string; color?: string; materialId?: string; custom?: boolean; grams?: number; finishMinutes?: number }[];
   markup?: string;
   discount?: string;
   supplies?: { id: string; name: string; category?: string; quantity: number; unitCost: number }[];
@@ -60,7 +67,11 @@ const n = (value: string) => {
   const normalized = cleanValue.includes(",") ? cleanValue.replace(/\./g, "").replace(",", ".") : cleanValue;
   return Number(normalized) || 0;
 };
-const fmtHours = (hours: number) => `${Math.floor(hours)}h ${Math.round((hours % 1) * 60)}m`;
+// Arredonda o total em minutos antes de separar: 49,999 h vira "50h 0m", não "49h 60m".
+const fmtHours = (hours: number) => {
+  const minutes = Math.round(hours * 60);
+  return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+};
 
 export default function OrcamentosPage() {
   return (
@@ -97,6 +108,12 @@ function OrcamentosForm() {
   const [marketplaceId, setMarketplaceId] = useState("direct");
   const [discount, setDiscount] = useState("0");
   const [customExtras, setCustomExtras] = useState<CustomExtra[]>([]);
+  const [customPieces, setCustomPieces] = useState<CustomPiece[]>([]);
+  // Janela da peça sob medida (exceção, não seção fixa): rascunho em edição ou null.
+  const [pieceDraft, setPieceDraft] = useState<CustomPiece | null>(null);
+  const [pricingSettings, setPricingSettings] = useState<PricingSettings | null>(null);
+  const [printers, setPrinters] = useState<Printer[]>([]);
+  const [monthlyFixedCost, setMonthlyFixedCost] = useState<number | null>(null);
   const [customExtraName, setCustomExtraName] = useState("");
   const [customExtraCost, setCustomExtraCost] = useState("");
   const [notes, setNotes] = useState("");
@@ -144,9 +161,16 @@ function OrcamentosForm() {
     }
     async function load() {
       await loadCatalog();
-      const responses = await Promise.all([fetch("/api/settings"), fetch("/api/marketplaces"), fetch("/api/customers")]);
+      const responses = await Promise.all([fetch("/api/settings"), fetch("/api/marketplaces"), fetch("/api/customers"), fetch("/api/printers"), fetch("/api/costs/fixed")]);
+      if (responses[3].ok) setPrinters((await responses[3].json()) as Printer[]);
+      if (responses[4].ok) {
+        const now = new Date();
+        const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+        setMonthlyFixedCost(effectiveMonthlyFixedCost((await responses[4].json()) as { month: string; total: number }[], month));
+      }
       if (responses[0].ok) {
-        const data = (await responses[0].json()) as Settings & { defaultMarkup: number };
+        const data = (await responses[0].json()) as Settings & PricingSettings;
+        setPricingSettings(data);
         if (!quoteId) setMarkup(String(data.defaultMarkup));
         setSettings({ companyName: data.companyName, companyContact: data.companyContact, quoteDeliveryText: data.quoteDeliveryText, quoteWarrantyText: data.quoteWarrantyText, quotePaymentText: data.quotePaymentText });
       }
@@ -174,7 +198,17 @@ function OrcamentosForm() {
     setNotes(versionNotes);
     let s: QuoteSnapshot = {};
     try { s = JSON.parse(snapshotJson) as QuoteSnapshot; } catch { s = {}; }
-    setProductLines((s.products ?? []).map((item) => ({ productId: item.id, quantity: String(item.quantity ?? 1), color: item.color ?? "" })));
+    setProductLines((s.products ?? []).filter((item) => !item.custom).map((item) => ({ productId: item.id, quantity: String(item.quantity ?? 1), color: item.color ?? "" })));
+    setCustomPieces((s.products ?? []).filter((item) => item.custom).map((item) => ({
+      id: item.id,
+      name: item.name,
+      materialId: item.materialId ?? "",
+      grams: String(item.grams ?? 0).replace(".", ","),
+      hours: String(Math.floor(item.printTimeHours)),
+      minutes: String(Math.round((item.printTimeHours % 1) * 60)),
+      finish: String(item.finishMinutes ?? 0),
+      quantity: String(item.quantity ?? 1),
+    })));
     if (s.markup !== undefined) setMarkup(s.markup);
     if (s.discount !== undefined) setDiscount(s.discount);
     if (s.marketplace?.id) setMarketplaceId(s.marketplace.id);
@@ -287,14 +321,68 @@ function OrcamentosForm() {
     [supplyLines, supplies],
   );
 
+  // A1 é a impressora mais usada (mesmo padrão do produto novo no Catálogo).
+  const defaultPrinter = printers.find((item) => item.model.toLowerCase().includes("a1")) ?? printers[0];
+  const pieceFigures = useCallback((piece: CustomPiece) => {
+    const material = materials.find((item) => item.id === piece.materialId);
+    const printTimeHours = n(piece.hours) + n(piece.minutes) / 60;
+    const grams = n(piece.grams);
+    const valid = Boolean(piece.name.trim() && material && grams > 0 && printTimeHours > 0 && pricingSettings);
+    if (!valid || !material || !pricingSettings) return { piece, material, printTimeHours, grams, valid: false, unitCost: 0, unitPrice: 0 };
+    const cost = calculatePieceCost({
+      weightGrams: grams,
+      materialUnitPrice: material.unitPrice,
+      materialUnitWeightGrams: material.unitWeightGrams,
+      printTimeHours,
+      cleanupMinutes: n(piece.finish),
+      laborRatePerHour: pricingSettings.laborRate,
+      energyRatePerKwh: pricingSettings.energyRate,
+      powerWatts: defaultPrinter?.powerWatts ?? pricingSettings.defaultPowerWatts,
+      printerPurchasePrice: defaultPrinter?.purchasePrice,
+      printerUsefulLifeHours: defaultPrinter?.usefulLifeHours,
+      printerMaintenancePerHour: defaultPrinter?.maintenancePerHour,
+      fixedCostPerPiece: fixedCostPerPiece(pricingSettings, monthlyFixedCost ?? undefined, printTimeHours),
+      lossRatePercent: pricingSettings.defaultLossRate,
+    });
+    // "Preço de Catálogo" da peça: markup padrão e arredondamento em ,90 das
+    // Configurações — o mesmo que ela teria se fosse cadastrada no Catálogo.
+    const unitPrice = calculateSuggestedPrice({ unitCost: cost.total, markupPercent: pricingSettings.defaultMarkup, roundTo90: pricingSettings.roundPricesTo90 ?? false }).final;
+    return { piece, material, printTimeHours, grams, valid: true, unitCost: cost.total, unitPrice };
+  }, [materials, pricingSettings, defaultPrinter, monthlyFixedCost]);
+  const customPiecesWithData = useMemo(() => customPieces.map(pieceFigures), [customPieces, pieceFigures]);
+  const draftFigures = pieceDraft ? pieceFigures(pieceDraft) : null;
+
+  function openNewPiece() {
+    setPieceDraft({ id: `sob-medida-${Date.now()}`, name: "", materialId: "", grams: "", hours: "0", minutes: "0", finish: "0", quantity: "1" });
+  }
+  function confirmPieceDraft() {
+    if (!pieceDraft || !draftFigures?.valid) return;
+    setCustomPieces((current) => (current.some((piece) => piece.id === pieceDraft.id) ? current.map((piece) => (piece.id === pieceDraft.id ? pieceDraft : piece)) : [...current, pieceDraft]));
+    setPieceDraft(null);
+  }
+  function updateCustomPiece(id: string, patch: Partial<CustomPiece>) {
+    setCustomPieces((current) => current.map((piece) => (piece.id === id ? { ...piece, ...patch } : piece)));
+  }
+  function removeCustomPiece(id: string) {
+    setCustomPieces((current) => current.filter((piece) => piece.id !== id));
+  }
+  /** Abre o Catálogo com um produto novo já preenchido a partir da peça sob medida. */
+  function catalogLinkFor(piece: CustomPiece) {
+    const params = new URLSearchParams({ novo: "1", nome: piece.name.trim(), material: piece.materialId, gramas: piece.grams, horas: piece.hours, minutos: piece.minutes, acabamento: piece.finish });
+    return `/catalog?${params}`;
+  }
+
   const calc = useMemo(() => {
     // Base é o Preço Final Sugerido de cada produto no Catálogo (já com o
     // markup/margem definidos lá), não o custo — senão o orçamento recalcula
     // do zero em cima do custo e ignora o preço que já foi ajustado no
     // Catálogo (inclusive via "digite o preço final"). O markup do orçamento
     // ainda se aplica por cima dessa base, junto com os insumos/extras.
-    const productsCost = productLinesWithData.reduce((sum, entry) => sum + entry.product.price * (n(entry.line.quantity) || 1), 0);
-    const productsPrintTime = productLinesWithData.reduce((sum, entry) => sum + entry.product.printTimeHours * (n(entry.line.quantity) || 1), 0);
+    const validPieces = customPiecesWithData.filter((entry) => entry.valid);
+    const productsCost = productLinesWithData.reduce((sum, entry) => sum + entry.product.price * (n(entry.line.quantity) || 1), 0)
+      + validPieces.reduce((sum, entry) => sum + entry.unitPrice * (n(entry.piece.quantity) || 1), 0);
+    const productsPrintTime = productLinesWithData.reduce((sum, entry) => sum + entry.product.printTimeHours * (n(entry.line.quantity) || 1), 0)
+      + validPieces.reduce((sum, entry) => sum + entry.printTimeHours * (n(entry.piece.quantity) || 1), 0);
     const presetsCost = supplyLinesWithData.reduce((sum, entry) => sum + (n(entry.line.unitCost) || entry.supply.unitCost) * (n(entry.line.quantity) || 1), 0);
     const customCost = customExtras.reduce((sum, item) => sum + item.unitCost, 0);
     const suppliesCost = presetsCost + customCost;
@@ -312,7 +400,8 @@ function OrcamentosForm() {
     // (produtos pelo custo do Catálogo, não pelo preço de venda, + insumos).
     // Sem isso, um orçamento no preço do Catálogo (ex.: pedido da loja, markup
     // 0) mostrava lucro zero, embora o lucro já esteja embutido no preço.
-    const productsRealCost = productLinesWithData.reduce((sum, entry) => sum + entry.unitCost * (n(entry.line.quantity) || 1), 0);
+    const productsRealCost = productLinesWithData.reduce((sum, entry) => sum + entry.unitCost * (n(entry.line.quantity) || 1), 0)
+      + validPieces.reduce((sum, entry) => sum + entry.unitCost * (n(entry.piece.quantity) || 1), 0);
     const realCost = productsRealCost + suppliesCost;
     const takeRate = Math.max(1 - marketplace.commissionRate - marketplace.adsRate, 0.01);
     const channelFees = pricing.final * (1 - takeRate) + (pricing.final > 0 ? marketplace.fixedFee : 0);
@@ -330,7 +419,7 @@ function OrcamentosForm() {
       price: pricing.final,
       profit: pricing.final - costWithReserve,
     };
-  }, [customExtras, discount, markup, marketplace, pricingMethod, productLinesWithData, supplyLinesWithData]);
+  }, [customExtras, customPiecesWithData, discount, markup, marketplace, pricingMethod, productLinesWithData, supplyLinesWithData]);
 
   const quickChannels = marketplaces.slice(0, 4);
 
@@ -353,7 +442,9 @@ function OrcamentosForm() {
         ? "Informe o telefone do cliente."
         : !clientEmail.trim()
           ? "Informe o e-mail do cliente."
-          : "";
+          : customPiecesWithData.some((entry) => !entry.valid)
+            ? "Complete a peça sob medida (nome, filamento, gramas e tempo de impressão) ou remova-a."
+            : "";
     if (!message) return true;
     setReportError(message);
     window.setTimeout(() => setReportError(""), 3500);
@@ -431,7 +522,20 @@ function OrcamentosForm() {
         // Cor e filamento da linha: aparecem no PDF/Produção e guiam a baixa de estoque.
         ...(entry.color ? { color: entry.color } : {}),
         ...(entry.material ? { materialId: entry.material.id } : {}),
-      })),
+      })).concat(customPiecesWithData.filter((entry) => entry.valid).map((entry) => ({
+        id: entry.piece.id,
+        name: entry.piece.name.trim(),
+        quantity: n(entry.piece.quantity) || 1,
+        unitCost: entry.unitCost,
+        unitPrice: entry.unitPrice,
+        printTimeHours: entry.printTimeHours,
+        imageUrl: undefined,
+        ...(entry.material?.color ? { color: entry.material.color } : {}),
+        ...(entry.material ? { materialId: entry.material.id } : {}),
+        custom: true,
+        grams: entry.grams,
+        finishMinutes: n(entry.piece.finish),
+      }))),
       markup,
       discount,
       supplies: supplyLinesWithData.map((entry) => ({
@@ -738,7 +842,7 @@ function OrcamentosForm() {
                 <a className="bookmark-link" href="/catalog" title="Gerenciar produtos no Catálogo"><IconBookmark className="nav-icon" /></a>
               </div>
               <div className="material-lines">
-                {productLines.length ? (
+                {productLines.length || customPieces.length ? (
                   <div className="material-line material-line-header product-line">
                     <span />
                     <span>Produto (do Catálogo)</span>
@@ -824,12 +928,39 @@ function OrcamentosForm() {
                     </div>
                   );
                 })}
+                {customPiecesWithData.map(({ piece, material, printTimeHours, grams, unitCost, unitPrice }) => {
+                  const quantity = n(piece.quantity) || 1;
+                  return (
+                    <div className="material-line product-line" key={piece.id}>
+                      <div className="product-line-thumb"><span title="Peça sob medida">SM</span></div>
+                      <div className="custom-piece-line">
+                        <span className="custom-piece-title"><span className="supply-tag">SOB MEDIDA</span>{piece.name}</span>
+                        <small>{grams.toLocaleString("pt-BR")} g · {fmtHours(printTimeHours)} · {material?.name.split(" - ")[0] ?? "filamento"}</small>
+                        <span className="custom-piece-links">
+                          <button type="button" onClick={() => setPieceDraft(piece)}>Editar</button>
+                          <a href={catalogLinkFor(piece)} target="_blank" rel="noreferrer">Salvar no Catálogo</a>
+                        </span>
+                      </div>
+                      <small className="product-line-info" title={`Custo de fabricação calculado como no Catálogo${quantity > 1 ? ` · ${quantity}x ${brl(unitCost)} cada` : ""}`}><IconClock className="nav-icon" /> {brl(unitCost * quantity)}</small>
+                      <small className="product-line-info product-line-price" title={`Preço com o markup padrão das Configurações${quantity > 1 ? ` · ${quantity}x ${brl(unitPrice)} cada` : ""}`}>{brl(unitPrice * quantity)}</small>
+                      <span className="qty-stepper">
+                        <input inputMode="numeric" value={piece.quantity} onChange={(event) => updateCustomPiece(piece.id, { quantity: event.target.value })} placeholder="1" />
+                        <span className="qty-stepper-arrows">
+                          <button type="button" onClick={() => updateCustomPiece(piece.id, { quantity: String(quantity + 1) })} aria-label="Aumentar quantidade"><IconChevronUp className="nav-icon" /></button>
+                          <button type="button" onClick={() => updateCustomPiece(piece.id, { quantity: String(Math.max(1, quantity - 1)) })} aria-label="Diminuir quantidade"><IconChevronDown className="nav-icon" /></button>
+                        </span>
+                      </span>
+                      <button type="button" className="delete-button" onClick={() => removeCustomPiece(piece.id)} aria-label={`Remover ${piece.name}`}><IconTrash className="nav-icon" /></button>
+                    </div>
+                  );
+                })}
               </div>
               {products.length === 0 ? <div className="empty-note">Nenhum produto cadastrado no Catálogo ainda.</div> : null}
               <div className="material-lines-actions">
                 <button type="button" className="secondary-button" onClick={addProductLine} disabled={!products.length}>+ Adicionar produto</button>
+                <button type="button" className="text-link-button" onClick={openNewPiece} disabled={!pricingSettings} title="Para uma peça que ainda não está no Catálogo">Orçar peça sob medida</button>
               </div>
-              {productLines.length ? (
+              {productLines.length || customPieces.length ? (
                 <div className="metric-wide">
                   <span><IconClock className="nav-icon" /> Tempo total de impressão</span>
                   <strong>{fmtHours(calc.printTime)}</strong>
@@ -1016,6 +1147,40 @@ function OrcamentosForm() {
           </div>
         </div>
       </div>
+      {pieceDraft ? (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Peça sob medida" onClick={() => setPieceDraft(null)}>
+          <div className="modal-card modal-card-wide custom-piece-modal" onClick={(event) => event.stopPropagation()}>
+            <h2>Peça sob medida</h2>
+            <p>Para uma peça que ainda não está no Catálogo. Use os dados do fatiador: o custo segue a mesma fórmula do Catálogo e o preço usa o markup padrão das Configurações.</p>
+            <label>Nome da peça<input autoFocus value={pieceDraft.name} onChange={(event) => setPieceDraft({ ...pieceDraft, name: event.target.value })} placeholder="Ex: Chaveiro com logo da empresa" /></label>
+            <label>Filamento
+              <select value={pieceDraft.materialId} onChange={(event) => setPieceDraft({ ...pieceDraft, materialId: event.target.value })}>
+                <option value="">Selecione...</option>
+                {materials.filter((item) => item.active !== false || item.id === pieceDraft.materialId).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            </label>
+            <div className="custom-piece-grid">
+              <label>Gramas<input inputMode="decimal" value={pieceDraft.grams} onChange={(event) => setPieceDraft({ ...pieceDraft, grams: event.target.value })} placeholder="18" /></label>
+              <label>Horas<input inputMode="numeric" value={pieceDraft.hours} onChange={(event) => setPieceDraft({ ...pieceDraft, hours: event.target.value })} /></label>
+              <label>Minutos<input inputMode="numeric" value={pieceDraft.minutes} onChange={(event) => setPieceDraft({ ...pieceDraft, minutes: event.target.value })} /></label>
+              <label title="Preparo, limpeza e acabamento, fora do tempo de máquina">Acab. (min)<input inputMode="numeric" value={pieceDraft.finish} onChange={(event) => setPieceDraft({ ...pieceDraft, finish: event.target.value })} /></label>
+              <label>Quantidade<input inputMode="numeric" value={pieceDraft.quantity} onChange={(event) => setPieceDraft({ ...pieceDraft, quantity: event.target.value })} /></label>
+            </div>
+            <div className="custom-piece-preview">
+              {draftFigures?.valid ? (
+                <>
+                  <span>Custo <strong>{brl(draftFigures.unitCost)}</strong> por peça</span>
+                  <span>Preço <strong>{brl(draftFigures.unitPrice)}</strong> por peça</span>
+                </>
+              ) : <span>Preencha nome, filamento, gramas e tempo para calcular.</span>}
+            </div>
+            <div className="form-actions">
+              <button type="button" className="secondary-button" onClick={() => setPieceDraft(null)}>Cancelar</button>
+              <button type="button" className="primary-button" disabled={!draftFigures?.valid} onClick={confirmPieceDraft}>{customPieces.some((piece) => piece.id === pieceDraft.id) ? "Salvar alterações" : "Adicionar ao orçamento"}</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

@@ -374,6 +374,8 @@ model ProductionItem {
   // Cor escolhida no orçamento e o filamento dela (baixa de estoque) — vazio = receita do produto.
   color       String        @default("")
   materialId  String?
+  // Peça sob medida (sem produto no Catálogo): gramas por unidade para a baixa de estoque.
+  gramsPerUnit Float        @default(0)
   status      String        @default("WAITING")
   completedAt DateTime?
   createdAt   DateTime      @default(now())

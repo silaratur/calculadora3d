@@ -72,6 +72,9 @@ export async function PUT(request: Request) {
           data: { stockGrams: { decrement: line.grams * existing.quantity } },
         });
       }
+    } else if (firstTimeCompleted && !existing.product && existing.materialId && existing.gramsPerUnit > 0) {
+      // Peça sob medida (orçamento sem produto no Catálogo): gramas gravadas na própria peça.
+      await tx.material.update({ where: { id: existing.materialId }, data: { stockGrams: { decrement: existing.gramsPerUnit * existing.quantity } } });
     }
 
     const siblingStatuses = existing.job.items.map((sibling) => (sibling.id === id ? parsed.data.status : sibling.status));

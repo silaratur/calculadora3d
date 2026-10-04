@@ -446,6 +446,38 @@ export default function CatalogPage() {
     setPage(1);
   }
 
+  // Vindo de Orçamentos → peça sob medida → "Salvar no Catálogo"
+  // (/catalog?novo=1&nome=…&material=…&gramas=…&horas=…&minutos=…&acabamento=…):
+  // abre o formulário de produto novo já preenchido, uma vez, quando a
+  // Biblioteca e as impressoras carregarem.
+  const [prefillDone, setPrefillDone] = useState(false);
+  useEffect(() => {
+    if (prefillDone || !printers.length || !allMaterials.length) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("novo") !== "1") return;
+    function applyPrefill(params: URLSearchParams) {
+      const defaultPrinter = printers.find((item) => item.model.toLowerCase().includes("a1"));
+      const materialId = params.get("material") ?? "";
+      setEditingId(null);
+      setDraft({
+        ...emptyDraft,
+        name: params.get("nome") ?? "",
+        materialLines: allMaterials.some((item) => item.id === materialId) ? [{ materialId, grams: params.get("gramas") ?? "" }] : [],
+        hours: params.get("horas") ?? "0",
+        minutes: params.get("minutos") ?? "0",
+        cleanup: params.get("acabamento") ?? "0",
+        printerId: defaultPrinter?.id ?? "",
+        markup: String(settings.defaultMarkup),
+        lossRate: String(settings.defaultLossRate),
+      });
+      setFeedback("Produto novo preenchido a partir da peça sob medida do orçamento. Complete categoria, foto e cores e salve.");
+      setView("form");
+      setPrefillDone(true);
+      window.history.replaceState(null, "", "/catalog");
+    }
+    applyPrefill(params);
+  }, [prefillDone, printers, allMaterials, settings]);
+
   function newProduct() {
     setEditingId(null);
     // A1 é a impressora mais usada — poupa um clique em quase todo produto
