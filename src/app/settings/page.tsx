@@ -3,110 +3,50 @@
 import { FormEvent, useEffect, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
+import Link from "next/link";
 import { IconTrash } from "@/components/Icons";
 import { brl } from "@/lib/money";
 
 type Settings = { energyRate: number; defaultPowerWatts: number; laborRate: number; monthlyRent: number; monthlySubscriptions: number; monthlyMaintenance: number; monthlyOtherCosts: number; monthlyPieces: number; defaultMarkup: number; defaultLossRate: number; companyName: string; companyContact: string; quoteValidityDays: number; quoteDeliveryText: string; quoteWarrantyText: string; quotePaymentText: string; storeProductionDays: number; storeQtyDiscounts: string; roundPricesTo90: boolean; storeFreeShippingMin: number; storeShippingText: string; storeCouponCode: string; storeCouponPercent: number };
-type Testimonial = { id: string; name: string; text: string; context: string };
-type Tier = { minQty: string; percent: string };
-type InstagramStatus = { connected: false } | { connected: true; username: string; igUserId: string; tokenHint: string; tokenExpiresAt: string | null; lastCheckedAt: string | null };
 type Marketplace = { id: string; name: string; commissionRate: number; fixedFee: number; adsRate: number; notes: string };
 
 const emptySettings: Settings = { energyRate: 0.85, defaultPowerWatts: 250, laborRate: 25, monthlyRent: 0, monthlySubscriptions: 50, monthlyMaintenance: 40, monthlyOtherCosts: 0, monthlyPieces: 60, defaultMarkup: 40, defaultLossRate: 5, companyName: "AC3D", companyContact: "", quoteValidityDays: 7, quoteDeliveryText: "", quoteWarrantyText: "", quotePaymentText: "", storeProductionDays: 10, storeQtyDiscounts: "[]", roundPricesTo90: true, storeFreeShippingMin: 0, storeShippingText: "", storeCouponCode: "", storeCouponPercent: 0 };
-const emptyTestimonial = { name: "", text: "", context: "" };
 
-/** storeQtyDiscounts vem do banco como JSON; na tela vira linhas editáveis. */
-function parseTiers(raw: string): Tier[] {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map((tier: { minQty?: number; percent?: number }) => ({ minQty: String(tier.minQty ?? ""), percent: String(tier.percent ?? "") }));
-  } catch {
-    return [];
-  }
-}
 const emptyChannel = { name: "", commissionRate: "0", fixedFee: "0", adsRate: "0", notes: "" };
 const numberValue = (value: string) => { const clean = value.replace(/R\$\s?/g, "").replace(/\s/g, ""); return Number(clean.includes(",") ? clean.replace(/\./g, "").replace(",", ".") : clean) || 0; };
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings>(emptySettings);
-  const [tiers, setTiers] = useState<Tier[]>([]);
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [testimonial, setTestimonial] = useState(emptyTestimonial);
   const [channel, setChannel] = useState(emptyChannel);
   const [channels, setChannels] = useState<Marketplace[]>([]);
   const [editingChannelId, setEditingChannelId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
   const [needsLogin, setNeedsLogin] = useState(false);
-  const [instagram, setInstagram] = useState<InstagramStatus | null>(null);
-  const [instagramToken, setInstagramToken] = useState("");
-  const [instagramFeedback, setInstagramFeedback] = useState("");
-  const [instagramBusy, setInstagramBusy] = useState(false);
 
   useEffect(() => {
     async function load() {
-      const [settingsResponse, channelsResponse, testimonialsResponse] = await Promise.all([fetch("/api/settings"), fetch("/api/marketplaces"), fetch("/api/testimonials")]);
-      if (testimonialsResponse.ok) setTestimonials((await testimonialsResponse.json()) as Testimonial[]);
+      const [settingsResponse, channelsResponse] = await Promise.all([fetch("/api/settings"), fetch("/api/marketplaces")]);
       if (settingsResponse.status === 401) { setNeedsLogin(true); return; }
       setNeedsLogin(false);
       if (settingsResponse.ok) {
         const loaded = (await settingsResponse.json()) as Settings;
         setSettings(loaded);
-        setTiers(parseTiers(loaded.storeQtyDiscounts));
       }
       if (channelsResponse.ok) setChannels((await channelsResponse.json()) as Marketplace[]);
-      const instagramResponse = await fetch("/api/instagram");
-      if (instagramResponse.ok) setInstagram((await instagramResponse.json()) as InstagramStatus);
     }
     void load();
   }, []);
 
   async function saveSettings(event: FormEvent) {
     event.preventDefault();
-    // Linhas vazias/incompletas são ignoradas em vez de bloquear o salvamento.
-    const storeQtyDiscounts = tiers
-      .map((tier) => ({ minQty: Math.round(numberValue(tier.minQty)), percent: numberValue(tier.percent) }))
-      .filter((tier) => tier.minQty >= 2 && tier.percent > 0);
-    const response = await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...settings, storeQtyDiscounts }) });
+    // Os campos da loja (editados em Loja → Configurações da loja) vão como vieram;
+    // as faixas de desconto ficam de fora porque o banco as guarda em JSON.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { storeQtyDiscounts, ...rest } = settings;
+    const response = await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rest) });
     setFeedback(response.ok ? "Configurações salvas." : "Não foi possível salvar as configurações.");
   }
 
-  // PUT salva um token novo (validado no Instagram antes de gravar), POST só
-  // testa o salvo e DELETE desconecta. A resposta nunca traz o token.
-  async function instagramRequest(method: "PUT" | "POST" | "DELETE", success: string) {
-    setInstagramBusy(true);
-    setInstagramFeedback("");
-    const response = await fetch("/api/instagram", {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: method === "PUT" ? JSON.stringify({ token: instagramToken }) : undefined,
-    });
-    const body = (await response.json().catch(() => null)) as (InstagramStatus & { error?: string }) | null;
-    setInstagramBusy(false);
-    if (!response.ok) { setInstagramFeedback(body?.error ?? "Não foi possível falar com o Instagram."); return; }
-    if (body) setInstagram(body);
-    setInstagramToken("");
-    setInstagramFeedback(success);
-  }
-
-  function saveInstagramToken(event: FormEvent) {
-    event.preventDefault();
-    void instagramRequest("PUT", "Token salvo e conexão confirmada.");
-  }
-
-  async function saveTestimonial(event: FormEvent) {
-    event.preventDefault();
-    const response = await fetch("/api/testimonials", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(testimonial) });
-    if (!response.ok) { setFeedback("Confira o nome e o texto do depoimento."); return; }
-    setTestimonials([(await response.json()) as Testimonial, ...testimonials]);
-    setTestimonial(emptyTestimonial);
-    setFeedback("Depoimento publicado na loja.");
-  }
-
-  async function deleteTestimonial(id: string) {
-    const response = await fetch(`/api/testimonials?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    if (response.ok) setTestimonials(testimonials.filter((item) => item.id !== id));
-  }
 
   async function saveChannel(event: FormEvent) {
     event.preventDefault();
@@ -190,52 +130,15 @@ export default function SettingsPage() {
               <label>Forma de pagamento<textarea value={settings.quotePaymentText} onChange={(event) => setSettings({ ...settings, quotePaymentText: event.target.value })} placeholder="Ex: 50% de sinal para iniciar a produção e 50% na entrega." /></label>
               <label>Garantia do produto<textarea value={settings.quoteWarrantyText} onChange={(event) => setSettings({ ...settings, quoteWarrantyText: event.target.value })} placeholder="Ex: 30 dias contra defeitos de fabricação a partir da entrega." /></label>
             </div>
-            <div className="settings-group">
-              <h3>Loja online (ac3d.silaratur.cloud)</h3>
-              <p className="settings-intro">Prazo, pagamento e garantia acima também aparecem na loja. O prazo em dias úteis calcula a data-limite das vitrines sazonais (ex: &quot;Peça até 28/09 para o Dia das Crianças&quot;).</p>
-              <label>Prazo de produção (dias úteis)<input inputMode="numeric" value={settings.storeProductionDays} onChange={(event) => setSettings({ ...settings, storeProductionDays: Math.round(numberValue(event.target.value)) })} /></label>
-              <span className="settings-subtitle">Desconto por quantidade (vale por produto, somando as cores)</span>
-              {tiers.map((tier, index) => (
-                <div className="form-grid three" key={index}>
-                  <label>A partir de (un.)<input inputMode="numeric" value={tier.minQty} onChange={(event) => setTiers(tiers.map((item, i) => (i === index ? { ...item, minQty: event.target.value } : item)))} placeholder="10" /></label>
-                  <label>Desconto (%)<input inputMode="decimal" value={tier.percent} onChange={(event) => setTiers(tiers.map((item, i) => (i === index ? { ...item, percent: event.target.value } : item)))} placeholder="10" /></label>
-                  <button type="button" className="quiet-button" onClick={() => setTiers(tiers.filter((_, i) => i !== index))} aria-label={`Remover faixa ${index + 1}`}><IconTrash className="nav-icon" /> Remover</button>
-                </div>
-              ))}
-              {tiers.length < 5 ? <button type="button" className="quiet-button" onClick={() => setTiers([...tiers, { minQty: "", percent: "" }])}>+ Adicionar faixa</button> : null}
-              <span className="settings-subtitle">Entrega</span>
-              <label>Frete grátis a partir de (R$, 0 = não oferecer)<input inputMode="decimal" value={settings.storeFreeShippingMin} onChange={(event) => setSettings({ ...settings, storeFreeShippingMin: numberValue(event.target.value) })} /></label>
-              <label>Texto de entrega na loja<input type="text" value={settings.storeShippingText} onChange={(event) => setSettings({ ...settings, storeShippingText: event.target.value })} placeholder="Ex: Retirada grátis em Vitória ou envio pelos Correios." /></label>
-              <span className="settings-subtitle">Cupom de primeira compra (divulgue no Instagram)</span>
-              <div className="form-grid three">
-                <label>Código<input type="text" value={settings.storeCouponCode} onChange={(event) => setSettings({ ...settings, storeCouponCode: event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, "") })} placeholder="BEMVINDO10" /></label>
-                <label>Desconto (%)<input inputMode="decimal" value={settings.storeCouponPercent} onChange={(event) => setSettings({ ...settings, storeCouponPercent: numberValue(event.target.value) })} /></label>
-              </div>
-            </div>
             <button className="primary-button" type="submit">Salvar configurações</button>
           </form>
 
           <div className="settings-side">
-            {instagram ? (
-              <form className="preset-form" onSubmit={saveInstagramToken}>
-                <h2>Instagram</h2>
-                <p className="settings-intro">Conexão do app &quot;AC3D Publicador&quot; para publicar os posts aprovados. O token fica guardado cifrado e não aparece de novo nesta tela.</p>
-                {instagram.connected ? (
-                  <div className="instagram-status">
-                    <strong>Conectado como @{instagram.username}</strong>
-                    <span>Token terminado em …{instagram.tokenHint}{instagram.tokenExpiresAt ? ` · vale até ${new Date(instagram.tokenExpiresAt).toLocaleDateString("pt-BR")}` : ""}</span>
-                    {instagram.lastCheckedAt ? <span>Última verificação: {new Date(instagram.lastCheckedAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</span> : null}
-                  </div>
-                ) : <p className="instagram-status">Nenhuma conta conectada.</p>}
-                <label>{instagram.connected ? "Trocar token" : "Token de acesso"}<input type="password" autoComplete="off" spellCheck={false} value={instagramToken} onChange={(event) => setInstagramToken(event.target.value)} placeholder="Cole aqui o token gerado no painel da Meta" /></label>
-                <div className="form-actions">
-                  <button className="primary-button" type="submit" disabled={instagramBusy || instagramToken.trim().length < 20}>{instagramBusy ? "Verificando..." : "Salvar token"}</button>
-                  {instagram.connected ? <button className="secondary-button" type="button" disabled={instagramBusy} onClick={() => void instagramRequest("POST", "Conexão funcionando.")}>Testar conexão</button> : null}
-                  {instagram.connected ? <button className="quiet-button" type="button" disabled={instagramBusy} onClick={() => { if (window.confirm("Desconectar o Instagram? O token salvo será apagado.")) void instagramRequest("DELETE", "Instagram desconectado."); }}>Desconectar</button> : null}
-                </div>
-                {instagramFeedback ? <p className="settings-intro">{instagramFeedback}</p> : null}
-              </form>
-            ) : null}
+            <div className="preset-form">
+              <h2>Loja online</h2>
+              <p className="settings-intro">Prazo da loja, desconto por quantidade, frete, cupom, depoimentos e a conexão do Instagram agora ficam na área Loja.</p>
+              <Link className="secondary-button" href="/loja/configuracoes">Abrir Configurações da loja</Link>
+            </div>
 
             <form id="channel-form" className="preset-form" onSubmit={saveChannel}>
               <h2>{editingChannelId ? "Editar canal de venda" : "Novo canal de venda"}</h2>
@@ -252,25 +155,6 @@ export default function SettingsPage() {
               </div>
             </form>
 
-            <form className="preset-form" onSubmit={saveTestimonial}>
-              <h2>Depoimentos da loja</h2>
-              <p className="settings-intro">O que clientes disseram (peça pelo WhatsApp depois da entrega). Aparecem na loja; só publique com autorização do cliente.</p>
-              <label>Nome<input required value={testimonial.name} onChange={(event) => setTestimonial({ ...testimonial, name: event.target.value })} placeholder="Ex: Mariana, Vitória" /></label>
-              <label>Depoimento<textarea required value={testimonial.text} onChange={(event) => setTestimonial({ ...testimonial, text: event.target.value })} /></label>
-              <label>Sobre o quê (opcional)<input value={testimonial.context} onChange={(event) => setTestimonial({ ...testimonial, context: event.target.value })} placeholder="Ex: Mini pandas para a festa de 5 anos" /></label>
-              <button className="primary-button" type="submit">Publicar depoimento</button>
-              {testimonials.map((item) => (
-                <article className="preset-card" key={item.id}>
-                  <div className="card-top">
-                    <span className="material-badge">DEPOIMENTO</span>
-                    <button type="button" className="delete-button" onClick={() => deleteTestimonial(item.id)} aria-label={`Excluir depoimento de ${item.name}`}><IconTrash className="nav-icon" /></button>
-                  </div>
-                  <h3>{item.name}</h3>
-                  <p>{item.text}</p>
-                  {item.context ? <p>{item.context}</p> : null}
-                </article>
-              ))}
-            </form>
 
             <div className="channel-list">
               {channels.map((item) => (

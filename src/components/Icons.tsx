@@ -82,6 +82,9 @@ export function IconShieldAlert({ className }: IconProps) {
 export function IconShoppingBag({ className }: IconProps) {
   return <svg className={className} {...base}><path d="M16 10a4 4 0 0 1-8 0" /><path d="M3.103 6.034h17.794" /><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z" /></svg>;
 }
+export function IconExternalLink({ className }: IconProps) {
+  return <svg className={className} {...base}><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>;
+}
 export function IconChevronUp({ className }: IconProps) {
   return <svg className={className} {...base}><path d="m18 15-6-6-6 6" /></svg>;
 }

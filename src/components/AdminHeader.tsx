@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import {
   IconBook,
   IconCirclePlus,
+  IconExternalLink,
   IconFileText,
   IconGrid,
   IconHome,
@@ -36,7 +37,9 @@ type Section =
   | "cashflow"
   | "settings"
   | "users"
-  | "divulgacao";
+  | "divulgacao"
+  | "loja"
+  | "loja-config";
 
 type NavLink = {
   id: Section;
@@ -48,19 +51,33 @@ type NavLink = {
   alsoActive?: Section[];
 };
 
-// Menu agrupado pelas etapas do trabalho (fase 2 da reformulação), em vez de
-// 12 itens soltos em duas linhas. "Orçamentos" é a lista (Projetos) e também
-// fica marcado no editor; quem só pode usar o editor (perfil Calculadora) cai
-// direto nele.
+// Duas áreas, como nos painéis de e-commerce: o Ateliê (calcular, vender e
+// produzir) e a Loja (tudo da loja online e da divulgação). Cada área tem seu
+// menu; a chave no topo troca de área. Dentro do Ateliê o menu segue agrupado
+// pelas etapas do trabalho. "Orçamentos" é a lista (Projetos) e também fica
+// marcado no editor; quem só pode usar o editor (perfil Calculadora) cai direto nele.
+type Area = "atelie" | "loja";
+type Group = { label: string; links: NavLink[] };
 const home: NavLink = { id: "dashboard", hrefs: ["/"], label: "Hoje", icon: IconHome };
-const groups: { label: string; links: NavLink[] }[] = [
+const storeHome: NavLink = { id: "loja", hrefs: ["/loja"], label: "Visão geral", icon: IconHome };
+const STORE_URL = "https://ac3d.silaratur.cloud";
+const storeGroups: Group[] = [
+  {
+    label: "Loja online",
+    links: [
+      { id: "divulgacao", hrefs: ["/divulgacao"], label: "Divulgação", icon: IconSparkles },
+      { id: "loja-config", hrefs: ["/loja/configuracoes"], label: "Configurações da loja", icon: IconSettings },
+    ],
+  },
+];
+const storeSections: Section[] = ["loja", "loja-config", "divulgacao"];
+const groups: Group[] = [
   {
     label: "Vender",
     links: [
       { id: "projects", hrefs: ["/projects", "/orcamentos"], label: "Orçamentos", icon: IconFileText, alsoActive: ["orcamentos"] },
       { id: "sales", hrefs: ["/sales"], label: "Vendas", icon: IconTag },
       { id: "customers", hrefs: ["/customers"], label: "Clientes", icon: IconUser },
-      { id: "divulgacao", hrefs: ["/divulgacao"], label: "Divulgação", icon: IconSparkles },
     ],
   },
   {
@@ -83,8 +100,11 @@ const accountLinks: NavLink[] = [
   { id: "settings", hrefs: ["/settings"], label: "Configurações", icon: IconSettings },
   { id: "users", hrefs: ["/users"], label: "Usuários", icon: IconUsers },
 ];
-// Barra inferior do celular: as telas de uso diário; o resto fica em "Mais".
-const tabIds: Section[] = ["dashboard", "projects", "production", "catalog"];
+// Barra inferior do celular: as telas de uso diário da área; o resto fica em "Mais".
+const tabIdsByArea: Record<Area, Section[]> = {
+  atelie: ["dashboard", "projects", "production", "catalog"],
+  loja: ["loja", "divulgacao", "loja-config"],
+};
 
 export function AdminHeader({ active, badges }: { active: Section; badges?: Partial<Record<Section, number>> }) {
   // Enquanto não confirma sessão válida (ou se não tiver), nenhuma opção de
@@ -124,12 +144,15 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
   const hrefFor = (link: NavLink) => link.hrefs.find((href) => canAccessPath(role, href)) ?? null;
   const isActive = (link: NavLink) => link.id === active || Boolean(link.alsoActive?.includes(active));
   const canUseOrcamentos = canAccessPath(role, "/orcamentos");
-  const visibleGroups = groups
+  const canUseStore = canAccessPath(role, "/loja");
+  const area: Area = canUseStore && storeSections.includes(active) ? "loja" : "atelie";
+  const areaHome = area === "loja" ? storeHome : home;
+  const visibleGroups = (area === "loja" ? storeGroups : groups)
     .map((group) => ({ ...group, links: group.links.filter((link) => hrefFor(link)) }))
     .filter((group) => group.links.length);
   const visibleAccount = accountLinks.filter((link) => hrefFor(link));
-  const allVisible = [home, ...visibleGroups.flatMap((group) => group.links), ...visibleAccount].filter((link) => hrefFor(link));
-  const tabs = tabIds.map((id) => allVisible.find((link) => link.id === id)).filter((link): link is NavLink => Boolean(link));
+  const allVisible = [areaHome, ...visibleGroups.flatMap((group) => group.links), ...visibleAccount].filter((link) => hrefFor(link));
+  const tabs = tabIdsByArea[area].map((id) => allVisible.find((link) => link.id === id)).filter((link): link is NavLink => Boolean(link));
   const moreHasActive = !tabs.some(isActive);
 
   async function logout() {
@@ -162,10 +185,18 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
     );
   }
 
+  // Chave Ateliê / Loja: cada lado leva à página inicial da área.
+  const areaSwitch = canUseStore ? (
+    <div className="area-switch" role="tablist" aria-label="Área">
+      <Link role="tab" aria-selected={area === "atelie"} className={area === "atelie" ? "active" : undefined} href="/" onClick={() => setMoreOpen(false)}>Ateliê</Link>
+      <Link role="tab" aria-selected={area === "loja"} className={area === "loja" ? "active" : undefined} href="/loja" onClick={() => setMoreOpen(false)}>Loja</Link>
+    </div>
+  ) : null;
+
   function renderGroups(onNavigate?: () => void) {
     return (
       <>
-        {hrefFor(home) ? <div className="nav-group">{renderLink(home, onNavigate)}</div> : null}
+        {hrefFor(areaHome) ? <div className="nav-group">{renderLink(areaHome, onNavigate)}</div> : null}
         {visibleGroups.map((group) => (
           <div className="nav-group" key={group.label}>
             <span className="nav-group-label">{group.label}</span>
@@ -176,7 +207,12 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
     );
   }
 
-  const newQuote = canUseOrcamentos ? (
+  // Ação principal de cada área: no Ateliê, novo orçamento; na Loja, abrir a loja como o cliente vê.
+  const newQuote = area === "loja" ? (
+    <a className="new-order-cta" href={STORE_URL} target="_blank" rel="noreferrer" onClick={() => setMoreOpen(false)}>
+      <IconExternalLink className="nav-icon" /> Ver a loja
+    </a>
+  ) : canUseOrcamentos ? (
     <Link className="new-order-cta" href="/orcamentos" onClick={() => setMoreOpen(false)}>
       <IconCirclePlus className="nav-icon" /> Novo orçamento
     </Link>
@@ -206,6 +242,7 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
       {/* Computador: barra lateral fixa */}
       <aside className="app-sidebar" aria-label="Menu principal">
         {brand}
+        {areaSwitch}
         {newQuote}
         <nav className="app-nav">{renderGroups()}</nav>
         <div className="app-sidebar-footer">
@@ -241,6 +278,7 @@ export function AdminHeader({ active, badges }: { active: Section; badges?: Part
               <strong>Menu</strong>
               <button type="button" className="theme-toggle" onClick={() => setMoreOpen(false)} aria-label="Fechar menu"><IconX className="nav-icon" /></button>
             </div>
+            {areaSwitch}
             {newQuote}
             <nav className="app-nav">
               {renderGroups(() => setMoreOpen(false))}
