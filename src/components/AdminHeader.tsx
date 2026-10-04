@@ -40,6 +40,7 @@ type Section =
   | "divulgacao"
   | "loja"
   | "loja-promocoes"
+  | "loja-vitrine"
   | "loja-config";
 
 type NavLink = {
@@ -66,13 +67,14 @@ const storeGroups: Group[] = [
   {
     label: "Loja online",
     links: [
+      { id: "loja-vitrine", hrefs: ["/loja/vitrine"], label: "Vitrine", icon: IconGrid },
       { id: "loja-promocoes", hrefs: ["/loja/promocoes"], label: "Promoções", icon: IconTag },
       { id: "divulgacao", hrefs: ["/divulgacao"], label: "Divulgação", icon: IconSparkles },
       { id: "loja-config", hrefs: ["/loja/configuracoes"], label: "Configurações da loja", icon: IconSettings },
     ],
   },
 ];
-const storeSections: Section[] = ["loja", "loja-promocoes", "loja-config", "divulgacao"];
+const storeSections: Section[] = ["loja", "loja-vitrine", "loja-promocoes", "loja-config", "divulgacao"];
 const groups: Group[] = [
   {
     label: "Vender",
@@ -105,7 +107,7 @@ const accountLinks: NavLink[] = [
 // Barra inferior do celular: as telas de uso diário da área; o resto fica em "Mais".
 const tabIdsByArea: Record<Area, Section[]> = {
   atelie: ["dashboard", "projects", "production", "catalog"],
-  loja: ["loja", "loja-promocoes", "divulgacao", "loja-config"],
+  loja: ["loja", "loja-vitrine", "loja-promocoes", "divulgacao"],
 };
 
 export function AdminHeader({ active, badges }: { active: Section; badges?: Partial<Record<Section, number>> }) {

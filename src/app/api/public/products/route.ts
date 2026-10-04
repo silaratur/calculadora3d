@@ -25,7 +25,7 @@ export async function GET() {
     prisma.product.findMany({
       where: { active: true, showInStore: true, brandReview: "DONE" },
       orderBy: { createdAt: "desc" },
-      select: { id: true, sku: true, name: true, category: true, description: true, price: true, imageUrl: true, extraImages: true, colors: true, personalizable: true, sizeOptions: true, promoPercent: true, promoLabel: true, promoStartsAt: true, promoEndsAt: true, createdAt: true, updatedAt: true },
+      select: { id: true, sku: true, name: true, category: true, description: true, price: true, imageUrl: true, extraImages: true, colors: true, personalizable: true, sizeOptions: true, promoPercent: true, promoLabel: true, promoStartsAt: true, promoEndsAt: true, storeFeatured: true, storeBadge: true, storeOrder: true, createdAt: true, updatedAt: true },
     }),
     // Só o ranking sai daqui — as quantidades vendidas não são públicas.
     prisma.salesOrder.groupBy({ by: ["productId"], _sum: { quantity: true }, where: { productId: { not: null } } }),
@@ -61,6 +61,10 @@ export async function GET() {
       // Só a promoção que vale agora; a loja aplica o % sobre price e sobre cada tamanho.
       promo: promoPercent ? { percent: promoPercent, label: product.promoLabel, endsAt: product.promoEndsAt?.toISOString() ?? null } : null,
       bestSeller: bestSellers.has(product.id),
+      // Loja → Vitrine: destaque, selo escrito no card e posição (0 = sem posição).
+      featured: product.storeFeatured,
+      badge: product.storeBadge,
+      order: product.storeOrder,
       // Usado pela loja para a seção de lançamentos.
       createdAt: product.createdAt.toISOString(),
       images: sources.map((src, index) => (src.startsWith("data:") ? `/api/public/products/${product.id}/image/${index}?v=${version}` : src)),

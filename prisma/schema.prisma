@@ -173,6 +173,12 @@ model Product {
   promoLabel           String              @default("")
   promoStartsAt        DateTime?
   promoEndsAt          DateTime?
+  // Loja → Vitrine: destaque (seção "Em destaque" e topo das prateleiras), selo
+  // escrito no card ("Edição de Natal", "Últimas unidades"...) e posição (0 = sem
+  // posição definida: depois das ordenadas, mais novo primeiro).
+  storeFeatured        Boolean             @default(false)
+  storeBadge           String              @default("")
+  storeOrder           Int                 @default(0)
   // Campos do Catálogo Novo (src/app/catalog-new) — só populados por ele;
   // produtos criados no Catálogo atual ficam com os padrões (0/nenhum).
   prepMinutes          Float               @default(0)
@@ -497,6 +503,42 @@ model CashEntry {
   createdAt   DateTime @default(now())
 
   @@unique([sourceType, sourceId])
+}
+
+// Loja → Vitrine: coleções montadas à mão (Natal, Black Friday...). Com alguma
+// ativa no período, a loja mostra só as coleções; sem nenhuma, volta às vitrines
+// automáticas por data. endsAt é a data comemorativa (calcula o "peça até").
+model StoreCollection {
+  id         String    @id @default(cuid())
+  title      String
+  lead       String    @default("")
+  // rosa | oliva | vinho (cores da faixa na loja)
+  tone       String    @default("vinho")
+  startsAt   DateTime?
+  endsAt     DateTime?
+  productIds String    @default("[]")
+  active     Boolean   @default(true)
+  sortOrder  Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+// Loja → Vitrine: banner da abertura da loja (vale o mais recente ativo no período).
+// target: "produto:<SKU>" abre a peça; "colecao:<id>" rola até a coleção; ou um link https.
+model StoreBanner {
+  id          String    @id @default(cuid())
+  title       String
+  subtitle    String    @default("")
+  buttonLabel String    @default("")
+  target      String    @default("")
+  // Foto: uma das fotos de um produto do Catálogo.
+  productId   String?
+  imageIndex  Int       @default(0)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 // Cupons da loja (Loja → Promoções). O código fica em maiúsculas e só é
