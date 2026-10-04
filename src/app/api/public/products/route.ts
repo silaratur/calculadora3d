@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { activePromoPercent, parseSizes } from "@/lib/promotions";
 
 /**
  * Vitrine pública (loja ac3d.silaratur.cloud) — sem login. Só produtos ativos
@@ -24,7 +25,7 @@ export async function GET() {
     prisma.product.findMany({
       where: { active: true, showInStore: true, brandReview: "DONE" },
       orderBy: { createdAt: "desc" },
-      select: { id: true, sku: true, name: true, category: true, description: true, price: true, imageUrl: true, extraImages: true, colors: true, personalizable: true, createdAt: true, updatedAt: true },
+      select: { id: true, sku: true, name: true, category: true, description: true, price: true, imageUrl: true, extraImages: true, colors: true, personalizable: true, sizeOptions: true, promoPercent: true, promoLabel: true, promoStartsAt: true, promoEndsAt: true, createdAt: true, updatedAt: true },
     }),
     // Só o ranking sai daqui — as quantidades vendidas não são públicas.
     prisma.salesOrder.groupBy({ by: ["productId"], _sum: { quantity: true }, where: { productId: { not: null } } }),
@@ -38,8 +39,10 @@ export async function GET() {
       .map((row) => row.productId),
   );
 
+  const now = new Date();
   const body = products.map((product) => {
     const version = product.updatedAt.getTime();
+    const promoPercent = activePromoPercent(product, now);
     // Mesma ordem da rota de imagem (capa, depois extras). Foto em data URI vai
     // pela rota que decodifica; foto que já é arquivo (ex.: /catalogo/D.001.webp)
     // vai direto, sem passar pelo banco a cada visualização.
@@ -53,6 +56,10 @@ export async function GET() {
       price: product.price,
       colors: parseExtraImages(product.colors),
       personalizable: product.personalizable,
+      // Tamanhos com preço próprio (vazio = tamanho único, vale price).
+      sizes: parseSizes(product.sizeOptions),
+      // Só a promoção que vale agora; a loja aplica o % sobre price e sobre cada tamanho.
+      promo: promoPercent ? { percent: promoPercent, label: product.promoLabel, endsAt: product.promoEndsAt?.toISOString() ?? null } : null,
       bestSeller: bestSellers.has(product.id),
       // Usado pela loja para a seção de lançamentos.
       createdAt: product.createdAt.toISOString(),

@@ -164,6 +164,15 @@ model Product {
   colors               String              @default("[]")
   // Loja: aceita nome/frase personalizada (campo aparece na peça).
   personalizable       Boolean             @default(false)
+  // Loja: tamanhos com preço próprio (JSON [{ name, price }]); vazio = tamanho único,
+  // vale o price do produto. O primeiro costuma ser o tamanho do cadastro.
+  sizeOptions          String              @default("[]")
+  // Loja → Promoções: desconto em % sobre o preço (e sobre cada tamanho) dentro
+  // do período; datas nulas = sem limite naquele lado. 0 = sem promoção.
+  promoPercent         Float               @default(0)
+  promoLabel           String              @default("")
+  promoStartsAt        DateTime?
+  promoEndsAt          DateTime?
   // Campos do Catálogo Novo (src/app/catalog-new) — só populados por ele;
   // produtos criados no Catálogo atual ficam com os padrões (0/nenhum).
   prepMinutes          Float               @default(0)
@@ -488,6 +497,27 @@ model CashEntry {
   createdAt   DateTime @default(now())
 
   @@unique([sourceType, sourceId])
+}
+
+// Cupons da loja (Loja → Promoções). O código fica em maiúsculas e só é
+// conferido no servidor; a loja nunca recebe a lista de códigos.
+model Coupon {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  // PERCENT = value % do total; FIXED = value em R$ (nunca passa do total).
+  kind      String    @default("PERCENT")
+  value     Float
+  // Total mínimo das peças (já com promoção e desconto por quantidade).
+  minOrder  Float     @default(0)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  // null = sem limite de usos; uses conta os pedidos registrados com o cupom.
+  maxUses   Int?
+  uses      Int       @default(0)
+  active    Boolean   @default(true)
+  notes     String    @default("")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 // Depoimentos de clientes mostrados na loja (cadastrados em Configurações).

@@ -121,7 +121,7 @@ export default function StoreSettingsPage() {
         <section className="library-heading">
           <div>
             <h1>Configurações da loja</h1>
-            <p>Prazo, descontos, entrega, cupom, depoimentos e a conta do Instagram usada na Divulgação.</p>
+            <p>Prazo, desconto por quantidade, entrega, depoimentos e a conta do Instagram usada na Divulgação.</p>
           </div>
         </section>
 
@@ -152,12 +152,8 @@ export default function StoreSettingsPage() {
                 <label>Texto de entrega na loja<input type="text" value={settings.storeShippingText} onChange={(event) => set({ storeShippingText: event.target.value })} placeholder="Ex: Retirada grátis em Vitória ou envio pelos Correios." /></label>
               </div>
               <div className="settings-group">
-                <h3>Cupom de primeira compra</h3>
-                <p className="settings-intro">Divulgue no Instagram. A loja só avisa que existe cupom; o código é conferido na sacola.</p>
-                <div className="store-inline">
-                  <label>Código<input type="text" value={settings.storeCouponCode} onChange={(event) => set({ storeCouponCode: event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, "") })} placeholder="BEMVINDO10" /></label>
-                  <label>Desconto (%)<input inputMode="decimal" value={settings.storeCouponPercent} onChange={(event) => set({ storeCouponPercent: numberValue(event.target.value) })} /></label>
-                </div>
+                <h3>Cupons e promoções</h3>
+                <p className="settings-intro">Cupons (vários, com validade e limite de usos) e preços promocionais ficam em <a href="/loja/promocoes">Loja → Promoções</a>.</p>
               </div>
               <p className="settings-intro">Pagamento, garantia e prazo de entrega que aparecem na loja são os mesmos textos do orçamento em PDF, em <a href="/settings">Configurações</a>.</p>
               <button className="primary-button" type="submit">Salvar configurações da loja</button>

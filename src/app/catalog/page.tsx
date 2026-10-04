@@ -56,6 +56,7 @@ type Product = {
   showInStore: boolean;
   colors?: string;
   personalizable?: boolean;
+  sizeOptions?: string;
   brandReview?: "PENDING" | "PROPOSED" | "DONE";
   brandReviewDoc?: string;
   sourceUrl?: string;
@@ -88,6 +89,8 @@ type Draft = {
   showInStore: boolean;
   colors: string[];
   personalizable: boolean;
+  /** Tamanhos com preço próprio na loja (texto dos campos; vazio = tamanho único). */
+  sizes: { name: string; price: string }[];
   sourceUrl: string;
   brandReviewDone: boolean;
 };
@@ -113,6 +116,7 @@ const emptyDraft: Draft = {
   showInStore: false,
   colors: [],
   personalizable: false,
+  sizes: [],
   sourceUrl: "",
   brandReviewDone: false,
 };
@@ -135,6 +139,19 @@ function materialLabel(material: Material) {
   return cut < 0 ? `${material.name} - ${perGram}` : `${material.name.slice(0, cut)} - ${perGram} - ${material.name.slice(cut + 3)}`;
 }
 const n = (value: string) => Number(value.replace(",", ".")) || 0;
+
+/** sizeOptions do banco (JSON [{ name, price }]) → linhas editáveis do formulário. */
+function parseSizeOptions(raw?: string): { name: string; price: string }[] {
+  try {
+    const parsed: unknown = JSON.parse(raw ?? "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((item): item is { name: string; price: number } => typeof item?.name === "string" && typeof item?.price === "number")
+      .map((item) => ({ name: item.name, price: String(item.price).replace(".", ",") }));
+  } catch {
+    return [];
+  }
+}
 
 // Direção que cada critério assume ao ser selecionado pela primeira vez —
 // o que faz sentido como "padrão" varia (recente = mais novo primeiro,
@@ -459,6 +476,20 @@ export default function CatalogPage() {
     setPage(1);
   }
 
+  // Vindo da Loja → Visão geral ("Precisa de atenção"): /catalog?editar=<SKU> abre
+  // esse produto direto no formulário, uma vez, quando a lista e a Biblioteca carregarem.
+  const [editLinkDone, setEditLinkDone] = useState(false);
+  useEffect(() => {
+    if (editLinkDone || !products.length || !printers.length || !allMaterials.length) return;
+    const sku = new URLSearchParams(window.location.search).get("editar");
+    const target = sku ? products.find((item) => item.sku === sku) : undefined;
+    function openFromLink() {
+      setEditLinkDone(true);
+      if (target) edit(target);
+    }
+    openFromLink();
+  }, [editLinkDone, products, printers, allMaterials]);
+
   // Vindo do Hoje (concorrentes mudaram de preço): /catalog?aba=concorrencia&busca=<SKU>.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -536,6 +567,7 @@ export default function CatalogPage() {
       showInStore: product.showInStore ?? false,
       colors: parseColors(product.colors),
       personalizable: product.personalizable ?? false,
+      sizes: parseSizeOptions(product.sizeOptions),
       sourceUrl: product.sourceUrl ?? "",
       brandReviewDone: (product.brandReview ?? "DONE") === "DONE",
     });
@@ -578,6 +610,8 @@ export default function CatalogPage() {
       showInStore: draft.showInStore,
       colors: draft.colors.slice(0, 12),
       personalizable: draft.personalizable,
+      // Linhas sem nome ou sem preço são ignoradas.
+      sizeOptions: draft.sizes.filter((size) => size.name.trim() && n(size.price) > 0).map((size) => ({ name: size.name.trim(), price: n(size.price) })),
       sourceUrl: draft.sourceUrl.trim(),
       // Produto novo sempre entra na revisão de marca; na edição, a caixa decide
       // (desmarcar volta para a fila; marcar encerra a revisão).
@@ -828,6 +862,20 @@ export default function CatalogPage() {
                     <input type="checkbox" checked={draft.personalizable} onChange={(event) => setDraft({ ...draft, personalizable: event.target.checked })} />
                     Aceita personalização na loja (nome ou frase escrita pelo cliente)
                   </label>
+                  <fieldset className="color-options size-options">
+                    <legend>Tamanhos com preço próprio na loja (opcional)</legend>
+                    <p className="field-hint">Deixe vazio para tamanho único. Comece pelo tamanho deste cadastro; os outros têm o preço que você definir aqui (promoções aplicam o mesmo % em todos).</p>
+                    {draft.sizes.map((size, index) => (
+                      <div className="size-option-row" key={index}>
+                        <label>Nome<input value={size.name} onChange={(event) => setDraft({ ...draft, sizes: draft.sizes.map((item, i) => (i === index ? { ...item, name: event.target.value } : item)) })} placeholder="Ex.: Grande · 20 cm" /></label>
+                        <label>Preço (R$)<input inputMode="decimal" value={size.price} onChange={(event) => setDraft({ ...draft, sizes: draft.sizes.map((item, i) => (i === index ? { ...item, price: event.target.value } : item)) })} placeholder="44,90" /></label>
+                        <button type="button" className="quiet-button" onClick={() => setDraft({ ...draft, sizes: draft.sizes.filter((_, i) => i !== index) })}>Remover</button>
+                      </div>
+                    ))}
+                    {draft.sizes.length < 6 ? (
+                      <button type="button" className="quiet-button" onClick={() => setDraft({ ...draft, sizes: draft.sizes.length ? [...draft.sizes, { name: "", price: "" }] : [{ name: "", price: String(suggestedPrice.toFixed(2)).replace(".", ",") }, { name: "", price: "" }] })}>+ Adicionar tamanho</button>
+                    ) : null}
+                  </fieldset>
                   <label>
                     Fotos do produto ({draft.images.length}/{maxProductImages}) — a primeira é a capa; mínimo {minProductImages}, uma com as medidas e a régua
                     <input type="file" accept="image/*" multiple disabled={draft.images.length >= maxProductImages} onChange={handleImage} />

@@ -10,10 +10,10 @@ import { displayNumber } from "@/lib/sales";
 type Summary = {
   counts: { published: number; hidden: number; inReview: number; active: number };
   orders30: { count: number; total: number; converted: number };
-  recentOrders: { id: string; code: string | null; customerName: string; productName: string; finalPrice: number; status: string; source: string; createdAt: string }[];
+  recentOrders: { id: string; code: string | null; customerName: string; productName: string; finalPrice: number; status: string; source: string; createdAt: string; link: string }[];
   attention: { sku: string; name: string; kind: "revisao" | "fotos" | "concorrencia"; text: string; link: string }[];
   posts: { id: string; title: string; kind: string; status: string; scheduledAt: string | null }[];
-  offers: { coupon: { code: string; percent: number } | null; freeShippingMin: number; productionDays: number };
+  offers: { coupons: { code: string; label: string }[]; promos: { active: number; scheduled: number }; freeShippingMin: number; productionDays: number };
   hidden: { sku: string; name: string; price: number }[];
 };
 
@@ -97,7 +97,7 @@ export default function StoreOverviewPage() {
                   <ul>
                     {data.recentOrders.map((order) => (
                       <li key={order.id}>
-                        <Link href="/projects">
+                        <Link href={order.link}>
                           <span className="today-item-main">{order.productName}{order.source === "loja-encomenda" ? <em className="today-tag">encomenda</em> : null}</span>
                           <small>{order.code ? `${displayNumber(order.code)} · ` : ""}{order.customerName || "sem nome"} · {new Date(order.createdAt).toLocaleDateString("pt-BR")} · {quoteStatus[order.status] ?? order.status}</small>
                         </Link>
@@ -106,7 +106,7 @@ export default function StoreOverviewPage() {
                     ))}
                   </ul>
                 ) : <p className="today-empty">Nenhum pedido chegou pela loja ainda.</p>}
-                <Link className="today-more" href="/projects">Abrir Orçamentos</Link>
+                <Link className="today-more" href="/projects">Abrir Orçamentos em aberto</Link>
               </article>
 
               <article className="today-list">
@@ -132,10 +132,11 @@ export default function StoreOverviewPage() {
 
             <h2 className="today-section-title">Ofertas ativas</h2>
             <section className="store-offers">
-              <p><span>Cupom</span><strong>{data.offers.coupon ? `${data.offers.coupon.code} · ${String(data.offers.coupon.percent).replace(".", ",")}% de desconto` : "nenhum"}</strong></p>
+              <p><span>Promoções</span><strong className="num">{data.offers.promos.active ? `${data.offers.promos.active} ${data.offers.promos.active === 1 ? "produto" : "produtos"} em promoção` : "nenhuma ativa"}{data.offers.promos.scheduled ? ` · ${data.offers.promos.scheduled} agendada(s)` : ""}</strong></p>
+              <p><span>Cupons</span><strong>{data.offers.coupons.length ? data.offers.coupons.map((coupon) => `${coupon.code} (${coupon.label})`).join(" · ") : "nenhum ativo"}</strong></p>
               <p><span>Frete grátis</span><strong className="num">{data.offers.freeShippingMin > 0 ? `a partir de ${brl(data.offers.freeShippingMin)}` : "não oferecido"}</strong></p>
               <p><span>Prazo de produção</span><strong className="num">{data.offers.productionDays} dias úteis</strong></p>
-              <Link className="secondary-button" href="/loja/configuracoes">Alterar nas Configurações da loja</Link>
+              <Link className="secondary-button" href="/loja/promocoes">Gerenciar promoções e cupons</Link>
             </section>
             {data.hidden.length ? (
               <p className="store-hidden">Fora da vitrine: {data.hidden.map((item) => `${item.sku} ${item.name}`).join(" · ")}</p>

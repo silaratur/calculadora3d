@@ -32,6 +32,8 @@ const productSchema = z.object({
   showInStore: z.boolean().optional(),
   colors: z.array(z.string().trim().min(1).max(30)).max(12).optional(),
   personalizable: z.boolean().optional(),
+  // Tamanhos com preço próprio na loja (vazio = tamanho único).
+  sizeOptions: z.array(z.object({ name: z.string().trim().min(1).max(40), price: z.number().positive() })).max(6).optional(),
   sourceUrl: z.string().trim().max(500).optional(),
   brandReview: z.enum(["PENDING", "PROPOSED", "DONE"]).optional(),
   // Campos do formulário atual (src/app/catalog) — produtos antigos, criados
@@ -182,6 +184,7 @@ export async function POST(request: Request) {
     showInStore: data.showInStore ?? false,
     colors: JSON.stringify(data.colors ?? []),
     personalizable: data.personalizable ?? false,
+    sizeOptions: JSON.stringify(data.sizeOptions ?? []),
     sourceUrl: data.sourceUrl ?? "",
     // Todo produto novo entra na fila da revisão de marca (tarefa diária).
     brandReview: data.brandReview ?? "PENDING",
@@ -267,6 +270,7 @@ export async function PUT(request: Request) {
         ...(data.brandReview !== undefined ? { brandReview: data.brandReview } : {}),
         ...(data.colors ? { colors: JSON.stringify(data.colors) } : {}),
         ...(data.personalizable !== undefined ? { personalizable: data.personalizable } : {}),
+        ...(data.sizeOptions !== undefined ? { sizeOptions: JSON.stringify(data.sizeOptions) } : {}),
         prepMinutes: data.prepMinutes ?? 0,
         cleanupMinutes: data.cleanupMinutes ?? 0,
         energyCost: data.energyCost ?? 0,

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { nextSharedCode } from "@/lib/codes";
 import { prisma } from "@/lib/prisma";
 import { resolveColorLine } from "@/lib/color-variants";
+import { activePromoPercent, applyPercent, couponDiscount, couponProblem, parseSizes } from "@/lib/promotions";
 
 /**
  * Pedido feito na loja (ac3d.silaratur.cloud) vira um Orçamento "Em aberto"
@@ -12,12 +13,14 @@ import { resolveColorLine } from "@/lib/color-variants";
  * Só o servidor da loja chama isto (cabeçalho x-store-key = STORE_API_KEY nos
  * dois .env); o navegador do cliente nunca fala direto com esta rota. Preços,
  * descontos e cupom são recalculados aqui a partir do Catálogo — o que vem da
- * loja é só SKU, quantidade, cor e personalização.
+ * loja é só SKU, quantidade, tamanho, cor e personalização. Ordem dos
+ * descontos: preço do tamanho → promoção → quantidade → cupom (lib/promotions).
  */
 const itemSchema = z.object({
   sku: z.string().trim().min(1).max(20),
   qty: z.number().int().min(1).max(999),
   color: z.string().trim().max(30).optional(),
+  size: z.string().trim().max(40).optional(),
   personalization: z.string().trim().max(60).optional(),
 });
 
@@ -155,35 +158,50 @@ export async function POST(request: Request) {
   const qtyBySku = new Map<string, number>();
   for (const line of lines) qtyBySku.set(line.sku, (qtyBySku.get(line.sku) ?? 0) + line.qty);
 
+  const now = new Date();
   const priced = lines.map((line) => {
     const product = bySku.get(line.sku)!;
+    // Tamanho que não existe mais (ou não informado) cai no primeiro da lista.
+    const sizes = parseSizes(product.sizeOptions);
+    const size = sizes.length ? sizes.find((option) => option.name === line.size) ?? sizes[0] : null;
+    const base = size ? size.price : product.price;
+    const promoPercent = activePromoPercent(product, now);
+    const promoUnit = applyPercent(base, promoPercent);
     const percent = discountFor(qtyBySku.get(line.sku) ?? 0, settings.storeQtyDiscounts);
-    const unit = cents(product.price * (1 - percent / 100));
-    return { ...line, product, percent, unit, total: cents(unit * line.qty) };
+    const unit = applyPercent(promoUnit, percent);
+    return { ...line, size: size?.name, product, base, promoPercent, promoUnit, percent, unit, total: cents(unit * line.qty) };
   });
-  const subtotal = cents(priced.reduce((sum, line) => sum + line.product.price * line.qty, 0));
+  const subtotal = cents(priced.reduce((sum, line) => sum + line.base * line.qty, 0));
+  const afterPromo = cents(priced.reduce((sum, line) => sum + line.promoUnit * line.qty, 0));
   const afterTiers = cents(priced.reduce((sum, line) => sum + line.total, 0));
-  const couponOk = Boolean(order.coupon) && Boolean(settings.storeCouponCode) && settings.storeCouponPercent > 0 && order.coupon!.toUpperCase() === settings.storeCouponCode.toUpperCase();
-  const couponPercent = couponOk ? settings.storeCouponPercent : 0;
-  const total = cents(afterTiers * (1 - couponPercent / 100));
+  // Cupom da tabela (Loja → Promoções): vale se ativo, no período, com usos e acima da compra mínima.
+  const couponRecord = order.coupon ? await prisma.coupon.findUnique({ where: { code: order.coupon.toUpperCase() } }) : null;
+  const couponOk = Boolean(couponRecord) && !couponProblem(couponRecord!, afterTiers, now);
+  const couponOff = couponOk ? couponDiscount(couponRecord!, afterTiers) : 0;
+  const couponPercent = couponOk && couponRecord!.kind === "PERCENT" ? couponRecord!.value : 0;
+  const total = cents(afterTiers - couponOff);
   // Uma linha por produto + cor no snapshot (formato da tela de Orçamentos):
   // a cor troca o filamento (mesmo tipo) e o custo real da linha; o preço é o
   // do Catálogo. Personalização segue nas observações.
-  const byVariant = new Map<string, { sku: string; color: string; quantity: number }>();
+  const byVariant = new Map<string, { sku: string; color: string; size: string; base: number; quantity: number }>();
   for (const line of priced) {
     const color = line.color ?? "";
-    const key = `${line.sku}|${color.toLowerCase()}`;
+    const size = line.size ?? "";
+    const key = `${line.sku}|${size.toLowerCase()}|${color.toLowerCase()}`;
     const current = byVariant.get(key);
-    byVariant.set(key, { sku: line.sku, color, quantity: (current?.quantity ?? 0) + line.qty });
+    byVariant.set(key, { sku: line.sku, color, size, base: line.base, quantity: (current?.quantity ?? 0) + line.qty });
   }
-  const snapshotProducts = [...byVariant.values()].map(({ sku, color, quantity }) => {
+  const snapshotProducts = [...byVariant.values()].map(({ sku, color, size, base, quantity }) => {
     const product = bySku.get(sku)!;
     const resolved = resolveColorLine(product, color, materials);
+    // O Catálogo só tem o custo do tamanho cadastrado; outro tamanho estima o
+    // custo na mesma proporção do preço (Grande 44,90 / Pequena 37,90 → ×1,18).
+    const sizeFactor = size && product.price > 0 ? base / product.price : 1;
     return {
       id: product.id,
-      name: product.name,
+      name: size ? `${product.name} (${size})` : product.name,
       quantity,
-      unitCost: resolved.unitCost,
+      unitCost: cents(resolved.unitCost * sizeFactor),
       printTimeHours: product.printTimeHours,
       imageUrl: product.imageUrl.startsWith("data:") ? undefined : product.imageUrl,
       ...(color ? { color } : {}),
@@ -193,8 +211,8 @@ export async function POST(request: Request) {
   const baseCost = cents(snapshotProducts.reduce((sum, line) => sum + line.unitCost * line.quantity, 0));
   const notes = [
     `Pedido pela loja em ${received}.`,
-    ...priced.map((line) => `• ${line.qty}x ${line.product.name} (${line.sku})${line.color ? ` — cor ${line.color}` : ""}${line.personalization ? ` — personalização: "${line.personalization}"` : ""} — ${line.unit.toFixed(2).replace(".", ",")}/un.${line.percent ? ` (-${line.percent}%)` : ""}`),
-    couponOk ? `Cupom ${settings.storeCouponCode} (-${couponPercent}%)` : "",
+    ...priced.map((line) => `• ${line.qty}x ${line.product.name} (${line.sku})${line.size ? ` — tamanho ${line.size}` : ""}${line.color ? ` — cor ${line.color}` : ""}${line.personalization ? ` — personalização: "${line.personalization}"` : ""} — ${line.unit.toFixed(2).replace(".", ",")}/un.${line.promoPercent ? ` (promoção ${line.product.promoLabel || ""} -${line.promoPercent}%)`.replace("  ", " ") : ""}${line.percent ? ` (quantidade -${line.percent}%)` : ""}`),
+    couponOk ? `Cupom ${couponRecord!.code} (-${couponOff.toFixed(2).replace(".", ",")})` : "",
     order.notes ? `Observações do cliente: ${order.notes}` : "",
     ...contact,
   ].filter(Boolean).join("\n");
@@ -213,20 +231,24 @@ export async function POST(request: Request) {
       products: snapshotProducts,
       // O editor de Orçamentos parte do preço do Catálogo e soma o markup do
       // orçamento por cima; o preço da loja já É o do Catálogo, então markup 0
-      // e os descontos da loja (quantidade + cupom) como abatimento — assim o
-      // orçamento abre com o mesmo valor que o cliente viu.
+      // e os descontos da loja (promoção, quantidade, cupom e tamanho) como
+      // abatimento — assim o orçamento abre com o mesmo valor que o cliente viu.
       markup: "0",
       pricingMethod: "markup",
-      discount: cents(subtotal - total).toFixed(2).replace(".", ","),
-      calculations: { price: total, subtotal, afterTiers, couponPercent, costWithReserve: baseCost, profit: cents(total - baseCost) },
-      storeLines: priced.map((line) => ({ sku: line.sku, qty: line.qty, color: line.color ?? "", personalization: line.personalization ?? "", unit: line.unit, percent: line.percent })),
+      // Relativo ao preço do Catálogo (o editor parte dele): tamanho maior que o
+      // cadastrado vira desconto negativo, ou seja, acréscimo.
+      discount: cents(priced.reduce((sum, line) => sum + line.product.price * line.qty, 0) - total).toFixed(2).replace(".", ","),
+      calculations: { price: total, subtotal, afterPromo, afterTiers, couponPercent, couponOff, coupon: couponOk ? couponRecord!.code : "", costWithReserve: baseCost, profit: cents(total - baseCost) },
+      storeLines: priced.map((line) => ({ sku: line.sku, qty: line.qty, size: line.size ?? "", color: line.color ?? "", personalization: line.personalization ?? "", base: line.base, promoPercent: line.promoPercent, unit: line.unit, percent: line.percent })),
     }),
     notes,
     validUntil,
     source: "loja",
     sourceDetail: channel,
   });
+  // Conta o uso do cupom (limite de usos) — também nunca derruba o pedido já salvo.
+  if (couponOk) await prisma.coupon.update({ where: { id: couponRecord!.id }, data: { uses: { increment: 1 } } }).catch(() => undefined);
   // O lead nunca derruba o pedido: se falhar, o orçamento já está salvo.
   await upsertLead(customer.customerName, customer.customerPhone, customer.customerEmail, quote.code).catch(() => undefined);
-  return NextResponse.json({ code: quote.code, total, subtotal, couponPercent }, { status: 201 });
+  return NextResponse.json({ code: quote.code, total, subtotal, couponPercent, couponOff }, { status: 201 });
 }
