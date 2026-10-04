@@ -405,6 +405,37 @@ model CompetitorPrice {
   notes       String   @default("")
   url         String   @default("")
   checkedAt   DateTime @default(now())
+  // Verificação automática (terças e sextas, scripts/concorrentes-verificar.mjs):
+  // "" (nunca), OK, ALTERADO, INDISPONIVEL ou ERRO. Nunca apaga o anúncio — só o usuário apaga.
+  lastCheckStatus String    @default("")
+  lastCheckAt     DateTime?
+  checks          CompetitorPriceCheck[]
+}
+
+// Uma rodada da verificação de preços dos concorrentes.
+model CompetitorCheckRun {
+  id          String                 @id @default(cuid())
+  createdAt   DateTime               @default(now())
+  checked     Int                    @default(0)
+  changed     Int                    @default(0)
+  unavailable Int                    @default(0)
+  errors      Int                    @default(0)
+  changes     CompetitorPriceCheck[]
+}
+
+// Mudança encontrada numa rodada: preço novo (ALTERADO) ou anúncio fora do ar (INDISPONIVEL).
+model CompetitorPriceCheck {
+  id                String             @id @default(cuid())
+  runId             String
+  run               CompetitorCheckRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  competitorPriceId String
+  competitorPrice   CompetitorPrice    @relation(fields: [competitorPriceId], references: [id], onDelete: Cascade)
+  status            String
+  oldPrice          Float
+  newPrice          Float?
+  createdAt         DateTime           @default(now())
+
+  @@index([runId])
 }
 
 // Custos fixos lançados por mês (AAAA-MM), com histórico.

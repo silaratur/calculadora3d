@@ -459,6 +459,17 @@ export default function CatalogPage() {
     setPage(1);
   }
 
+  // Vindo do Hoje (concorrentes mudaram de preço): /catalog?aba=concorrencia&busca=<SKU>.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("aba") !== "concorrencia") return;
+    function openCompetitors(params: URLSearchParams) {
+      setListTab("competitors");
+      setSearch(params.get("busca") ?? "");
+    }
+    openCompetitors(params);
+  }, []);
+
   // Vindo de Orçamentos → peça sob medida → "Salvar no Catálogo"
   // (/catalog?novo=1&nome=…&material=…&gramas=…&horas=…&minutos=…&acabamento=…):
   // abre o formulário de produto novo já preenchido, uma vez, quando a

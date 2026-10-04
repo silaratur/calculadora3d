@@ -26,6 +26,14 @@ type DashboardData = {
     toDeliver: { id: string; orderNumber: string; productName: string; customer: string | null; dueDate: string | null; readySince: string }[];
   };
   openQuotes: { count: number; total: number };
+  competitors: {
+    lastRun: { createdAt: string; checked: number; changed: number; unavailable: number; errors: number } | null;
+    changes: {
+      sku: string; name: string; price: number; medianBefore: number | null; medianAfter: number | null; recommendation: string; suggestedPrice: number | null;
+      items: { competitor: string; url: string; status: string; oldPrice: number; newPrice: number | null }[];
+    }[];
+    missing: { sku: string; name: string }[];
+  };
 };
 
 type Material = { id: string; name: string; stockGrams: number; lowStockThresholdGrams: number };
@@ -237,6 +245,53 @@ export default function HomePage() {
                 ) : <p className="today-empty">Nenhum valor pendente. Tudo recebido.</p>}
                 <Link className="today-more" href="/sales">Abrir Vendas</Link>
               </article>
+            </section>
+
+            <section className="today-list today-competitors">
+              <header>
+                <h2>Concorrentes mudaram de preço <b>{data.competitors.changes.length}</b></h2>
+                <span>
+                  {data.competitors.lastRun
+                    ? `verificado ${new Date(data.competitors.lastRun.createdAt).toLocaleString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · ${data.competitors.lastRun.checked} anúncios${data.competitors.lastRun.errors ? ` · ${data.competitors.lastRun.errors} sem leitura` : ""}`
+                    : "a verificação roda às terças e sextas"}
+                </span>
+              </header>
+              {data.competitors.changes.length ? (
+                <ul>
+                  {data.competitors.changes.map((product) => (
+                    <li key={product.sku} className="competitor-change">
+                      <div className="competitor-change-head">
+                        <a href={`/catalog?aba=concorrencia&busca=${encodeURIComponent(product.sku)}`}>
+                          <span className="today-item-main">{product.name}</span>
+                          <small>{product.sku} · seu preço {brl(product.price)}{product.medianBefore !== null && product.medianAfter !== null ? ` · mediana ${brl(product.medianBefore)} → ${brl(product.medianAfter)}` : ""}</small>
+                        </a>
+                        {product.suggestedPrice ? <span className="today-item-side num">sugerido {brl(product.suggestedPrice)}</span> : null}
+                      </div>
+                      <ul className="competitor-change-items">
+                        {product.items.map((item, index) => (
+                          <li key={`${item.url}-${index}`}>
+                            <a href={item.url} target="_blank" rel="noreferrer">{item.competitor}</a>
+                            <span className="num">
+                              {item.status === "INDISPONIVEL"
+                                ? "saiu do ar"
+                                : <>{brl(item.oldPrice)} → <b className={item.newPrice! < item.oldPrice ? "negative" : "positive"}>{brl(item.newPrice!)}</b></>}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="competitor-change-tip">{product.recommendation}</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="today-empty">{data.competitors.lastRun ? "Nenhuma mudança de preço na última verificação." : "Ainda sem verificação de preços."}</p>
+              )}
+              {data.competitors.missing.length ? (
+                <p className="competitor-missing">
+                  Sem pesquisa de concorrente: {data.competitors.missing.map((item) => `${item.sku} ${item.name}`).join(" · ")}
+                </p>
+              ) : null}
+              <a className="today-more" href="/catalog?aba=concorrencia">Abrir Concorrência</a>
             </section>
 
             <h2 className="today-section-title">Números do negócio</h2>

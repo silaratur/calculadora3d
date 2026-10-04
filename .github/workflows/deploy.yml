@@ -38,11 +38,12 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
 
+      # Mantém os 10 backups mais recentes e, dos mais antigos, um por dia por 30 dias.
       - name: Backup do banco de produção
         run: |
           BRANCH_SEGURA=$(echo "${{ github.ref_name }}" | tr -c 'a-zA-Z0-9_-' '-')
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
-            "cp /opt/calculadora3d/data/prod.db /opt/calculadora3d/data/backup-\$(date +%Y%m%d-%H%M%S)-ci-${BRANCH_SEGURA}.db 2>/dev/null || true; ls -t /opt/calculadora3d/data/backup-*.db 2>/dev/null | tail -n +11 | xargs -r rm -f"
+            "cp /opt/calculadora3d/data/prod.db /opt/calculadora3d/data/backup-\$(date +%Y%m%d-%H%M%S)-ci-${BRANCH_SEGURA}.db 2>/dev/null || true; cd /opt/calculadora3d/data && ls -t backup-*.db 2>/dev/null | tail -n +11 | awk '{ if (seen[substr(\$0, 8, 8)]++) print }' | xargs -r rm -f; find /opt/calculadora3d/data -maxdepth 1 -name 'backup-*.db' -mtime +30 -delete"
 
       - name: Enviar pacote
         run: |
