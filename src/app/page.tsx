@@ -148,9 +148,22 @@ export default function HomePage() {
 
         {data ? (
           <>
-            {/* Tela Hoje (fase 2): primeiro o que é urgente, depois o que fazer,
-                por último os números do negócio — antes eram 12 números com o
-                mesmo peso e nenhuma tarefa. */}
+            {/* Tela Hoje: primeiro os números do negócio (pedido do usuário em
+                05/10/2026), depois o que é urgente e o que fazer. */}
+            <h2 className="today-section-title">Números do negócio</h2>
+            <section className="today-money">
+              <div><span>Vendido</span><strong className="num">{brl(data.totalSold)}</strong><small>{data.ordersCount} {data.ordersCount === 1 ? "venda" : "vendas"} · ticket {brl(data.ticketMedio)}</small></div>
+              <div><span>Lucro bruto</span><strong className={neg(data.grossProfit) ?? "num"}>{brl(data.grossProfit)}</strong></div>
+              <div><span>Margem líquida</span><strong className={neg(data.marginPercent) ?? "num"}>{data.marginPercent.toFixed(1).replace(".", ",")}%</strong><small>meta 40%</small></div>
+              <div><span>Saldo de caixa</span><strong className={neg(data.cash.balance) ?? "num"}>{brl(data.cash.balance)}</strong></div>
+              <div><span>A receber</span><strong className="num">{brl(data.cash.receivable)}</strong></div>
+              <div><span>Projeção de caixa</span><strong className={neg(data.cash.projectedBalance) ?? "num"}>{brl(data.cash.projectedBalance)}</strong><small>saldo + a receber</small></div>
+            </section>
+            <p className="today-potential">
+              <a href="/projects">Orçamentos em aberto: {data.openQuotes.count} · {brl(data.openQuotes.total)}</a>
+              <span>potencial — só vira dinheiro quando o orçamento é aprovado e o recebimento registrado</span>
+            </p>
+
             <div className="dashboard-alerts">
               {data.cash.balance < 0 ? (
                 <p className="sim-alert sim-bad">
@@ -294,19 +307,6 @@ export default function HomePage() {
               <a className="today-more" href="/catalog?aba=concorrencia">Abrir Concorrência</a>
             </section>
 
-            <h2 className="today-section-title">Números do negócio</h2>
-            <section className="today-money">
-              <div><span>Vendido</span><strong className="num">{brl(data.totalSold)}</strong><small>{data.ordersCount} {data.ordersCount === 1 ? "venda" : "vendas"} · ticket {brl(data.ticketMedio)}</small></div>
-              <div><span>Lucro bruto</span><strong className={neg(data.grossProfit) ?? "num"}>{brl(data.grossProfit)}</strong></div>
-              <div><span>Margem líquida</span><strong className={neg(data.marginPercent) ?? "num"}>{data.marginPercent.toFixed(1).replace(".", ",")}%</strong><small>meta 40%</small></div>
-              <div><span>Saldo de caixa</span><strong className={neg(data.cash.balance) ?? "num"}>{brl(data.cash.balance)}</strong></div>
-              <div><span>A receber</span><strong className="num">{brl(data.cash.receivable)}</strong></div>
-              <div><span>Projeção de caixa</span><strong className={neg(data.cash.projectedBalance) ?? "num"}>{brl(data.cash.projectedBalance)}</strong><small>saldo + a receber</small></div>
-            </section>
-            <p className="today-potential">
-              <a href="/projects">Orçamentos em aberto: {data.openQuotes.count} · {brl(data.openQuotes.total)}</a>
-              <span>potencial — só vira dinheiro quando o orçamento é aprovado e o recebimento registrado</span>
-            </p>
           </>
         ) : (
           <div className="empty-note">Não foi possível carregar os dados do painel agora.</div>
