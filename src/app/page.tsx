@@ -287,7 +287,7 @@ export default function HomePage() {
                 <p className="today-empty">{data.competitors.lastRun ? "Nenhuma mudança de preço na última verificação." : "Ainda sem verificação de preços."}</p>
               )}
               {data.competitors.missing.length ? (
-                <p className="competitor-missing">
+                <p className="today-competitor-missing">
                   Sem pesquisa de concorrente: {data.competitors.missing.map((item) => `${item.sku} ${item.name}`).join(" · ")}
                 </p>
               ) : null}

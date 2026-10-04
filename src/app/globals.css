@@ -1718,7 +1718,7 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .competitor-change-items b.negative { color: var(--danger); }
 .competitor-change-items b.positive { color: var(--admin-olive); }
 .competitor-change-tip { background: var(--sunk); border-radius: 8px; color: var(--admin-ink); font-size: 13px; margin: 0; padding: 6px 10px; }
-.competitor-missing { color: var(--warn); font-size: 13px; margin: 8px 0 4px; }
+.today-competitor-missing { color: var(--warn); font-size: 13px; margin: 8px 0 4px; }
 .today-section-title { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 16px; font-weight: 700; margin: 0 0 10px; }
 .today-money { background: var(--admin-paper); border: 1px solid var(--admin-border); border-radius: 14px; display: grid; font-family: var(--font-sans), Arial, sans-serif; grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .today-money div { border-left: 1px solid var(--admin-border); display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 14px 16px; }
@@ -1976,6 +1976,12 @@ a.material-badge { text-decoration: none; }
 .competitor-table { display: grid; gap: 6px; }
 .competitor-row { align-items: center; background: var(--admin-paper, #fffdfb); border: 1px solid var(--admin-border, #e8ddd7); border-radius: 12px; color: inherit; display: grid; font: inherit; font-size: 13px; gap: 10px; grid-template-columns: 1.6fr .7fr 1.4fr 1fr 1fr 2fr; padding: 10px 12px; text-align: left; width: 100%; }
 button.competitor-row { cursor: pointer; }
+.competitor-filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.competitor-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.competitor-row small.competitor-gain { font-weight: 700; margin-top: 2px; }
+.competitor-row small.competitor-gain.up { color: var(--admin-olive); }
+.competitor-row small.competitor-gain.down { color: var(--danger); }
+.competitor-entry.unavailable { opacity: .6; }
 .competitor-head { background: none; border: 0; color: var(--admin-muted); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .competitor-row small, .competitor-entry small { color: var(--admin-muted); display: block; font-size: 11px; }
 .competitor-row .num, .competitor-entry .num { font-family: var(--font-mono, monospace); }
@@ -1994,6 +2000,7 @@ button.competitor-row { cursor: pointer; }
 .competitor-missing ul { display: grid; gap: 6px; list-style: none; margin: 10px 0 0; padding: 0; }
 .competitor-missing li { align-items: center; display: flex; font-size: 13px; gap: 12px; justify-content: space-between; }
 @media (max-width: 900px) { .competitor-row, .competitor-entry { grid-template-columns: 1fr 1fr; } .competitor-head { display: none; } }
+@media (max-width: 600px) { .competitor-row .competitor-product, .competitor-row .competitor-reco { grid-column: 1 / -1; } }
 
 /* Valores (dinheiro, horas, porcentagem) nunca se partem em duas linhas. */
 .num, .section-total strong, .product-line-info, .cost-pill, .metric-wide strong { white-space: nowrap; }

@@ -9,7 +9,7 @@ import { brl } from "@/lib/money";
  * Livre, Elo7…) ligados a um produto e avaliação: meu preço × mediana do
  * mercado por unidade com frete, com recomendação respeitando custo e margem.
  */
-type Competitor = CompetitorEntry & { productName: string; url: string; notes: string };
+type Competitor = CompetitorEntry & { productName: string; url: string; notes: string; lastCheckStatus?: string; lastCheckAt?: string | null };
 type ProductRef = { id: string; sku: string; name: string; price: number; cost: number; imageUrl?: string };
 type Marketplace = { id: string; name: string; commissionRate: number; fixedFee: number; adsRate: number };
 
@@ -18,6 +18,21 @@ const n = (value: string) => Number(value.replace(",", ".")) || 0;
 const today = () => new Date().toISOString().slice(0, 10);
 const emptyForm = { productId: "", competitor: "", channel: "Shopee", price: "", quantity: "1", shipping: "0", url: "", checkedAt: today(), notes: "" };
 const positionLabel: Record<Position, string> = { abaixo: "🟢 Abaixo do mercado", media: "🟡 Na média", acima: "🔴 Acima do mercado", "mercado-abaixo-do-custo": "⚫ Mercado abaixo do custo" };
+
+// Filtros e ordenação da avaliação, pensados para a revisão de preços:
+// primeiro o que pede ação (subir/baixar), depois o que mudou na verificação automática.
+type Filter = "todos" | "subir" | "baixar" | "media" | "custo" | "mudou" | "fora" | "desatualizado";
+type Sort = "diferenca" | "ganho" | "mediana" | "nome" | "verificacao";
+const RECENT_DAYS = 7;
+const isUnavailable = (entry: Competitor) => entry.lastCheckStatus === "INDISPONIVEL";
+const changedRecently = (entry: Competitor) => entry.lastCheckStatus === "ALTERADO" && !!entry.lastCheckAt && Date.now() - new Date(entry.lastCheckAt).getTime() < RECENT_DAYS * 86400000;
+const filterLabel: Record<Filter, string> = {
+  todos: "Todos", subir: "🟢 Pode subir", baixar: "🔴 Pode baixar", media: "🟡 Na média", custo: "⚫ Manter (custo/margem)",
+  mudou: "Preço mudou", fora: "Anúncio fora do ar", desatualizado: "Desatualizados",
+};
+const sortLabel: Record<Sort, string> = { diferenca: "Maior diferença", ganho: "Ganho por peça", mediana: "% vs mediana", nome: "Nome", verificacao: "Mudou primeiro" };
+// Direção padrão de cada ordenação (clicar de novo inverte, como no Catálogo).
+const defaultDirection: Record<Sort, "asc" | "desc"> = { diferenca: "desc", ganho: "desc", mediana: "desc", nome: "asc", verificacao: "desc" };
 
 export function CompetitorPrices({ search, products, marketplaces }: { search: string; products: ProductRef[]; marketplaces: Marketplace[] }) {
   const [entries, setEntries] = useState<Competitor[]>([]);
@@ -28,6 +43,9 @@ export function CompetitorPrices({ search, products, marketplaces }: { search: s
   const [expanded, setExpanded] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
+  const [filter, setFilter] = useState<Filter>("todos");
+  const [sortBy, setSortBy] = useState<Sort>("diferenca");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   useEffect(() => {
     let cancelled = false;
@@ -52,11 +70,51 @@ export function CompetitorPrices({ search, products, marketplaces }: { search: s
       .filter((product) => `${product.sku} ${product.name}`.toLowerCase().includes(query) || entries.some((entry) => entry.productId === product.id && entry.competitor.toLowerCase().includes(query)))
       .map((product) => {
         const own = entries.filter((entry) => entry.productId === product.id);
-        return { product, entries: own, evaluation: evaluatePrice(product, own) };
+        // Anúncio fora do ar continua salvo (só o usuário apaga), mas não entra na mediana.
+        const live = own.filter((entry) => !isUnavailable(entry));
+        return {
+          product,
+          entries: own,
+          evaluation: evaluatePrice(product, live),
+          changed: own.filter(changedRecently).length,
+          unavailable: own.length - live.length,
+          lastCheck: Math.max(0, ...own.map((entry) => (entry.lastCheckAt ? new Date(entry.lastCheckAt).getTime() : 0))),
+        };
       });
   }, [products, entries, query]);
-  const evaluated = rows.filter((row) => row.evaluation).sort((a, b) => Math.abs(b.evaluation!.diffPercent) - Math.abs(a.evaluation!.diffPercent));
+  type Row = (typeof rows)[number];
+  const withEvaluation = rows.filter((row) => row.evaluation);
+  const matches: Record<Filter, (row: Row) => boolean> = {
+    todos: () => true,
+    subir: (row) => row.evaluation!.position === "abaixo" && row.evaluation!.suggestedPrice !== null,
+    baixar: (row) => row.evaluation!.position === "acima" && row.evaluation!.suggestedPrice !== null,
+    media: (row) => row.evaluation!.position === "media",
+    custo: (row) => row.evaluation!.position === "mercado-abaixo-do-custo" || (row.evaluation!.position === "acima" && row.evaluation!.suggestedPrice === null),
+    mudou: (row) => row.changed > 0,
+    fora: (row) => row.unavailable > 0,
+    desatualizado: (row) => row.evaluation!.stale > 0,
+  };
+  const sortValue: Record<Sort, (row: Row) => number | string> = {
+    diferenca: (row) => Math.abs(row.evaluation!.diffPercent),
+    ganho: (row) => (row.evaluation!.suggestedPrice ?? row.product.price) - row.product.price,
+    mediana: (row) => row.evaluation!.diffPercent,
+    nome: (row) => row.product.name.toLowerCase(),
+    verificacao: (row) => row.changed * 1e15 + row.unavailable * 1e14 + row.lastCheck,
+  };
+  const evaluated = withEvaluation
+    .filter(matches[filter])
+    .sort((a, b) => {
+      const x = sortValue[sortBy](a);
+      const y = sortValue[sortBy](b);
+      const order = typeof x === "string" ? x.localeCompare(String(y), "pt-BR") : x - (y as number);
+      return sortDirection === "asc" ? order : -order;
+    });
   const withoutReference = rows.filter((row) => !row.evaluation);
+
+  function selectSort(value: Sort) {
+    if (value === sortBy) setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+    else { setSortBy(value); setSortDirection(defaultDirection[value]); }
+  }
 
   function startNew(productId = "") {
     setEditingId(null);
@@ -171,29 +229,66 @@ export function CompetitorPrices({ search, products, marketplaces }: { search: s
         </form>
       ) : null}
 
-      <h3 className="competitor-section-title">Avaliação de preços ({evaluated.length} produtos com referência)</h3>
+      <h3 className="competitor-section-title">Avaliação de preços ({withEvaluation.length} produtos com referência)</h3>
+      {withEvaluation.length ? (
+        <div className="competitor-filters">
+          <div className="catalog-sort">
+            <span>Mostrar</span>
+            {(Object.keys(filterLabel) as Filter[]).map((key) => {
+              const count = withEvaluation.filter(matches[key]).length;
+              if (key !== "todos" && key !== filter && !count) return null;
+              return <button key={key} type="button" className={filter === key ? "chip selected" : "chip"} onClick={() => setFilter(key)}>{filterLabel[key]} ({count})</button>;
+            })}
+          </div>
+          <div className="catalog-sort">
+            <span>Classificar por</span>
+            {(Object.keys(sortLabel) as Sort[]).map((key) => (
+              <button key={key} type="button" className={sortBy === key ? "chip selected" : "chip"} onClick={() => selectSort(key)}>
+                {sortLabel[key]}{sortBy === key ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {withEvaluation.length && !evaluated.length ? <div className="empty-note">Nenhum produto neste filtro.</div> : null}
       {evaluated.length ? (
         <div className="competitor-table">
           <div className="competitor-row competitor-head">
             <span>Produto</span><span>Meu preço</span><span>Mercado (mín · mediana · máx)</span><span>Posição</span><span>Custo · mín. {TARGET_MARGIN}%</span><span>Recomendação</span>
           </div>
-          {evaluated.map(({ product, entries: own, evaluation }) => (
+          {evaluated.map(({ product, entries: own, evaluation, changed, unavailable }) => (
             <div key={product.id} className="competitor-group">
               <button type="button" className={`competitor-row position-${evaluation!.position}`} onClick={() => setExpanded(expanded === product.id ? null : product.id)}>
-                <span className="competitor-product"><b>{product.name}</b><small>{product.sku} · {evaluation!.count} anúncio(s){evaluation!.stale ? ` · ${evaluation!.stale} desatualizado(s)` : ""}</small></span>
+                <span className="competitor-product">
+                  <b>{product.name}</b>
+                  <small>{product.sku} · {evaluation!.count} anúncio(s){evaluation!.stale ? ` · ${evaluation!.stale} desatualizado(s)` : ""}</small>
+                  {changed || unavailable ? (
+                    <span className="competitor-tags">
+                      {changed ? <em className="today-tag">preço mudou ({changed})</em> : null}
+                      {unavailable ? <em className="today-tag urgent">{unavailable} fora do ar</em> : null}
+                    </span>
+                  ) : null}
+                </span>
                 <span className="num">{brl(product.price)}</span>
                 <span className="num">{brl(evaluation!.min)} · <b>{brl(evaluation!.median)}</b> · {brl(evaluation!.max)}</span>
                 <span>{positionLabel[evaluation!.position]}<small>{evaluation!.diffPercent > 0 ? "+" : ""}{evaluation!.diffPercent.toFixed(0)}% vs mediana</small></span>
                 <span className="num">{brl(product.cost)} · {brl(evaluation!.floorPrice)}</span>
-                <span className="competitor-reco">{evaluation!.recommendation}</span>
+                <span className="competitor-reco">
+                  {evaluation!.recommendation}
+                  {evaluation!.suggestedPrice ? <small className={evaluation!.suggestedPrice > product.price ? "competitor-gain up" : "competitor-gain down"}>{evaluation!.suggestedPrice > product.price ? "+" : "−"}{brl(Math.abs(evaluation!.suggestedPrice - product.price))} por peça</small> : null}
+                </span>
               </button>
               {expanded === product.id ? (
                 <div className="competitor-entries">
                   {own.map((entry) => {
                     const rate = commissionOf(entry.channel);
                     return (
-                      <div key={entry.id} className={isStale(entry) ? "competitor-entry stale" : "competitor-entry"}>
-                        <span><b>{entry.competitor}</b> · {entry.channel || "—"}{entry.notes ? <small>{entry.notes}</small> : null}</span>
+                      <div key={entry.id} className={isUnavailable(entry) ? "competitor-entry unavailable" : isStale(entry) ? "competitor-entry stale" : "competitor-entry"}>
+                        <span>
+                          <b>{entry.competitor}</b> · {entry.channel || "—"}
+                          {isUnavailable(entry) ? <em className="today-tag urgent">fora do ar — fora da mediana</em> : changedRecently(entry) ? <em className="today-tag">preço mudou</em> : null}
+                          {entry.notes ? <small>{entry.notes}</small> : null}
+                        </span>
                         <span className="num">{brl(entry.price)}{entry.quantity > 1 ? ` / ${entry.quantity} un.` : ""}{entry.shipping ? ` + ${brl(entry.shipping)} frete` : " · frete grátis"}</span>
                         <span className="num">= {brl(unitPrice(entry))}/un.{rate !== null ? <small>recebe ~{brl((entry.price * (1 - rate)) / Math.max(entry.quantity, 1))}/un. líquido</small> : null}</span>
                         <span>{new Date(entry.checkedAt).toLocaleDateString("pt-BR")}{isStale(entry) ? <small>desatualizado</small> : null}</span>
