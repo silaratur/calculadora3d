@@ -11,7 +11,7 @@ const sharp = require("sharp");
 const WIDTH = 1024;
 const HEIGHT = 768;
 const INK = "#602f32"; // vinho da marca
-const PAPER = "#f7f1e9";
+const LIGHT = "#fbf6ef"; // texto/traços sobre o vinho — régua clara em fundo claro some
 
 function arg(name) {
   const i = process.argv.indexOf(`--${name}`);
@@ -43,8 +43,8 @@ async function detectBox(buffer) {
 function label(x, y, text, anchor = "middle") {
   const width = text.length * 11 + 20;
   const left = anchor === "start" ? x : x - width / 2;
-  return `<rect x="${left}" y="${y - 17}" width="${width}" height="28" rx="14" fill="${PAPER}" fill-opacity="0.94" stroke="${INK}" stroke-opacity="0.35"/>
-    <text x="${left + width / 2}" y="${y + 3}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700" fill="${INK}">${text}</text>`;
+  return `<rect x="${left}" y="${y - 17}" width="${width}" height="28" rx="14" fill="${INK}"/>
+    <text x="${left + width / 2}" y="${y + 3}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700" fill="${LIGHT}">${text}</text>`;
 }
 
 async function main() {
@@ -72,9 +72,9 @@ async function main() {
   for (let v = 0; v <= largura + 1e-6; v += step) {
     const x = box.x + v * pxPerCm;
     const whole = Math.abs(v - Math.round(v)) < 1e-6;
-    ticks.push(`<line x1="${x}" y1="${ry}" x2="${x}" y2="${ry + (whole ? 16 : 9)}" stroke="${INK}" stroke-width="${whole ? 2 : 1.2}"/>`);
+    ticks.push(`<line x1="${x}" y1="${ry}" x2="${x}" y2="${ry + (whole ? 16 : 9)}" stroke="${LIGHT}" stroke-width="${whole ? 2 : 1.2}"/>`);
     const every = pxPerCm < 18 ? 5 : pxPerCm < 30 ? 2 : 1;
-    if (whole && Math.round(v) % every === 0) ticks.push(`<text x="${x}" y="${ry + 32}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="${INK}">${Math.round(v)}</text>`);
+    if (whole && Math.round(v) % every === 0) ticks.push(`<text x="${x}" y="${ry + 32}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="${LIGHT}">${Math.round(v)}</text>`);
   }
 
   const svg = `<svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
@@ -85,7 +85,7 @@ async function main() {
     ${label(vx + 14, box.y + box.h / 2, cm(altura), "start")}
     ${arrow(box.x + 4, hy, box.x + box.w - 4, hy)}
     ${label(box.x + box.w / 2, hy - 2, cm(largura))}
-    <rect x="${box.x - 8}" y="${ry - 4}" width="${box.w + 16}" height="44" rx="4" fill="${PAPER}" fill-opacity="0.9" stroke="${INK}" stroke-opacity="0.4"/>
+    <rect x="${box.x - 8}" y="${ry - 4}" width="${box.w + 16}" height="44" rx="4" fill="${INK}"/>
     ${ticks.join("\n    ")}
     ${profundidade ? label(28, 36, `Profundidade ${cm(profundidade)}`, "start") : ""}
   </svg>`;
