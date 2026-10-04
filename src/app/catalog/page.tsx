@@ -56,6 +56,9 @@ type Product = {
   showInStore: boolean;
   colors?: string;
   personalizable?: boolean;
+  brandReview?: "PENDING" | "PROPOSED" | "DONE";
+  brandReviewDoc?: string;
+  sourceUrl?: string;
   materials: MaterialLine[];
   supplies?: { supplyId: string; quantity: number }[];
   salesCount: number;
@@ -85,6 +88,8 @@ type Draft = {
   showInStore: boolean;
   colors: string[];
   personalizable: boolean;
+  sourceUrl: string;
+  brandReviewDone: boolean;
 };
 
 const emptyDraft: Draft = {
@@ -108,6 +113,8 @@ const emptyDraft: Draft = {
   showInStore: false,
   colors: [],
   personalizable: false,
+  sourceUrl: "",
+  brandReviewDone: false,
 };
 
 /** Cores do produto: JSON no banco, lista marcada nos checkboxes do formulário. */
@@ -166,6 +173,8 @@ export default function CatalogPage() {
   const [searchSuggestionsOpen, setSearchSuggestionsOpen] = useState(false);
   const [category, setCategory] = useState("all");
   const [sortBy, setSortBy] = useState<"name" | "recent" | "category" | "sales" | "price">("name");
+  // Só produtos com revisão de marca em aberto (pendente ou com proposta para aprovar).
+  const [onlyBrandReview, setOnlyBrandReview] = useState(false);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [itemsPerPage, setItemsPerPage] = useState(15);
   const [page, setPage] = useState(1);
@@ -245,7 +254,8 @@ export default function CatalogPage() {
     const items = products.filter(
       (product) =>
         `${product.sku} ${product.name}`.toLowerCase().includes(search.toLowerCase()) &&
-        (category === "all" || product.category === category),
+        (category === "all" || product.category === category) &&
+        (!onlyBrandReview || (product.brandReview ?? "DONE") !== "DONE"),
     );
     const sorted = [...items];
     const sign = sortDirection === "asc" ? 1 : -1;
@@ -255,7 +265,7 @@ export default function CatalogPage() {
     else if (sortBy === "sales") sorted.sort((a, b) => sign * (a.salesCount - b.salesCount));
     else if (sortBy === "price") sorted.sort((a, b) => sign * (a.price - b.price));
     return sorted;
-  }, [category, sortDirection, products, search, sortBy]);
+  }, [category, onlyBrandReview, sortDirection, products, search, sortBy]);
   // Sugestões abaixo do campo de busca: com o campo vazio mostra os produtos
   // (lista aberta), digitando estreita pelas ocorrências no SKU/nome — mesmo
   // padrão do autocomplete de cliente em Orçamentos.
@@ -511,6 +521,8 @@ export default function CatalogPage() {
       showInStore: product.showInStore ?? false,
       colors: parseColors(product.colors),
       personalizable: product.personalizable ?? false,
+      sourceUrl: product.sourceUrl ?? "",
+      brandReviewDone: (product.brandReview ?? "DONE") === "DONE",
     });
     setFeedback("");
     setView("form");
@@ -550,6 +562,10 @@ export default function CatalogPage() {
       showInStore: draft.showInStore,
       colors: draft.colors.slice(0, 12),
       personalizable: draft.personalizable,
+      sourceUrl: draft.sourceUrl.trim(),
+      // Produto novo sempre entra na revisão de marca; na edição, a caixa decide
+      // (desmarcar volta para a fila; marcar encerra a revisão).
+      ...(editingId ? { brandReview: draft.brandReviewDone ? "DONE" : (products.find((item) => item.id === editingId)?.brandReview === "PROPOSED" ? "PROPOSED" : "PENDING") } : {}),
       cost: cost.total,
       price: suggestedPrice,
     };
@@ -636,6 +652,11 @@ export default function CatalogPage() {
                 <button type="button" className={sortBy === "category" ? "chip selected" : "chip"} onClick={() => selectSort("category")}>Categoria{sortArrow("category")}</button>
                 <button type="button" className={sortBy === "sales" ? "chip selected" : "chip"} onClick={() => selectSort("sales")}>Mais Vendas{sortArrow("sales")}</button>
                 <button type="button" className={sortBy === "price" ? "chip selected" : "chip"} onClick={() => selectSort("price")}>Preço{sortArrow("price")}</button>
+                {products.some((item) => (item.brandReview ?? "DONE") !== "DONE") ? (
+                  <button type="button" className={onlyBrandReview ? "chip selected" : "chip"} onClick={() => { setOnlyBrandReview(!onlyBrandReview); setPage(1); }}>
+                    Revisão de marca ({products.filter((item) => (item.brandReview ?? "DONE") !== "DONE").length})
+                  </button>
+                ) : null}
               </div>
               <div className="catalog-filters-right">
                 <select value={category} onChange={(event) => { setCategory(event.target.value); setPage(1); }}>
@@ -664,6 +685,12 @@ export default function CatalogPage() {
                     </span>
                   </div>
                   <span className="material-badge">{product.sku}</span>
+                  {product.brandReview === "PENDING" ? <span className="brand-review-badge">Revisão de marca pendente</span> : null}
+                  {product.brandReview === "PROPOSED" ? (
+                    product.brandReviewDoc
+                      ? <a className="brand-review-badge proposed" href={product.brandReviewDoc} target="_blank" rel="noreferrer">Proposta de marca pronta ↗</a>
+                      : <span className="brand-review-badge proposed">Proposta de marca pronta</span>
+                  ) : null}
                   <h2>{product.name}</h2>
                   {parseColors(product.colors).length ? (
                     <span className="product-card-colors" aria-label={`Cores: ${parseColors(product.colors).join(", ")}`}>
@@ -727,6 +754,13 @@ export default function CatalogPage() {
                       ) : null}
                     </label>
                   </div>
+                  <label>Link de origem do modelo (opcional)<input type="url" value={draft.sourceUrl} onChange={(event) => setDraft({ ...draft, sourceUrl: event.target.value })} placeholder="https://makerworld.com/... — para checar a licença de venda" /></label>
+                  {editingId ? (
+                    <label className="checkbox-field">
+                      <input type="checkbox" checked={draft.brandReviewDone} onChange={(event) => setDraft({ ...draft, brandReviewDone: event.target.checked })} />
+                      Revisão de marca concluída (fotos e texto próprios da AC3D)
+                    </label>
+                  ) : null}
                   <label className="notes-field description-field">Descrição<textarea rows={15} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Aparece no card do catálogo" /></label>
                   <label className="checkbox-field">
                     <input type="checkbox" checked={draft.showInStore} onChange={(event) => setDraft({ ...draft, showInStore: event.target.checked })} />

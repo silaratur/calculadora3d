@@ -32,6 +32,8 @@ const productSchema = z.object({
   showInStore: z.boolean().optional(),
   colors: z.array(z.string().trim().min(1).max(30)).max(12).optional(),
   personalizable: z.boolean().optional(),
+  sourceUrl: z.string().trim().max(500).optional(),
+  brandReview: z.enum(["PENDING", "PROPOSED", "DONE"]).optional(),
   // Campos do formulário atual (src/app/catalog) — produtos antigos, criados
   // antes dele existir, ficam com tudo no padrão (0/nenhum).
   prepMinutes: z.number().min(0).optional(),
@@ -180,6 +182,9 @@ export async function POST(request: Request) {
     showInStore: data.showInStore ?? false,
     colors: JSON.stringify(data.colors ?? []),
     personalizable: data.personalizable ?? false,
+    sourceUrl: data.sourceUrl ?? "",
+    // Todo produto novo entra na fila da revisão de marca (tarefa diária).
+    brandReview: data.brandReview ?? "PENDING",
     prepMinutes: data.prepMinutes ?? 0,
     cleanupMinutes: data.cleanupMinutes ?? 0,
     energyCost: data.energyCost ?? 0,
@@ -258,6 +263,8 @@ export async function PUT(request: Request) {
         active: data.active ?? true,
         // Só reescreve se veio no corpo — formulários antigos não tiram o produto da loja.
         ...(data.showInStore !== undefined ? { showInStore: data.showInStore } : {}),
+        ...(data.sourceUrl !== undefined ? { sourceUrl: data.sourceUrl } : {}),
+        ...(data.brandReview !== undefined ? { brandReview: data.brandReview } : {}),
         ...(data.colors ? { colors: JSON.stringify(data.colors) } : {}),
         ...(data.personalizable !== undefined ? { personalizable: data.personalizable } : {}),
         prepMinutes: data.prepMinutes ?? 0,

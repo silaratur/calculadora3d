@@ -176,6 +176,14 @@ model Product {
   lossRatePercent      Float               @default(0)
   pricingMethod        String              @default("markup")
   discountPerUnit      Float               @default(0)
+  // Revisão de marca (fotos e texto próprios da AC3D, desde 04/10/2026):
+  // PENDING = produto novo, aguardando proposta; PROPOSED = a tarefa diária já
+  // gerou fotos/texto num documento (brandReviewDoc) para aprovação; DONE =
+  // aplicado. Produtos anteriores nascem DONE.
+  brandReview          String              @default("DONE")
+  brandReviewDoc       String              @default("")
+  // Link de onde veio o modelo 3D (MakerWorld, Printables...) — para checar a licença.
+  sourceUrl            String              @default("")
   marketplaceChannelId String?
   marketplaceChannel   MarketplaceChannel? @relation(fields: [marketplaceChannelId], references: [id])
   materials            ProductMaterial[]
