@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { IconTrash } from "@/components/Icons";
+import { PurchaseDialog, type PurchaseTarget } from "@/components/PurchaseDialog";
 import { brl } from "@/lib/money";
 
 type Tab = "filaments" | "printers" | "supplies";
@@ -88,6 +89,7 @@ export default function AdminPage() {
   const [authPassword, setAuthPassword] = useState("Minima.3D");
   const [authFeedback, setAuthFeedback] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [buying, setBuying] = useState<PurchaseTarget | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const reload = () => setReloadToken((token) => token + 1);
 
@@ -276,6 +278,7 @@ export default function AdminPage() {
           {lowStock && item.active ? <span className="low-stock-badge">Estoque baixo</span> : null}
         </p>
         {purchaseDetail(item)}
+        {item.active ? <button type="button" className="secondary-button purchase-button" onClick={() => setBuying({ kind: "material", id: item.id, name: item.name, perGram: (item.unitPrice || item.costPerKg) / Math.max(item.unitWeightGrams, 1), unitWeightGrams: item.unitWeightGrams })}>Registrar compra</button> : null}
       </article>
     );
   }
@@ -300,6 +303,7 @@ export default function AdminPage() {
         <p>Categoria: {item.category}</p>
         <strong>{brl(item.unitCost)} <small>por unidade</small></strong>
         {purchaseDetail(item)}
+        {item.active ? <button type="button" className="secondary-button purchase-button" onClick={() => setBuying({ kind: "supply", id: item.id, name: item.name, perUnit: item.unitCost })}>Registrar compra</button> : null}
       </article>
     );
   }
@@ -426,6 +430,7 @@ export default function AdminPage() {
 
         {feedback ? <p className="admin-feedback">{feedback}</p> : null}
       </div>
+      {buying ? <PurchaseDialog target={buying} onClose={() => setBuying(null)} onSaved={(message) => { setBuying(null); setFeedback(message); reload(); }} /> : null}
     </main>
   );
 }

@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
+import { dayAtNoonBrt } from "@/lib/finance";
+import { closedMonthFor } from "@/lib/finance-data";
 import { prisma } from "@/lib/prisma";
 
-const rubrics = ["filament", "commission", "energy", "shipping", "packaging", "waste", "salesFee", "maintenance"] as const;
+const rubrics = ["filament", "supplies", "commission", "energy", "shipping", "packaging", "waste", "salesFee", "maintenance"] as const;
 
 const variableCostSchema = z.object({
-  date: z.coerce.date(),
+  date: z.coerce.date().transform(dayAtNoonBrt),
   description: z.string().optional(),
   filament: z.number().min(0).optional(),
+  supplies: z.number().min(0).optional(),
   commission: z.number().min(0).optional(),
   energy: z.number().min(0).optional(),
   shipping: z.number().min(0).optional(),
@@ -37,6 +40,8 @@ export async function POST(request: Request) {
   const parsed = variableCostSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const data = parsed.data;
+  const closed = await closedMonthFor(data.date);
+  if (closed) return NextResponse.json({ error: `O mês ${closed.month} está fechado. Reabra em Dinheiro → Fechamento para lançar nele.` }, { status: 409 });
   const values = Object.fromEntries(rubrics.map((key) => [key, data[key] ?? 0])) as Record<(typeof rubrics)[number], number>;
 
   const entry = await prisma.variableCostEntry.create({ data: { date: data.date, description: data.description ?? "", ...values } });
@@ -62,6 +67,12 @@ export async function DELETE(request: Request) {
   if (!(await authenticated())) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   const id = new URL(request.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "ID obrigatório" }, { status: 400 });
+  const entry = await prisma.variableCostEntry.findUnique({ where: { id }, select: { date: true } });
+  const closed = entry ? await closedMonthFor(entry.date) : null;
+  if (closed) return NextResponse.json({ error: `O mês ${closed.month} está fechado. Reabra em Dinheiro → Fechamento para apagar lançamentos dele.` }, { status: 409 });
+  // Compra registrada pela Biblioteca continua no histórico, só sem o lançamento.
+  await prisma.materialPurchase.updateMany({ where: { variableCostId: id }, data: { variableCostId: null } });
+  await prisma.supplyPurchase.updateMany({ where: { variableCostId: id }, data: { variableCostId: null } });
   await prisma.cashEntry.deleteMany({ where: { sourceType: "VARIABLE_COST", sourceId: id } });
   await prisma.variableCostEntry.delete({ where: { id } });
   return NextResponse.json({ success: true });

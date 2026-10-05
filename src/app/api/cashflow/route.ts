@@ -4,10 +4,10 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { summarizeCash } from "@/lib/metrics";
 import { closedMonthFor } from "@/lib/finance-data";
-import { isRealized, parsePartners } from "@/lib/finance";
+import { dayAtNoonBrt, isRealized, parsePartners } from "@/lib/finance";
 
 const entrySchema = z.object({
-  date: z.coerce.date(),
+  date: z.coerce.date().transform(dayAtNoonBrt),
   category: z.string().min(1),
   type: z.enum(["IN", "OUT"]),
   description: z.string().optional(),

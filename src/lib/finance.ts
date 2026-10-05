@@ -20,6 +20,14 @@ export function monthRange(month: string) {
   const [year, mon] = month.split("-").map(Number);
   return { start: new Date(Date.UTC(year, mon - 1, 1) + BRT), end: new Date(Date.UTC(year, mon, 1) + BRT) };
 }
+/**
+ * Data só com o dia ("2026-10-01" vira meia-noite UTC = 21h do dia anterior em
+ * Brasília) passa para o meio-dia de Brasília, para não cair no mês anterior.
+ */
+export function dayAtNoonBrt(date: Date) {
+  const isBareDay = date.getUTCHours() === 0 && date.getUTCMinutes() === 0 && date.getUTCSeconds() === 0 && date.getUTCMilliseconds() === 0;
+  return isBareDay ? new Date(date.getTime() + 15 * 3_600_000) : date;
+}
 export const monthLabel = (month: string) => {
   const [year, mon] = month.split("-").map(Number);
   const name = new Date(Date.UTC(year, mon - 1, 15)).toLocaleDateString("pt-BR", { month: "long", timeZone: "UTC" });

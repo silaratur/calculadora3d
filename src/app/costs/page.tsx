@@ -46,6 +46,7 @@ type VariableCostEntry = {
   date: string;
   description: string;
   filament: number;
+  supplies: number;
   commission: number;
   energy: number;
   shipping: number;
@@ -89,6 +90,7 @@ const mostRecentPastMonth = (months: FixedCostMonth[], month: string) =>
 
 const variableFields: { key: keyof typeof emptyVariable; label: string }[] = [
   { key: "filament", label: "Filamento" },
+  { key: "supplies", label: "Insumos (LED, argolas, ímãs…)" },
   { key: "commission", label: "Comissão" },
   { key: "energy", label: "Energia de impressão" },
   { key: "shipping", label: "Frete" },
@@ -97,7 +99,7 @@ const variableFields: { key: keyof typeof emptyVariable; label: string }[] = [
   { key: "salesFee", label: "Taxas de venda" },
   { key: "maintenance", label: "Manutenção por peça" },
 ];
-const emptyVariable = { date: todayLocal(), description: "", filament: "0", commission: "0", energy: "0", shipping: "0", packaging: "0", waste: "0", salesFee: "0", maintenance: "0" };
+const emptyVariable = { date: todayLocal(), description: "", filament: "0", supplies: "0", commission: "0", energy: "0", shipping: "0", packaging: "0", waste: "0", salesFee: "0", maintenance: "0" };
 
 // Campos que entram direto no cálculo de energia/mão de obra/rateio fixo em
 // calculatePieceCost + fixedCostPerPiece (src/lib/costing.ts) — vieram do
@@ -187,7 +189,8 @@ export default function CostsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ date: variableDraft.date, description: variableDraft.description, ...body }),
     });
-    setFeedback(response.ok ? "Custo variável lançado." : "Não foi possível salvar.");
+    const result = await response.json().catch(() => ({}));
+    setFeedback(response.ok ? "Custo variável lançado." : (typeof result.error === "string" ? result.error : "Não foi possível salvar."));
     if (response.ok) { setVariableDraft({ ...emptyVariable, date: variableDraft.date }); reload(); }
   }
 
@@ -211,7 +214,8 @@ export default function CostsPage() {
   }
   async function deleteVariable(id: string) {
     if (!window.confirm("Excluir este lançamento?")) return;
-    await fetch(`/api/costs/variable?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    const response = await fetch(`/api/costs/variable?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    if (!response.ok) { const result = await response.json().catch(() => ({})); setFeedback(result.error ?? "Não foi possível excluir."); return; }
     reload();
   }
 
@@ -282,6 +286,7 @@ export default function CostsPage() {
           <div className="costs-stack">
             <form className="preset-form wide-form" onSubmit={saveVariable}>
               <h2>Novo custo variável</h2>
+              <p className="card-detail">Comprou filamento ou insumo? Use <a href="/admin">Biblioteca → Registrar compra</a> no próprio item: lança aqui, no Caixa e já atualiza o custo do item.</p>
               <div className="form-grid">
                 <label>Data<input type="date" value={variableDraft.date} onChange={(event) => setVariableDraft({ ...variableDraft, date: event.target.value })} /></label>
                 <label>Descrição<input value={variableDraft.description} onChange={(event) => setVariableDraft({ ...variableDraft, description: event.target.value })} placeholder="Ex: Compra de filamento PLA 1kg" /></label>

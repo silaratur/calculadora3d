@@ -2395,3 +2395,33 @@ button.competitor-row { cursor: pointer; }
   .finance-grid { grid-template-columns: 1fr; }
   .finance-head h2 { font-size: 22px; }
 }
+
+/* ---------------------------------------------------------------------------
+   Biblioteca → Registrar compra (filamento/insumo → custo variável + Caixa).
+   --------------------------------------------------------------------------- */
+.purchase-button { align-self: flex-start; margin-top: 10px; }
+.purchase-backdrop { align-items: flex-start; background: rgba(30, 18, 20, .45); display: flex; inset: 0; justify-content: center; overflow-y: auto; padding: 40px 16px; position: fixed; z-index: 60; }
+.purchase-dialog { background: var(--admin-paper); border: 1px solid var(--admin-border); border-radius: 16px; box-shadow: 0 18px 48px rgba(0, 0, 0, .18); display: grid; font-family: var(--font-sans), Arial, sans-serif; gap: 12px; max-width: 560px; min-width: 0; padding: 20px; width: 100%; }
+.purchase-dialog header { align-items: flex-start; display: flex; gap: 12px; justify-content: space-between; }
+.purchase-dialog h2 { color: var(--admin-ink); font-size: 20px; margin: 2px 0 0; }
+.purchase-dialog label { display: grid; gap: 4px; min-width: 0; }
+.purchase-kicker { color: var(--admin-muted); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.purchase-close { background: none; border: 0; color: var(--admin-muted); cursor: pointer; padding: 4px; }
+.purchase-preview { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.purchase-preview > div { background: var(--soft); border: 1px solid var(--admin-border); border-radius: 10px; padding: 10px 12px; }
+.purchase-preview span { color: var(--admin-muted); display: block; font-size: 12px; }
+.purchase-preview strong { color: var(--admin-ink); font-size: 17px; white-space: nowrap; }
+.purchase-preview small { color: var(--admin-muted); font-size: 12px; font-weight: 400; }
+.purchase-dialog .purchase-check { align-items: flex-start; display: flex; gap: 8px; }
+.purchase-check input { margin-top: 3px; width: auto; }
+.purchase-note { color: var(--admin-muted); font-size: 13px; line-height: 1.5; margin: 0; }
+.purchase-error { color: var(--danger); margin: 0; }
+.purchase-history { border-top: 1px solid var(--admin-border); padding-top: 10px; }
+.purchase-history h3 { color: var(--admin-ink); font-size: 14px; margin: 0 0 6px; }
+.purchase-history ul { display: grid; list-style: none; margin: 0; padding: 0; }
+.purchase-history li { align-items: center; border-top: 1px solid var(--admin-border); display: grid; font-size: 13px; gap: 10px; grid-template-columns: minmax(0, 1fr) auto auto; padding: 6px 0; }
+.purchase-history li:first-child { border-top: 0; }
+.purchase-history li > span:first-child { color: var(--admin-muted); overflow-wrap: anywhere; }
+.purchase-history strong { white-space: nowrap; }
+.purchase-old { color: var(--admin-muted); font-size: 11px; }
+@media (max-width: 520px) { .purchase-preview { grid-template-columns: 1fr; } }

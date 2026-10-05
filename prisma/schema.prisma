@@ -137,6 +137,7 @@ model Supply {
   purchaseLink    String          @default("")
   active          Boolean         @default(true)
   productSupplies ProductSupply[]
+  purchases       SupplyPurchase[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 }
@@ -225,7 +226,26 @@ model MaterialPurchase {
   supplier     String   @default("")
   purchaseLink String   @default("")
   lot          String   @default("")
+  // Compra registrada pela Biblioteca ("Registrar compra"): valor total pago e o
+  // custo variável (e a saída no Caixa) gerado junto.
+  totalPaid      Float   @default(0)
+  variableCostId String?
   createdAt    DateTime @default(now())
+}
+
+// Compra de insumo (LED, argola, ímã, caixa…) registrada pela Biblioteca:
+// atualiza o custo unitário do insumo e lança o custo variável/saída no Caixa.
+model SupplyPurchase {
+  id             String   @id @default(cuid())
+  supplyId       String
+  supply         Supply   @relation(fields: [supplyId], references: [id])
+  purchaseDate   DateTime
+  quantity       Float
+  totalPaid      Float
+  supplier       String   @default("")
+  purchaseLink   String   @default("")
+  variableCostId String?
+  createdAt      DateTime @default(now())
 }
 
 model ProductMaterial {
@@ -487,6 +507,8 @@ model VariableCostEntry {
   waste       Float    @default(0)
   salesFee    Float    @default(0)
   maintenance Float    @default(0)
+  // Insumos de produção (LED, argolas, ímãs, parafusos…).
+  supplies    Float    @default(0)
   createdAt   DateTime @default(now())
 }
 
