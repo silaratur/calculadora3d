@@ -64,7 +64,7 @@ export function quoteRealCost(snapshotJson: string): number | null {
 }
 
 type SnapshotPrices = {
-  products?: { id?: string; name?: string; quantity?: number; unitPrice?: number; custom?: boolean }[];
+  products?: { id?: string; name?: string; quantity?: number; unitPrice?: number; custom?: boolean; size?: string }[];
   calculations?: { productsCost?: number; subtotal?: number };
 };
 
@@ -83,7 +83,7 @@ export type CatalogPriceDrift = {
  * partir de 28/09/2026); nos anteriores, compara pela soma salva. Null quando
  * não mudou nada ou não dá para saber (produto excluído, snapshot sem itens).
  */
-export function catalogPriceDrift(snapshotJson: string, currentPrice: (productId: string) => number | undefined): CatalogPriceDrift | null {
+export function catalogPriceDrift(snapshotJson: string, currentPrice: (productId: string, size?: string) => number | undefined): CatalogPriceDrift | null {
   let snapshot: SnapshotPrices;
   try {
     snapshot = JSON.parse(snapshotJson) as SnapshotPrices;
@@ -100,7 +100,8 @@ export function catalogPriceDrift(snapshotJson: string, currentPrice: (productId
       currentBase += (line.unitPrice ?? 0) * (Number(line.quantity) || 1);
       continue;
     }
-    const now = line.id ? currentPrice(line.id) : undefined;
+    // Linha com tamanho compara com o preço daquele tamanho hoje.
+    const now = line.id ? currentPrice(line.id, line.size) : undefined;
     if (now === undefined) return null;
     currentBase += now * (Number(line.quantity) || 1);
     if (typeof line.unitPrice === "number" && Math.abs(line.unitPrice - now) >= 0.005) changes.push({ name: line.name ?? "", before: line.unitPrice, after: now });
@@ -112,4 +113,17 @@ export function catalogPriceDrift(snapshotJson: string, currentPrice: (productId
   if (!Number.isFinite(savedBase)) return null;
   if (Math.abs(currentBase - savedBase) < 0.01 && !changes.length) return null;
   return { savedBase, currentBase, changes };
+}
+
+/** Preço de hoje de um produto no tamanho da linha (sem tamanho, ou tamanho que saiu = preço do cadastro). */
+export function sizedPrice(product: { price: number; sizeOptions?: string } | undefined, size?: string) {
+  if (!product) return undefined;
+  if (!size) return product.price;
+  try {
+    const sizes = JSON.parse(product.sizeOptions ?? "[]") as { name?: string; price?: number }[];
+    const match = Array.isArray(sizes) ? sizes.find((item) => item?.name === size && typeof item.price === "number") : undefined;
+    return match?.price ?? product.price;
+  } catch {
+    return product.price;
+  }
 }

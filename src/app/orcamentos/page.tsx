@@ -5,7 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { AdminHeader } from "@/components/AdminHeader";
 import { IconBookmark, IconChevronDown, IconChevronUp, IconClock, IconCopy, IconDownload, IconSave, IconShoppingBag, IconTrash } from "@/components/Icons";
 import { ProductPhotoLink } from "@/components/ProductPreview";
-import { catalogPriceDrift, quoteStatusLabel } from "@/lib/quotes";
+import { catalogPriceDrift, quoteStatusLabel, sizedPrice } from "@/lib/quotes";
+import { parseSizes } from "@/lib/promotions";
 import { QuoteRevisionView } from "@/components/QuoteRevisionView";
 import { calculatePieceCost, calculateSuggestedPrice, effectiveMonthlyFixedCost, fixedCostPerPiece, markupPercentForFinalPrice, type PricingMethod, type PricingSettingsLike } from "@/lib/costing";
 import { defaultColor, productColors, resolveColorLine, singleFilamentRecipe, filamentForColor, type VariantMaterial } from "@/lib/color-variants";
@@ -17,14 +18,15 @@ import { brl } from "@/lib/money";
 // usamos os valores finais, sem recalcular nada.
 // materials/colors/materialCost/lossRatePercent: para a cor escolhida em cada
 // linha trocar o filamento e recalcular o custo real (src/lib/color-variants.ts).
-type Product = { id: string; name: string; sku: string; category: string; cost: number; price: number; printTimeHours: number; imageUrl?: string; materialCost: number; lossRatePercent?: number; colors?: string; materials?: { materialId: string; grams: number }[] };
+type Product = { id: string; name: string; sku: string; category: string; cost: number; price: number; printTimeHours: number; imageUrl?: string; materialCost: number; lossRatePercent?: number; colors?: string; sizeOptions?: string; materials?: { materialId: string; grams: number }[] };
 type Supply = { id: string; name: string; category: string; unitCost: number };
 type Marketplace = { id: string; name: string; commissionRate: number; fixedFee: number; adsRate: number };
 type CustomExtra = { id: string; name: string; unitCost: number };
 type CustomerLead = { id: string; name: string; phone: string; email: string };
 // color vazio = cor padrão do produto (a da receita, se oferecida). O mesmo
 // produto pode aparecer em várias linhas, uma por cor (2 brancas + 3 beges).
-type ProductLine = { productId: string; quantity: string; color?: string };
+// size: tamanho com preço próprio (Catálogo → Tamanhos); vazio = o do cadastro.
+type ProductLine = { productId: string; quantity: string; color?: string; size?: string };
 type SupplyLine = { supplyId: string; quantity: string; unitCost: string };
 // Peça sob medida: ainda não existe no Catálogo — custo calculado aqui com a
 // mesma fórmula do Catálogo (filamento, energia, máquina, custo fixo rateado
@@ -38,7 +40,7 @@ type Settings = { companyName: string; companyContact: string; quoteDeliveryText
 // criado.
 type QuoteSnapshot = {
   // custom: peça sob medida (id "sob-medida-…", sem produto no Catálogo) — grams/finishMinutes reabrem o editor.
-  products?: { id: string; name: string; quantity: number; unitCost: number; unitPrice?: number; printTimeHours: number; imageUrl?: string; color?: string; materialId?: string; custom?: boolean; grams?: number; finishMinutes?: number }[];
+  products?: { id: string; name: string; quantity: number; unitCost: number; unitPrice?: number; printTimeHours: number; imageUrl?: string; color?: string; size?: string; materialId?: string; custom?: boolean; grams?: number; finishMinutes?: number }[];
   markup?: string;
   discount?: string;
   supplies?: { id: string; name: string; category?: string; quantity: number; unitCost: number }[];
@@ -198,7 +200,7 @@ function OrcamentosForm() {
     setNotes(versionNotes);
     let s: QuoteSnapshot = {};
     try { s = JSON.parse(snapshotJson) as QuoteSnapshot; } catch { s = {}; }
-    setProductLines((s.products ?? []).filter((item) => !item.custom).map((item) => ({ productId: item.id, quantity: String(item.quantity ?? 1), color: item.color ?? "" })));
+    setProductLines((s.products ?? []).filter((item) => !item.custom).map((item) => ({ productId: item.id, quantity: String(item.quantity ?? 1), color: item.color ?? "", size: item.size ?? "" })));
     setCustomPieces((s.products ?? []).filter((item) => item.custom).map((item) => ({
       id: item.id,
       name: item.name,
@@ -289,7 +291,13 @@ function OrcamentosForm() {
       if (!product) return [];
       const color = line.color || defaultColor(product, materials);
       const resolved = resolveColorLine(product, color, materials);
-      return [{ line, product, color, material: resolved.material, unitCost: resolved.unitCost }];
+      // Tamanho: preço próprio; custo e tempo estimados na mesma proporção do preço
+      // (o Catálogo só tem os do tamanho cadastrado), igual aos pedidos da loja.
+      const sizes = parseSizes(product.sizeOptions ?? "[]");
+      const size = sizes.length ? (sizes.find((option) => option.name === line.size) ?? sizes[0]) : null;
+      const unitPrice = size ? size.price : product.price;
+      const factor = size && product.price > 0 ? unitPrice / product.price : 1;
+      return [{ line, product, color, size: size?.name ?? "", unitPrice, printTimeHours: product.printTimeHours * factor, material: resolved.material, unitCost: Math.round(resolved.unitCost * factor * 100) / 100 }];
     }),
     [productLines, products, materials],
   );
@@ -379,9 +387,9 @@ function OrcamentosForm() {
     // Catálogo (inclusive via "digite o preço final"). O markup do orçamento
     // ainda se aplica por cima dessa base, junto com os insumos/extras.
     const validPieces = customPiecesWithData.filter((entry) => entry.valid);
-    const productsCost = productLinesWithData.reduce((sum, entry) => sum + entry.product.price * (n(entry.line.quantity) || 1), 0)
+    const productsCost = productLinesWithData.reduce((sum, entry) => sum + entry.unitPrice * (n(entry.line.quantity) || 1), 0)
       + validPieces.reduce((sum, entry) => sum + entry.unitPrice * (n(entry.piece.quantity) || 1), 0);
-    const productsPrintTime = productLinesWithData.reduce((sum, entry) => sum + entry.product.printTimeHours * (n(entry.line.quantity) || 1), 0)
+    const productsPrintTime = productLinesWithData.reduce((sum, entry) => sum + entry.printTimeHours * (n(entry.line.quantity) || 1), 0)
       + validPieces.reduce((sum, entry) => sum + entry.printTimeHours * (n(entry.piece.quantity) || 1), 0);
     const presetsCost = supplyLinesWithData.reduce((sum, entry) => sum + (n(entry.line.unitCost) || entry.supply.unitCost) * (n(entry.line.quantity) || 1), 0);
     const customCost = customExtras.reduce((sum, item) => sum + item.unitCost, 0);
@@ -512,12 +520,14 @@ function OrcamentosForm() {
     const snapshot: QuoteSnapshot = {
       products: productLinesWithData.map((entry) => ({
         id: entry.product.id,
-        name: entry.product.name,
+        // Com tamanho, o nome leva o tamanho (PDF e Produção); `size` reabre o editor.
+        name: entry.size ? `${entry.product.name} (${entry.size})` : entry.product.name,
         quantity: n(entry.line.quantity) || 1,
         unitCost: entry.unitCost,
-        // Preço do Catálogo usado neste orçamento — base do alerta de mudança de preço.
-        unitPrice: entry.product.price,
-        printTimeHours: entry.product.printTimeHours,
+        // Preço do Catálogo usado neste orçamento (do tamanho) — base do alerta de mudança de preço.
+        unitPrice: entry.unitPrice,
+        printTimeHours: entry.printTimeHours,
+        ...(entry.size ? { size: entry.size } : {}),
         imageUrl: entry.product.imageUrl,
         // Cor e filamento da linha: aparecem no PDF/Produção e guiam a baixa de estoque.
         ...(entry.color ? { color: entry.color } : {}),
@@ -609,7 +619,8 @@ function OrcamentosForm() {
     const items = [
       ...productLinesWithData.map((entry) => {
         const quantity = n(entry.line.quantity) || 1;
-        const label = entry.color ? `${entry.product.name} — ${entry.color}` : entry.product.name;
+        const name = entry.size ? `${entry.product.name} (${entry.size})` : entry.product.name;
+        const label = entry.color ? `${name} — ${entry.color}` : name;
         return quantity > 1 ? `${label} (x${quantity})` : label;
       }),
       // Embalagem/caixa é custo interno, não um item que o cliente escolheu —
@@ -686,7 +697,7 @@ function OrcamentosForm() {
   // Preços do Catálogo mudaram desde que este orçamento (em aberto) foi salvo?
   const priceDrift = useMemo(() => {
     if (!loadedQuote || !products.length || quoteMeta?.status !== "DRAFT") return null;
-    return catalogPriceDrift(loadedQuote.snapshotJson, (id) => products.find((item) => item.id === id)?.price);
+    return catalogPriceDrift(loadedQuote.snapshotJson, (id, size) => sizedPrice(products.find((item) => item.id === id), size));
   }, [loadedQuote, products, quoteMeta?.status]);
   // Padrão: o preço combinado com o cliente não muda sozinho — recalcula o
   // markup para chegar no preço salvo com a base nova (o usuário pode trocar).
@@ -908,15 +919,23 @@ function OrcamentosForm() {
                         {product && productColors(product.colors).length ? (
                           <ColorPicker product={product} materials={materials} value={colorOf(line, product)} onChange={(color) => updateProductLine(index, { color })} />
                         ) : null}
+                        {product && parseSizes(product.sizeOptions ?? "[]").length > 1 ? (
+                          <label className="size-select">
+                            Tamanho
+                            <select value={lineEntry(index)?.size ?? ""} onChange={(event) => updateProductLine(index, { size: event.target.value })}>
+                              {parseSizes(product.sizeOptions ?? "[]").map((option) => <option key={option.name} value={option.name}>{option.name} · {brl(option.price)}</option>)}
+                            </select>
+                          </label>
+                        ) : null}
                       </div>
                       {product ? (
-                        <small className="product-line-info" title={`Custo de fabricação${lineEntry(index)?.color ? ` na cor ${lineEntry(index)?.color}` : ""} · ${fmtHours(product.printTimeHours * quantity)} de impressão${quantity > 1 ? ` · ${quantity}x ${brl(lineCost(index, product))} cada` : ""}`}>
+                        <small className="product-line-info" title={`Custo de fabricação${lineEntry(index)?.color ? ` na cor ${lineEntry(index)?.color}` : ""}${lineEntry(index)?.size ? ` no tamanho ${lineEntry(index)?.size} (estimado pela proporção do preço)` : ""} · ${fmtHours((lineEntry(index)?.printTimeHours ?? product.printTimeHours) * quantity)} de impressão${quantity > 1 ? ` · ${quantity}x ${brl(lineCost(index, product))} cada` : ""}`}>
                           <IconClock className="nav-icon" /> {brl(lineCost(index, product) * quantity)}
                         </small>
                       ) : <span />}
                       {product ? (
-                        <small className="product-line-info product-line-price" title={`Preço de venda sugerido no Catálogo${quantity > 1 ? ` · ${quantity}x ${brl(product.price)} cada` : ""}`}>
-                          {brl(product.price * quantity)}
+                        <small className="product-line-info product-line-price" title={`Preço de venda sugerido no Catálogo${lineEntry(index)?.size ? ` (tamanho ${lineEntry(index)?.size})` : ""}${quantity > 1 ? ` · ${quantity}x ${brl(lineEntry(index)?.unitPrice ?? product.price)} cada` : ""}`}>
+                          {brl((lineEntry(index)?.unitPrice ?? product.price) * quantity)}
                         </small>
                       ) : <span />}
                       <span className="qty-stepper">

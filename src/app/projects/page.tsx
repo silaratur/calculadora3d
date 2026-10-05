@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
-import { catalogPriceDrift, quoteRealCost, quoteStatusLabel } from "@/lib/quotes";
+import { catalogPriceDrift, quoteRealCost, quoteStatusLabel, sizedPrice } from "@/lib/quotes";
 import { canAccessPath } from "@/lib/roles";
 import { AuthBanner } from "@/components/AuthBanner";
 import { IconClock, IconDownload, IconTrash, IconUser } from "@/components/Icons";
@@ -124,7 +124,7 @@ export default function ProjectsPage() {
   const [page, setPage] = useState(1);
 
   // Preço atual de cada produto — para marcar orçamentos em aberto cujo Catálogo mudou.
-  const [catalogPrices, setCatalogPrices] = useState<Map<string, number>>(new Map());
+  const [catalogPrices, setCatalogPrices] = useState<Map<string, { price: number; sizeOptions?: string }>>(new Map());
 
   useEffect(() => {
     async function load() {
@@ -134,7 +134,7 @@ export default function ProjectsPage() {
         fetch("/api/session"),
         fetch("/api/products", { cache: "no-store" }),
       ]);
-      if (productsResponse.ok) setCatalogPrices(new Map(((await productsResponse.json()) as { id: string; price: number }[]).map((item) => [item.id, item.price])));
+      if (productsResponse.ok) setCatalogPrices(new Map(((await productsResponse.json()) as { id: string; price: number; sizeOptions?: string }[]).map((item) => [item.id, { price: item.price, sizeOptions: item.sizeOptions }])));
       if (quoteResponse.status === 401) { setNeedsLogin(true); return; }
       setNeedsLogin(false);
       if (quoteResponse.ok) setQuotes((await quoteResponse.json()) as Quote[]);
@@ -355,7 +355,7 @@ export default function ProjectsPage() {
                     <span className="quote-card-meta">
                       <span className="material-badge">{displayCode(quote.code)}</span>
                       {(() => {
-                        const drift = quote.status === "DRAFT" && catalogPrices.size ? catalogPriceDrift(quote.snapshotJson, (id) => catalogPrices.get(id)) : null;
+                        const drift = quote.status === "DRAFT" && catalogPrices.size ? catalogPriceDrift(quote.snapshotJson, (id, size) => sizedPrice(catalogPrices.get(id), size)) : null;
                         if (!drift) return null;
                         const detail = drift.changes.length ? drift.changes.map((change) => `${change.name}: ${brl(change.before)} → ${brl(change.after)}`).join("\n") : `Soma dos produtos: ${brl(drift.savedBase)} → ${brl(drift.currentBase)}`;
                         return <span className="quote-card-drift" title={`Preços do Catálogo mudaram desde este orçamento:\n${detail}`}>⚠ Preço do Catálogo mudou</span>;

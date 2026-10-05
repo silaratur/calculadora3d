@@ -202,6 +202,9 @@ export async function POST(request: Request) {
       name: size ? `${product.name} (${size})` : product.name,
       quantity,
       unitCost: cents(resolved.unitCost * sizeFactor),
+      // O editor de Orçamentos lê o tamanho e usa o preço dele (unitPrice = preço cheio do tamanho).
+      ...(size ? { size } : {}),
+      unitPrice: base,
       printTimeHours: product.printTimeHours,
       imageUrl: product.imageUrl.startsWith("data:") ? undefined : product.imageUrl,
       ...(color ? { color } : {}),
@@ -235,9 +238,9 @@ export async function POST(request: Request) {
       // abatimento — assim o orçamento abre com o mesmo valor que o cliente viu.
       markup: "0",
       pricingMethod: "markup",
-      // Relativo ao preço do Catálogo (o editor parte dele): tamanho maior que o
-      // cadastrado vira desconto negativo, ou seja, acréscimo.
-      discount: cents(priced.reduce((sum, line) => sum + line.product.price * line.qty, 0) - total).toFixed(2).replace(".", ","),
+      // Relativo ao preço cheio de cada tamanho (o editor parte dele): promoção,
+      // quantidade e cupom viram o abatimento.
+      discount: cents(subtotal - total).toFixed(2).replace(".", ","),
       calculations: { price: total, subtotal, afterPromo, afterTiers, couponPercent, couponOff, coupon: couponOk ? couponRecord!.code : "", costWithReserve: baseCost, profit: cents(total - baseCost) },
       storeLines: priced.map((line) => ({ sku: line.sku, qty: line.qty, size: line.size ?? "", color: line.color ?? "", personalization: line.personalization ?? "", base: line.base, promoPercent: line.promoPercent, unit: line.unit, percent: line.percent })),
     }),

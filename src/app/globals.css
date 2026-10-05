@@ -2345,3 +2345,5 @@ button.competitor-row { cursor: pointer; }
   .showcase-list li { grid-template-columns: 22px 52px minmax(0, 1fr) auto; }
   .showcase-list .post-button { grid-column: 2 / -1; justify-self: start; }
 }
+.size-select { color: var(--admin-muted); display: flex; flex-direction: column; font-family: var(--font-sans), Arial, sans-serif; font-size: 11px; gap: 2px; margin-top: 6px; }
+.size-select select { font-size: 12px; }
