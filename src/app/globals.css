@@ -2352,3 +2352,46 @@ button.competitor-row { cursor: pointer; }
 .store-orders-alert { border-color: var(--admin-copper); margin-bottom: 16px; }
 .store-orders-alert li { flex-wrap: wrap; }
 .store-order-reply { flex-shrink: 0; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; padding: 6px 12px; text-decoration: none; white-space: nowrap; }
+
+/* ---------------------------------------------------------------------------
+   Dinheiro → Fechamento: foto mensal (regime de caixa), sócios e retiradas.
+   --------------------------------------------------------------------------- */
+.finance-months { margin-bottom: 22px; }
+.finance-months tbody tr { cursor: pointer; }
+.finance-months tbody tr.finance-row-active { background: var(--soft-warm); }
+.finance-month-link { background: none; border: 0; color: var(--admin-copper); cursor: pointer; font: inherit; font-weight: 700; padding: 0; text-align: left; }
+.finance-badge { background: var(--sunk); border-radius: 999px; color: var(--admin-muted); font-size: 12px; padding: 2px 9px; white-space: nowrap; }
+.finance-badge.closed { background: var(--ok-soft); color: var(--ok); }
+.finance-badge.open { background: var(--warn-soft); color: var(--warn); }
+.finance-head { align-items: flex-end; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; margin-bottom: 14px; }
+.finance-head h2 { color: var(--admin-ink); font-size: 26px; margin: 0; }
+.finance-status { color: var(--admin-muted); font-family: var(--font-sans), Arial, sans-serif; font-size: 14px; margin: 4px 0 0; }
+.finance-status.closed { color: var(--ok); }
+.finance-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.finance-confirm, .finance-warning { background: var(--notice-bg); border: 1px solid var(--notice-border); border-radius: 12px; display: grid; font-family: var(--font-sans), Arial, sans-serif; gap: 10px; margin: 0 0 16px; padding: 14px 16px; }
+.finance-confirm p { margin: 0; }
+.finance-confirm label { display: grid; gap: 4px; }
+.finance-stats small { color: var(--admin-muted); display: block; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; margin-top: 4px; overflow-wrap: anywhere; }
+.finance-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 16px; }
+.finance-card { background: var(--admin-paper); border: 1px solid var(--admin-border); border-radius: 14px; font-family: var(--font-sans), Arial, sans-serif; margin-bottom: 16px; min-width: 0; padding: 16px 18px; }
+.finance-grid .finance-card { margin-bottom: 0; }
+.finance-card h3 { color: var(--admin-ink); font-size: 16px; margin: 0 0 10px; }
+.finance-card-head { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; margin-bottom: 10px; }
+.finance-card-head h3 { margin: 0; }
+.finance-lines { display: grid; margin: 0; }
+.finance-lines > div { align-items: baseline; border-top: 1px solid var(--admin-border); display: flex; gap: 12px; justify-content: space-between; padding: 7px 0; }
+.finance-lines > div:first-child { border-top: 0; }
+.finance-lines dt { color: var(--admin-muted); }
+.finance-lines dd { font-variant-numeric: tabular-nums; margin: 0; white-space: nowrap; }
+.finance-lines .finance-total { border-top: 2px solid var(--admin-border-strong); }
+.finance-lines .finance-total dt, .finance-lines .finance-total dd { color: var(--admin-ink); font-size: 17px; font-weight: 700; }
+.finance-lines .finance-total dd.negative { color: var(--danger); }
+.finance-note { color: var(--admin-muted); font-size: 13px; line-height: 1.5; margin: 10px 0 0; }
+.finance-settings { border-top: 1px solid var(--admin-border); display: grid; gap: 10px; margin-top: 14px; padding-top: 14px; }
+.finance-settings label { display: grid; gap: 4px; }
+.finance-move { margin-bottom: 16px; }
+.finance-page .cash-table td { white-space: nowrap; }
+@media (max-width: 760px) {
+  .finance-grid { grid-template-columns: 1fr; }
+  .finance-head h2 { font-size: 22px; }
+}

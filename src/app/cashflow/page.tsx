@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
@@ -18,6 +19,7 @@ type CashEntry = {
   sourceId: string | null;
   suggestedPrice: number | null;
   cost: number | null;
+  partner: string;
 };
 
 type Summary = { totalIn: number; totalOut: number; balance: number; receivable: number; projectedBalance: number };
@@ -25,8 +27,10 @@ type Summary = { totalIn: number; totalOut: number; balance: number; receivable:
 const neg = (value: number) => (value < 0 ? "negative" : undefined);
 // Data local, não UTC — perto da meia-noite no Brasil toISOString() já mostraria o dia seguinte.
 const todayLocal = () => { const now = new Date(); const pad = (v: number) => String(v).padStart(2, "0"); return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`; };
-const emptyEntry = { date: todayLocal(), category: "Venda", type: "IN" as "IN" | "OUT", description: "", status: "REALIZED" as "REALIZED" | "PLANNED", amount: "" };
-const categories = ["Venda", "Custo Fixo", "Custo Variável", "Investimento", "Outro"];
+const emptyEntry = { date: todayLocal(), category: "Venda", type: "IN" as "IN" | "OUT", description: "", status: "REALIZED" as "REALIZED" | "PLANNED", amount: "", partner: "Ambos" };
+const categories = ["Venda", "Custo Fixo", "Custo Variável", "Investimento", "Retirada de sócio", "Aporte de sócio", "Outro"];
+// Retirada sempre sai do caixa e aporte sempre entra — o tipo acompanha a categoria.
+const partnerCategory: Record<string, "IN" | "OUT"> = { "Retirada de sócio": "OUT", "Aporte de sócio": "IN" };
 const sourceLabel: Record<string, string> = { PAYMENT: "Recebimento", FIXED_COST: "Custo Fixo", VARIABLE_COST: "Custo Variável", PAYMENT_REVERSAL: "Estorno" };
 
 export default function CashflowPage() {
@@ -35,6 +39,7 @@ export default function CashflowPage() {
   const [draft, setDraft] = useState(emptyEntry);
   const [feedback, setFeedback] = useState("");
   const [needsLogin, setNeedsLogin] = useState(false);
+  const [partners, setPartners] = useState<string[]>([]);
   const [reloadToken, setReloadToken] = useState(0);
   const reload = () => setReloadToken((token) => token + 1);
 
@@ -44,8 +49,9 @@ export default function CashflowPage() {
       if (response.status === 401) { setNeedsLogin(true); return; }
       setNeedsLogin(false);
       if (!response.ok) return;
-      const body = (await response.json()) as { entries: CashEntry[]; summary: Summary };
+      const body = (await response.json()) as { entries: CashEntry[]; summary: Summary; partners: string[] };
       setEntries(body.entries);
+      setPartners(body.partners ?? []);
       setSummary(body.summary);
     }
     void load();
@@ -55,19 +61,22 @@ export default function CashflowPage() {
     event.preventDefault();
     const amount = Number(draft.amount.replace(",", "."));
     if (!amount || amount <= 0) { setFeedback("Informe um valor válido."); return; }
+    const isPartner = Boolean(partnerCategory[draft.category]);
     const response = await fetch("/api/cashflow", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...draft, amount }),
+      body: JSON.stringify({ ...draft, amount, partner: isPartner ? draft.partner : "" }),
     });
-    setFeedback(response.ok ? "Lançamento registrado." : "Não foi possível registrar.");
+    const body = await response.json().catch(() => ({}));
+    setFeedback(response.ok ? "Lançamento registrado." : (body.error ?? "Não foi possível registrar."));
     if (response.ok) { setDraft({ ...emptyEntry, date: draft.date }); reload(); }
   }
 
   async function remove(entry: CashEntry) {
     if (entry.sourceType) { setFeedback("Esse lançamento vem de outra tela — edite ou apague na origem (Vendas ou Custos)."); return; }
     if (!window.confirm("Excluir este lançamento?")) return;
-    await fetch(`/api/cashflow?id=${encodeURIComponent(entry.id)}`, { method: "DELETE" });
+    const response = await fetch(`/api/cashflow?id=${encodeURIComponent(entry.id)}`, { method: "DELETE" });
+    if (!response.ok) { const body = await response.json().catch(() => ({})); setFeedback(body.error ?? "Não foi possível excluir."); return; }
     reload();
   }
 
@@ -87,7 +96,7 @@ export default function CashflowPage() {
   const renderRow = (entry: CashEntry) => (
     <tr key={entry.id}>
       <td>{new Date(entry.date).toLocaleDateString("pt-BR")}</td>
-      <td>{entry.category}</td>
+      <td>{entry.category}{entry.partner ? ` · ${entry.partner}` : ""}</td>
       <td>{entry.description || "—"}</td>
       <td>{entry.sourceType ? sourceLabel[entry.sourceType] ?? entry.sourceType : "Manual"}</td>
       <td>{entry.status === "REALIZED" ? "Realizado" : "Previsto"}</td>
@@ -111,6 +120,7 @@ export default function CashflowPage() {
             <h1>Fluxo de Caixa</h1>
             <p>Entradas, saídas e a projeção considerando o que ainda falta receber.</p>
           </div>
+          <Link className="secondary-button" href="/cashflow/fechamento">Fechamento do mês</Link>
         </section>
 
         <section className="production-stats cashflow-stats">
@@ -158,11 +168,15 @@ export default function CashflowPage() {
             <h2>Novo lançamento manual</h2>
             <div className="form-grid">
               <label>Data<input type="date" value={draft.date} onChange={(event) => setDraft({ ...draft, date: event.target.value })} /></label>
-              <label>Categoria<select value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })}>{categories.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-              <label>Tipo<select value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value as "IN" | "OUT" })}><option value="IN">Entrada</option><option value="OUT">Saída</option></select></label>
+              <label>Categoria<select value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value, type: partnerCategory[event.target.value] ?? draft.type })}>{categories.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+              {partnerCategory[draft.category] ? (
+                <label>Sócio<select value={draft.partner} onChange={(event) => setDraft({ ...draft, partner: event.target.value })}>{[...partners, "Ambos"].map((name) => <option key={name} value={name}>{name === "Ambos" ? "Ambos (divide pela participação)" : name}</option>)}</select></label>
+              ) : (
+                <label>Tipo<select value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value as "IN" | "OUT" })}><option value="IN">Entrada</option><option value="OUT">Saída</option></select></label>
+              )}
             </div>
             <div className="form-grid">
-              <label>Descrição<input value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Ex: Aporte de sócio" /></label>
+              <label>Descrição<input value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Ex: Pix para o sócio" /></label>
               <label>Status<select value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as "REALIZED" | "PLANNED" })}><option value="REALIZED">Realizado</option><option value="PLANNED">Previsto</option></select></label>
               <label>Valor (R$)<input inputMode="decimal" value={draft.amount} onChange={(event) => setDraft({ ...draft, amount: event.target.value })} placeholder="0,00" /></label>
             </div>

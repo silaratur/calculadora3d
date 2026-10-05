@@ -36,6 +36,7 @@ type Section =
   | "production"
   | "costs"
   | "cashflow"
+  | "fechamento"
   | "settings"
   | "users"
   | "divulgacao"
@@ -99,6 +100,7 @@ const groups: Group[] = [
     label: "Dinheiro",
     links: [
       { id: "cashflow", hrefs: ["/cashflow"], label: "Caixa", icon: IconWallet },
+      { id: "fechamento", hrefs: ["/cashflow/fechamento"], label: "Fechamento", icon: IconFileText },
       { id: "costs", hrefs: ["/costs"], label: "Custos", icon: IconCoins },
     ],
   },

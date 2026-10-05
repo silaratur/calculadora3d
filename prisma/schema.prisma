@@ -72,6 +72,10 @@ model PricingSettings {
   storeShippingText    String   @default("")
   storeCouponCode      String   @default("")
   storeCouponPercent   Float    @default(0)
+  // Fechamento mensal: sócios (JSON [{ name, share }], share em %) e a reserva
+  // mínima que fica no caixa antes de calcular quanto dá para retirar.
+  partnersJson         String   @default("[{\"name\":\"Sócio 1\",\"share\":50},{\"name\":\"Sócio 2\",\"share\":50}]")
+  cashReserve          Float    @default(0)
   updatedAt            DateTime @updatedAt
 }
 
@@ -500,9 +504,23 @@ model CashEntry {
   orderId     String?
   sourceType  String? // "PAYMENT" | "VARIABLE_COST" | "FIXED_COST" | null (manual)
   sourceId    String?
+  // Retirada/aporte de sócio: nome do sócio ou "Ambos" (divide pela participação).
+  partner     String   @default("")
   createdAt   DateTime @default(now())
 
   @@unique([sourceType, sourceId])
+}
+
+// Fechamento do mês (Dinheiro → Fechamento): a foto congelada dos números do
+// mês no momento em que foi fechado. Mês fechado não aceita lançamento novo
+// até ser reaberto.
+model MonthClosing {
+  id        String   @id @default(cuid())
+  month     String   @unique // "2026-09"
+  snapshot  String // JSON com os números do mês
+  notes     String   @default("")
+  closedBy  String   @default("")
+  closedAt  DateTime @default(now())
 }
 
 // Loja → Vitrine: coleções montadas à mão (Natal, Black Friday...). Com alguma

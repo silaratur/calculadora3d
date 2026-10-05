@@ -41,24 +41,29 @@ export async function POST(request: Request) {
   const data = parsed.data;
   const values = Object.fromEntries(rubrics.map((key) => [key, data[key] ?? 0])) as Record<(typeof rubrics)[number], number>;
 
+  // Mês fechado não muda (a foto do Fechamento ficaria diferente do Caixa).
+  if (await prisma.monthClosing.findUnique({ where: { month: data.month } })) return NextResponse.json({ error: `O mês ${data.month} está fechado. Reabra em Dinheiro → Fechamento para alterar os custos dele.` }, { status: 409 });
   const entry = await prisma.fixedCostMonth.upsert({
     where: { month: data.month },
     update: values,
     create: { month: data.month, ...values },
   });
   const amount = total(entry);
-  const date = new Date(`${data.month}-01T00:00:00`);
+  // Dia 1º ao meio-dia de Brasília: meia-noite UTC caía no dia 31 do mês anterior.
+  const date = new Date(`${data.month}-01T12:00:00-03:00`);
+  // Mês que ainda não chegou fica previsto (não desconta do saldo de hoje).
+  const status = date.getTime() > Date.now() ? "PLANNED" : "REALIZED";
 
   if (amount > 0) {
     await prisma.cashEntry.upsert({
       where: { sourceType_sourceId: { sourceType: "FIXED_COST", sourceId: entry.id } },
-      update: { amount, date, description: `Custos fixos de ${data.month}` },
+      update: { amount, date, status, description: `Custos fixos de ${data.month}` },
       create: {
         date,
         category: "Custo Fixo",
         type: "OUT",
         description: `Custos fixos de ${data.month}`,
-        status: "REALIZED",
+        status,
         amount,
         sourceType: "FIXED_COST",
         sourceId: entry.id,
