@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { activePromoPercent, parseSizes } from "@/lib/promotions";
 import { parseIds, productImagePath } from "@/lib/showcase";
 import { notifyStore } from "@/lib/store-sync";
 
@@ -16,7 +17,7 @@ export async function GET() {
     prisma.product.findMany({
       where: { active: true },
       orderBy: { createdAt: "desc" },
-      select: { id: true, sku: true, name: true, category: true, price: true, showInStore: true, brandReview: true, storeFeatured: true, storeBadge: true, storeOrder: true, imageUrl: true, extraImages: true, updatedAt: true, createdAt: true },
+      select: { id: true, sku: true, name: true, category: true, description: true, price: true, colors: true, sizeOptions: true, promoPercent: true, promoLabel: true, promoStartsAt: true, promoEndsAt: true, showInStore: true, brandReview: true, storeFeatured: true, storeBadge: true, storeOrder: true, imageUrl: true, extraImages: true, updatedAt: true, createdAt: true },
     }),
     prisma.storeCollection.findMany({ orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] }),
     prisma.storeBanner.findMany({ orderBy: { createdAt: "desc" } }),
@@ -28,6 +29,11 @@ export async function GET() {
       inStore: product.showInStore && product.brandReview === "DONE",
       storeFeatured: product.storeFeatured, storeBadge: product.storeBadge, storeOrder: product.storeOrder,
       createdAt: product.createdAt,
+      // Para o "Criar post": texto, cores, tamanhos e a promoção que vale agora.
+      description: product.description ?? "",
+      colors: parseIds(product.colors),
+      sizes: parseSizes(product.sizeOptions),
+      promo: activePromoPercent(product) ? { percent: product.promoPercent, label: product.promoLabel } : null,
       // Miniaturas para o painel (fotos que o produto tem, na ordem).
       images: Array.from({ length: [product.imageUrl, ...parseIds(product.extraImages)].filter(Boolean).length }, (_, index) => productImagePath(product, index)).filter((path): path is string => Boolean(path)),
     })),

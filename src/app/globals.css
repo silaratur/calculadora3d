@@ -2337,3 +2337,11 @@ button.competitor-row { cursor: pointer; }
 }
 .timeline-head { height: 70px; }
 .timeline-date.low { top: 26px; }
+.post-button { background: var(--field-bg); border: 1px solid var(--admin-border); border-radius: 999px; color: var(--admin-ink); cursor: pointer; font-family: var(--font-sans), Arial, sans-serif; font-size: 12px; padding: 5px 10px; white-space: nowrap; }
+.post-button:hover:not(:disabled) { border-color: var(--admin-copper); color: var(--admin-copper); }
+.post-button:disabled { cursor: default; opacity: .5; }
+.showcase-list li { grid-template-columns: auto 28px 52px minmax(0, 1fr) auto auto 170px auto; }
+@media (max-width: 760px) {
+  .showcase-list li { grid-template-columns: 22px 52px minmax(0, 1fr) auto; }
+  .showcase-list .post-button { grid-column: 2 / -1; justify-self: start; }
+}

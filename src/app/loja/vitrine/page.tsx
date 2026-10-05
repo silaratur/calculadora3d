@@ -4,13 +4,14 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AuthBanner } from "@/components/AuthBanner";
 import { brl } from "@/lib/money";
+import { photoToJpeg, productCaption } from "@/lib/product-post";
 import { BADGE_PRESETS, COLLECTION_TONES, periodStatus, type CollectionTone } from "@/lib/showcase";
 
 /**
  * Loja → Vitrine: ordem e destaque das peças na loja, selos, banner da abertura
  * e coleções editáveis (que substituem as vitrines automáticas por data).
  */
-type ShowcaseProduct = { id: string; sku: string; name: string; category: string; price: number; inStore: boolean; storeFeatured: boolean; storeBadge: string; storeOrder: number; createdAt: string; images: string[] };
+type ShowcaseProduct = { id: string; sku: string; name: string; category: string; price: number; inStore: boolean; storeFeatured: boolean; storeBadge: string; storeOrder: number; createdAt: string; images: string[]; description: string; colors: string[]; sizes: { name: string; price: number }[]; promo: { percent: number; label: string } | null };
 type Collection = { id: string; title: string; lead: string; tone: CollectionTone; startsAt: string | null; endsAt: string | null; productIds: string[]; active: boolean; sortOrder: number };
 type Banner = { id: string; title: string; subtitle: string; buttonLabel: string; target: string; productId: string | null; imageIndex: number; startsAt: string | null; endsAt: string | null; active: boolean };
 type Row = { id: string; storeFeatured: boolean; storeBadge: string };
@@ -82,6 +83,7 @@ export default function ShowcasePage() {
   const [editingCollection, setEditingCollection] = useState<string | null>(null);
   const [pickerSearch, setPickerSearch] = useState("");
   const [bannerForm, setBannerForm] = useState(emptyBanner);
+  const [creatingPost, setCreatingPost] = useState<string | null>(null);
   const [editingBanner, setEditingBanner] = useState<string | null>(null);
 
   useEffect(() => {
@@ -131,6 +133,28 @@ export default function ShowcasePage() {
     if (!response.ok) { setFeedback(body?.error ?? "Não foi possível salvar a vitrine."); return; }
     setFeedback("Vitrine salva. A loja já mostra a nova ordem, destaques e selos.");
     setReload((value) => value + 1);
+  }
+
+  // ---------- Divulgação: rascunho de carrossel a partir da peça (aprovação continua na Divulgação)
+  async function createPost(product: ShowcaseProduct) {
+    if (!product.images.length) { setFeedback(`${product.name} não tem fotos para o post.`); return; }
+    setCreatingPost(product.id);
+    setFeedback("");
+    try {
+      const images = await Promise.all(product.images.slice(0, 10).map((src) => photoToJpeg(src)));
+      const response = await fetch("/api/instagram/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: `${product.name} (${product.sku})`, kind: images.length > 1 ? "CAROUSEL" : "IMAGE", caption: productCaption(product, productionDays), scheduledAt: null, images }),
+      });
+      const body = (await response.json().catch(() => null)) as { error?: string } | null;
+      if (!response.ok) { setFeedback(body?.error ?? "Não foi possível criar o post."); return; }
+      setFeedback(`Rascunho de ${images.length > 1 ? `carrossel com ${images.length} fotos` : "post"} criado para ${product.name}. Revise a legenda, agende e aprove na Divulgação.`);
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Não foi possível preparar as fotos.");
+    } finally {
+      setCreatingPost(null);
+    }
   }
 
   // ---------- Coleções
@@ -406,7 +430,7 @@ export default function ShowcasePage() {
         <h2 className="today-section-title">Ordem, destaques e selos</h2>
         <section className="preset-form showcase-order">
           <div className="showcase-order-head">
-            <p className="settings-intro">Arraste (ou use as setas) para escolher a ordem das peças nas prateleiras da loja. <b>Destaque</b> coloca a peça na faixa &quot;Em destaque&quot;, logo depois da abertura ({featuredCount} marcada{featuredCount === 1 ? "" : "s"}). O <b>selo</b> aparece escrito no card.</p>
+            <p className="settings-intro">Arraste (ou use as setas) para escolher a ordem das peças nas prateleiras da loja. <b>Destaque</b> coloca a peça na faixa &quot;Em destaque&quot;, logo depois da abertura ({featuredCount} marcada{featuredCount === 1 ? "" : "s"}). O <b>selo</b> aparece escrito no card. <b>Criar post</b> monta um rascunho de carrossel na <a href="/divulgacao">Divulgação</a> com as fotos e a legenda.</p>
             <button type="button" className="primary-button" disabled={!dirty} onClick={() => void saveShowcase()}>{dirty ? "Salvar vitrine" : "Vitrine salva"}</button>
           </div>
           <datalist id="badge-presets">{BADGE_PRESETS.map((badge) => <option key={badge} value={badge} />)}</datalist>
@@ -430,6 +454,9 @@ export default function ShowcasePage() {
                   <span className="showcase-name">{product.name}<small>{product.sku} · {product.category} · {brl(product.price)}</small></span>
                   <button type="button" className={row.storeFeatured ? "feature-toggle on" : "feature-toggle"} aria-pressed={row.storeFeatured} onClick={() => updateRow(row.id, { storeFeatured: !row.storeFeatured })}>
                     {row.storeFeatured ? "★ Em destaque" : "☆ Destacar"}
+                  </button>
+                  <button type="button" className="post-button" disabled={creatingPost !== null} onClick={() => void createPost(product)} title="Cria um rascunho de carrossel na Divulgação com as fotos e uma legenda pronta">
+                    {creatingPost === product.id ? "Criando…" : "Criar post"}
                   </button>
                   <input className="badge-input" list="badge-presets" value={row.storeBadge} maxLength={24} onChange={(event) => updateRow(row.id, { storeBadge: event.target.value })} placeholder="Selo (opcional)" aria-label={`Selo de ${product.name}`} />
                   <span className="showcase-arrows">
