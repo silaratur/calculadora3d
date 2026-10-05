@@ -26,6 +26,7 @@ type DashboardData = {
     toDeliver: { id: string; orderNumber: string; productName: string; customer: string | null; dueDate: string | null; readySince: string }[];
   };
   openQuotes: { count: number; total: number };
+  storeOrders: { id: string; code: string | null; customerName: string; customerPhone: string; productName: string; finalPrice: number; source: string; createdAt: string; waitingHours: number }[];
   competitors: {
     lastRun: { createdAt: string; checked: number; changed: number; unavailable: number; errors: number } | null;
     changes: {
@@ -57,6 +58,24 @@ function daysUntil(iso: string) {
   const start = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
   const end = Date.UTC(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate());
   return Math.round((end - start) / 86400000);
+}
+
+/** "agora", "há 3 h", "há 2 dias" — tempo esperando resposta. */
+function waitingLabel(hours: number) {
+  if (hours < 1) return "agora";
+  if (hours < 24) return `há ${hours} h`;
+  const days = Math.floor(hours / 24);
+  return days === 1 ? "há 1 dia" : `há ${days} dias`;
+}
+
+/** Link do WhatsApp do cliente com a primeira resposta pronta (DDI 55 se faltar). */
+function whatsappLink(order: { customerName: string; customerPhone: string; code: string | null }) {
+  const digits = order.customerPhone.replace(/\D/g, "");
+  if (digits.length < 10) return null;
+  const phone = digits.length <= 11 ? `55${digits}` : digits;
+  const first = order.customerName.trim().split(/\s+/)[0] || "";
+  const text = `Olá${first ? `, ${first}` : ""}! Aqui é da AC3D Studio. Recebemos seu pedido${order.code ? ` nº ${order.code}` : ""} pela loja e já estamos conferindo. Posso confirmar os detalhes com você?`;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
 }
 
 function deadlineLabel(days: number) {
@@ -163,6 +182,30 @@ export default function HomePage() {
               <a href="/projects">Orçamentos em aberto: {data.openQuotes.count} · {brl(data.openQuotes.total)}</a>
               <span>potencial — só vira dinheiro quando o orçamento é aprovado e o recebimento registrado</span>
             </p>
+
+            {data.storeOrders.length ? (
+              <section className="today-list store-orders-alert" aria-labelledby="store-orders-title">
+                <header>
+                  <h2 id="store-orders-title">Pedidos da loja aguardando resposta <b>{data.storeOrders.length}</b></h2>
+                  <span>responda pelo WhatsApp e converta em venda quando fechar</span>
+                </header>
+                <ul>
+                  {data.storeOrders.map((order) => (
+                    <li key={order.id}>
+                      <a href={`/orcamentos?quoteId=${order.id}`}>
+                        <span className="today-item-main">
+                          {order.productName}
+                          {order.source === "loja-encomenda" ? <em className="today-tag">encomenda</em> : null}
+                          <em className={order.waitingHours >= 24 ? "today-tag urgent" : "today-tag"}>{waitingLabel(order.waitingHours)}</em>
+                        </span>
+                        <small>{order.code ? `${displayNumber(order.code)} · ` : ""}{order.customerName || "sem nome"}{order.finalPrice ? ` · ${brl(order.finalPrice)}` : " · a orçar"}</small>
+                      </a>
+                      {whatsappLink(order) ? <a className="secondary-button store-order-reply" href={whatsappLink(order)!} target="_blank" rel="noreferrer">Responder no WhatsApp</a> : null}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
 
             <div className="dashboard-alerts">
               {data.cash.balance < 0 ? (

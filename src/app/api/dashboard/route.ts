@@ -42,6 +42,14 @@ export async function GET() {
     prisma.quote.aggregate({ where: { status: "DRAFT" }, _count: true, _sum: { finalPrice: true } }),
   ]);
   const competitors = await competitorAlerts();
+  // Pedidos da loja ainda em aberto: o cliente pode não ter mandado o WhatsApp,
+  // então o Hoje avisa para ninguém ficar sem resposta.
+  const storeOrders = await prisma.quote.findMany({
+    where: { source: { in: ["loja", "loja-encomenda"] }, status: "DRAFT" },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, code: true, customerName: true, customerPhone: true, productName: true, finalPrice: true, source: true, createdAt: true },
+  });
+  const nowMs = Date.now();
 
   const totalSold = orders.reduce((sum, order) => sum + order.totalAmount, 0);
   const totalCost = orders.reduce((sum, order) => sum + order.unitCostSnapshot * order.quantity, 0);
@@ -63,6 +71,7 @@ export async function GET() {
     cash,
     openQuotes: { count: openQuotes._count, total: openQuotes._sum.finalPrice ?? 0 },
     competitors,
+    storeOrders: storeOrders.map((order) => ({ ...order, waitingHours: Math.floor((nowMs - order.createdAt.getTime()) / 3_600_000) })),
     today: {
       // Urgente/alta primeiro; depois quem já está imprimindo; depois ordem de chegada.
       toPrint: toPrint

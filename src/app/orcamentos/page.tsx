@@ -442,14 +442,14 @@ function OrcamentosForm() {
     setCustomExtras((current) => current.filter((item) => item.id !== id));
   }
 
-  /** Nome, telefone e e-mail do cliente agora são obrigatórios pra salvar. */
+  /** Nome e telefone são obrigatórios pra salvar; e-mail é opcional (a loja também não exige), mas precisa ser válido se vier. */
   function clientFieldsValid(): boolean {
     const message = !client.trim()
       ? "Informe o nome do cliente."
       : !clientPhone.trim()
         ? "Informe o telefone do cliente."
-        : !clientEmail.trim()
-          ? "Informe o e-mail do cliente."
+        : clientEmail.trim() && !/^\S+@\S+\.\S+$/.test(clientEmail.trim())
+          ? "Confira o e-mail do cliente ou deixe em branco."
           : customPiecesWithData.some((entry) => !entry.valid)
             ? "Complete a peça sob medida (nome, filamento, gramas e tempo de impressão) ou remova-a."
             : "";
@@ -838,8 +838,8 @@ function OrcamentosForm() {
             <input required type="tel" value={clientPhone} onChange={(event) => setClientPhone(event.target.value)} placeholder="(11) 91234-5678" />
           </label>
           <label>
-            <span>E-MAIL *</span>
-            <input required type="email" value={clientEmail} onChange={(event) => setClientEmail(event.target.value)} placeholder="cliente@email.com" />
+            <span>E-MAIL</span>
+            <input type="email" value={clientEmail} onChange={(event) => setClientEmail(event.target.value)} placeholder="cliente@email.com" />
           </label>
         </section>
         </fieldset>
