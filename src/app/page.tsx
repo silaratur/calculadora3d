@@ -8,6 +8,8 @@ import { displayNumber } from "@/lib/sales";
 import { brl } from "@/lib/money";
 
 type DashboardData = {
+  period: { kind: "day" | "month"; key: string; label: string; current: boolean; firstMonth: string; currentMonth: string; received: number; openFromPeriod: number; closingBalance: number | null };
+  ordersEver: number;
   totalSold: number;
   totalCost: number;
   grossProfit: number;
@@ -78,6 +80,13 @@ function whatsappLink(order: { customerName: string; customerPhone: string; code
   return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
 }
 
+/** "2026-10" ± n meses. */
+function shiftMonth(month: string, delta: number) {
+  const [year, mon] = month.split("-").map(Number);
+  const date = new Date(Date.UTC(year, mon - 1 + delta, 1));
+  return date.toISOString().slice(0, 7);
+}
+
 function deadlineLabel(days: number) {
   if (days < 0) return days === -1 ? "venceu ontem" : `venceu há ${-days} dias`;
   if (days === 0) return "entrega hoje";
@@ -93,10 +102,12 @@ export default function HomePage() {
   const [loginError, setLoginError] = useState("");
   const [data, setData] = useState<DashboardData | null>(null);
   const [lowStock, setLowStock] = useState<Material[]>([]);
+  // Números de vendas: sempre abre na foto de hoje; o mês é só para consulta.
+  const [month, setMonth] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadDashboard() {
-      const [dashboardRes, materialsRes] = await Promise.all([fetch("/api/dashboard"), fetch("/api/materials")]);
+      const [dashboardRes, materialsRes] = await Promise.all([fetch(month ? `/api/dashboard?mes=${month}` : "/api/dashboard"), fetch("/api/materials")]);
       if (dashboardRes.status === 401) { setLoggedIn(false); return; }
       setLoggedIn(true);
       if (dashboardRes.ok) setData((await dashboardRes.json()) as DashboardData);
@@ -106,7 +117,7 @@ export default function HomePage() {
       }
     }
     loadDashboard().finally(() => setChecking(false));
-  }, []);
+  }, [month]);
 
   async function handleLogin(event: FormEvent) {
     event.preventDefault();
@@ -150,7 +161,10 @@ export default function HomePage() {
     );
   }
 
-  const margin = data ? assessMargin(data.marginPercent, 40) : null;
+  // Margem só faz sentido com venda no período (dia sem venda não é margem ruim).
+  const margin = data && data.ordersCount ? assessMargin(data.marginPercent, 40) : null;
+  const isDay = data?.period.kind === "day";
+  const when = isDay ? "hoje" : "no mês";
   const overdue = data ? data.today.deadlines.filter((order) => daysUntil(order.dueDate) < 0) : [];
   const printMinutes = data ? data.today.toPrint.reduce((sum, item) => sum + item.minutes, 0) : 0;
 
@@ -169,14 +183,42 @@ export default function HomePage() {
           <>
             {/* Tela Hoje: primeiro os números do negócio (pedido do usuário em
                 05/10/2026), depois o que é urgente e o que fazer. */}
-            <h2 className="today-section-title">Números do negócio</h2>
+            {/* Foto do dia (regra do usuário em 10/10/2026): vendas, lucro e
+                recebido contam só hoje; o mês é consulta. Saldo e a receber
+                são a posição de agora. */}
+            <div className="today-period">
+              <h2 className="today-section-title">Números do negócio</h2>
+              <div className="today-period-switch" role="group" aria-label="Período">
+                <button type="button" className={isDay ? "active" : undefined} aria-pressed={isDay} onClick={() => setMonth(null)}>Hoje</button>
+                <button type="button" className={!isDay ? "active" : undefined} aria-pressed={!isDay} onClick={() => setMonth(month ?? data.period.currentMonth)}>Mês</button>
+              </div>
+              {!isDay ? (
+                <div className="today-month-nav">
+                  <button type="button" aria-label="Mês anterior" disabled={data.period.key <= data.period.firstMonth} onClick={() => setMonth(shiftMonth(data.period.key, -1))}>‹</button>
+                  <strong>{data.period.label}</strong>
+                  <button type="button" aria-label="Próximo mês" disabled={data.period.current} onClick={() => setMonth(shiftMonth(data.period.key, 1))}>›</button>
+                </div>
+              ) : null}
+            </div>
             <section className="today-money">
-              <div><span>Vendido</span><strong className="num">{brl(data.totalSold)}</strong><small>{data.ordersCount} {data.ordersCount === 1 ? "venda" : "vendas"} · ticket {brl(data.ticketMedio)}</small></div>
-              <div><span>Lucro bruto</span><strong className={neg(data.grossProfit) ?? "num"}>{brl(data.grossProfit)}</strong></div>
-              <div><span>Margem líquida</span><strong className={neg(data.marginPercent) ?? "num"}>{data.marginPercent.toFixed(1).replace(".", ",")}%</strong><small>meta 40%</small></div>
-              <div><span>Saldo de caixa</span><strong className={neg(data.cash.balance) ?? "num"}>{brl(data.cash.balance)}</strong></div>
-              <div><span>A receber</span><strong className="num">{brl(data.cash.receivable)}</strong></div>
-              <div><span>Projeção de caixa</span><strong className={neg(data.cash.projectedBalance) ?? "num"}>{brl(data.cash.projectedBalance)}</strong><small>saldo + a receber</small></div>
+              <div>
+                <span>Vendido {when}</span>
+                <strong className="num">{brl(data.totalSold)}</strong>
+                <small>{data.ordersCount ? `${data.ordersCount} ${data.ordersCount === 1 ? "venda" : "vendas"} · ticket ${brl(data.ticketMedio)}` : isDay ? "nenhuma venda hoje" : "nenhuma venda no mês"}</small>
+              </div>
+              <div><span>Lucro bruto {when}</span><strong className={neg(data.grossProfit) ?? "num"}>{brl(data.grossProfit)}</strong><small>das vendas {isDay ? "de hoje" : "do mês"}</small></div>
+              <div><span>Margem {when}</span><strong className={neg(data.marginPercent) ?? "num"}>{data.ordersCount ? `${data.marginPercent.toFixed(1).replace(".", ",")}%` : "—"}</strong><small>meta 40%</small></div>
+              <div><span>Recebido {when}</span><strong className={neg(data.period.received) ?? "num"}>{brl(data.period.received)}</strong><small>pagamentos que entraram no caixa</small></div>
+              {data.period.closingBalance !== null ? (
+                <div><span>Saldo no fim do mês</span><strong className={neg(data.period.closingBalance) ?? "num"}>{brl(data.period.closingBalance)}</strong></div>
+              ) : (
+                <div><span>Saldo de caixa agora</span><strong className={neg(data.cash.balance) ?? "num"}>{brl(data.cash.balance)}</strong><small>projeção <span className="num">{brl(data.cash.projectedBalance)}</span> com o a receber</small></div>
+              )}
+              {isDay ? (
+                <div><span>A receber agora</span><strong className="num">{brl(data.cash.receivable)}</strong><small>de todas as vendas em aberto</small></div>
+              ) : (
+                <div><span>Falta receber</span><strong className="num">{brl(data.period.openFromPeriod)}</strong><small>das vendas do mês</small></div>
+              )}
             </section>
             <p className="today-potential">
               <a href="/projects">Orçamentos em aberto: {data.openQuotes.count} · {brl(data.openQuotes.total)}</a>
@@ -224,7 +266,7 @@ export default function HomePage() {
                   Estoque baixo: {lowStock.map((item) => item.name).join(", ")}. <a href="/admin">Repor na Biblioteca</a>
                 </p>
               ) : null}
-              {data.ordersCount === 0 ? (
+              {data.ordersEver === 0 ? (
                 <p className="sim-alert sim-warning">Nenhuma venda registrada ainda. Comece pelo <a href="/catalog">Catálogo</a> e depois em <Link href="/sales">Vendas</Link>.</p>
               ) : null}
             </div>

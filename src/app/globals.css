@@ -1733,6 +1733,16 @@ button.new-quote-button { border: 0; cursor: pointer; }
 .competitor-change-tip { background: var(--sunk); border-radius: 8px; color: var(--admin-ink); font-size: 13px; margin: 0; padding: 6px 10px; }
 .today-competitor-missing { color: var(--warn); font-size: 13px; margin: 8px 0 4px; }
 .today-section-title { color: var(--admin-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: 16px; font-weight: 700; margin: 0 0 10px; }
+/* Hoje: foto do dia por padrão, mês só para consulta. */
+.today-period { align-items: center; display: flex; flex-wrap: wrap; font-family: var(--font-sans), Arial, sans-serif; gap: 8px 14px; margin: 0 0 10px; }
+.today-period .today-section-title { margin: 0; }
+.today-period-switch { border: 1px solid var(--admin-border); border-radius: 999px; display: inline-flex; overflow: hidden; }
+.today-period-switch button { background: var(--admin-paper); border: 0; color: var(--admin-muted); cursor: pointer; font: inherit; font-size: 13px; padding: 5px 14px; }
+.today-period-switch button.active { background: var(--admin-copper); color: var(--admin-paper); font-weight: 700; }
+.today-month-nav { align-items: center; display: inline-flex; gap: 8px; }
+.today-month-nav strong { color: var(--admin-ink); font-size: 14px; min-width: 150px; text-align: center; white-space: nowrap; }
+.today-month-nav button { background: var(--admin-paper); border: 1px solid var(--admin-border); border-radius: 8px; color: var(--admin-ink); cursor: pointer; font-size: 16px; height: 30px; line-height: 1; width: 30px; }
+.today-month-nav button:disabled { cursor: default; opacity: 0.35; }
 .today-money { background: var(--admin-paper); border: 1px solid var(--admin-border); border-radius: 14px; display: grid; font-family: var(--font-sans), Arial, sans-serif; grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .today-money div { border-left: 1px solid var(--admin-border); display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 14px 16px; }
 .today-money div:first-child { border-left: 0; }

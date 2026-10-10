@@ -16,33 +16,40 @@ import { activePromoPercent, applyPercent, couponDiscount, couponProblem, parseS
  * loja é só SKU, quantidade, tamanho, cor e personalização. Ordem dos
  * descontos: preço do tamanho → promoção → quantidade → cupom (lib/promotions).
  */
+// Texto do cliente nunca derruba o pedido: null vira vazio e o excesso é
+// cortado (antes, um campo fora do limite recusava tudo e a loja seguia só pelo
+// WhatsApp — o orçamento não chegava aqui).
+const text = (max: number) =>
+  z.preprocess((value) => (value == null ? undefined : typeof value === "string" ? value.trim().slice(0, max) : String(value).slice(0, max)), z.string().optional());
+
 const itemSchema = z.object({
   sku: z.string().trim().min(1).max(20),
-  qty: z.number().int().min(1).max(999),
-  color: z.string().trim().max(30).optional(),
-  size: z.string().trim().max(40).optional(),
-  personalization: z.string().trim().max(60).optional(),
+  qty: z.coerce.number().int().min(1).max(999).catch(1),
+  color: text(30),
+  size: text(40),
+  personalization: text(60),
 });
 
 const orderSchema = z.object({
   kind: z.enum(["cart", "custom"]).default("cart"),
-  customerName: z.string().trim().max(80).optional(),
-  customerPhone: z.string().trim().max(30).optional(),
-  customerEmail: z.union([z.string().trim().email().max(120), z.literal("")]).optional(),
-  city: z.string().trim().max(80).optional(),
-  delivery: z.enum(["retirada", "entrega", "combinar"]).optional(),
-  neededBy: z.string().trim().max(20).optional(),
+  customerName: text(80),
+  customerPhone: text(30),
+  // Validado depois: e-mail que não passa vai para as observações em vez de recusar o pedido.
+  customerEmail: text(120),
+  city: text(80),
+  delivery: z.enum(["retirada", "entrega", "combinar"]).optional().catch(undefined),
+  neededBy: text(20),
   // Canal que trouxe o cliente à loja (utm_source, site de origem ou app).
-  channel: z.string().trim().max(60).optional(),
-  notes: z.string().trim().max(1000).optional(),
-  coupon: z.string().trim().max(30).optional(),
+  channel: text(60),
+  notes: text(2000),
+  coupon: text(30),
   items: z.array(itemSchema).max(50).default([]),
   custom: z
     .object({
-      occasion: z.string().trim().min(2).max(60),
-      eventDate: z.string().trim().max(20).optional(),
-      quantity: z.number().int().min(1).max(100000).optional(),
-      details: z.string().trim().max(1000).optional(),
+      occasion: z.preprocess((value) => (typeof value === "string" && value.trim().length >= 2 ? value.trim().slice(0, 60) : "Outra ocasião"), z.string()),
+      eventDate: text(20),
+      quantity: z.coerce.number().int().min(1).max(100000).optional().catch(undefined),
+      details: text(2000),
     })
     .optional(),
 });
@@ -99,13 +106,19 @@ export async function POST(request: Request) {
   if (request.headers.get("x-store-key") !== key) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   const parsed = orderSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success) {
+    console.error("[pedido da loja] recusado:", JSON.stringify(z.flattenError(parsed.error)));
+    return NextResponse.json({ error: z.flattenError(parsed.error) }, { status: 400 });
+  }
   const order = parsed.data;
+  const typedEmail = order.customerEmail ?? "";
+  const emailOk = !typedEmail || z.email().safeParse(typedEmail).success;
+  if (!emailOk) order.notes = [order.notes, `E-mail informado (conferir): ${typedEmail}`].filter(Boolean).join("\n");
 
   const settings = await prisma.pricingSettings.upsert({ where: { id: "default" }, update: {}, create: {} });
   const validUntil = new Date(Date.now() + settings.quoteValidityDays * 24 * 60 * 60 * 1000);
   const received = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
-  const customer = { customerName: order.customerName ?? "", customerPhone: order.customerPhone ?? "", customerEmail: order.customerEmail ?? "" };
+  const customer = { customerName: order.customerName ?? "", customerPhone: order.customerPhone ?? "", customerEmail: emailOk ? typedEmail : "" };
   const channel = order.channel || "direto";
   // Contato/entrega que o cliente preencheu na loja — entram nas observações.
   const contact = [

@@ -20,6 +20,13 @@ export function monthRange(month: string) {
   const [year, mon] = month.split("-").map(Number);
   return { start: new Date(Date.UTC(year, mon - 1, 1) + BRT), end: new Date(Date.UTC(year, mon, 1) + BRT) };
 }
+/** "2026-10-10" do instante, no fuso de Brasília. */
+export const dayOf = (date: Date) => new Date(date.getTime() - BRT).toISOString().slice(0, 10);
+/** Início (00:00 de Brasília) e fim (00:00 do dia seguinte) do dia. */
+export function dayRange(day: string) {
+  const [year, mon, date] = day.split("-").map(Number);
+  return { start: new Date(Date.UTC(year, mon - 1, date) + BRT), end: new Date(Date.UTC(year, mon - 1, date + 1) + BRT) };
+}
 /**
  * Data só com o dia ("2026-10-01" vira meia-noite UTC = 21h do dia anterior em
  * Brasília) passa para o meio-dia de Brasília, para não cair no mês anterior.

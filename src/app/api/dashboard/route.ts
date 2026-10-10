@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getCashSummary } from "@/lib/metrics";
+import { dayOf, dayRange, isRealized, kindOf, monthLabel, monthOf, monthRange } from "@/lib/finance";
 import { evaluatePrice, type CompetitorEntry } from "@/lib/competitors";
 
 const priorityRank: Record<string, number> = { URGENT: 2, HIGH: 1 };
@@ -10,11 +11,34 @@ async function authenticated() {
   return Boolean(await getCurrentUser());
 }
 
-export async function GET() {
+/**
+ * Período dos números de vendas do Hoje: por padrão o dia de hoje (foto do dia,
+ * no fuso de Brasília — regra do usuário em 10/10/2026: antes somava tudo desde
+ * o início); com ?mes=AAAA-MM, o mês escolhido (nunca depois do mês atual).
+ */
+function salesPeriod(request: Request, now: Date) {
+  const month = new URL(request.url).searchParams.get("mes");
+  if (month && /^\d{4}-(0[1-9]|1[0-2])$/.test(month) && month <= monthOf(now)) {
+    return { kind: "month" as const, key: month, label: monthLabel(month), current: month === monthOf(now), ...monthRange(month) };
+  }
+  const day = dayOf(now);
+  return { kind: "day" as const, key: day, label: "Hoje", current: true, ...dayRange(day) };
+}
+
+export async function GET(request: Request) {
   if (!(await authenticated())) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
-  const [orders, cash, openJobs, activeProducts, materials, toPrint, openOrders, openQuotes] = await Promise.all([
-    prisma.salesOrder.findMany({ select: { totalAmount: true, unitCostSnapshot: true, quantity: true } }),
+  const now = new Date();
+  const period = salesPeriod(request, now);
+  const [orders, ordersEver, firstOrder, periodEntries, closingEntries, cash, openJobs, activeProducts, materials, toPrint, openOrders, openQuotes] = await Promise.all([
+    prisma.salesOrder.findMany({ where: { createdAt: { gte: period.start, lt: period.end } }, select: { totalAmount: true, paidAmount: true, unitCostSnapshot: true, quantity: true } }),
+    prisma.salesOrder.count(),
+    // Primeiro mês com venda: limite da navegação para trás.
+    prisma.salesOrder.findFirst({ orderBy: { createdAt: "asc" }, select: { createdAt: true } }),
+    // Recebido no período = pagamentos que entraram no caixa (menos estornos).
+    prisma.cashEntry.findMany({ where: { date: { gte: period.start, lt: period.end } }, select: { type: true, status: true, amount: true, date: true, sourceType: true, category: true } }),
+    // Saldo no fim de um mês que já passou (no mês atual e no dia vale o saldo de agora).
+    period.current ? Promise.resolve(null) : prisma.cashEntry.findMany({ where: { date: { lt: period.end } }, select: { type: true, status: true, amount: true, date: true, sourceType: true } }),
     getCashSummary(),
     prisma.productionJob.findMany({ where: { status: { not: "COMPLETED" } }, select: { plannedMinutes: true } }),
     prisma.product.count({ where: { active: true } }),
@@ -56,8 +80,26 @@ export async function GET() {
   const grossProfit = totalSold - totalCost;
   const pendingMinutes = openJobs.reduce((sum, job) => sum + job.plannedMinutes, 0);
   const lowStockMaterials = materials.filter((item) => item.stockGrams <= item.lowStockThresholdGrams).length;
+  const realizedInPeriod = periodEntries.filter((entry) => isRealized(entry, now));
+  const received = realizedInPeriod.reduce((sum, entry) => sum + (kindOf(entry) === "receipt" ? entry.amount : kindOf(entry) === "reversal" ? -entry.amount : 0), 0);
+  const closingBalance = closingEntries
+    ? closingEntries.filter((entry) => isRealized(entry, now)).reduce((sum, entry) => sum + (entry.type === "IN" ? entry.amount : -entry.amount), 0)
+    : null;
 
   return NextResponse.json({
+    period: {
+      kind: period.kind,
+      key: period.key,
+      label: period.label,
+      current: period.current,
+      firstMonth: firstOrder ? monthOf(firstOrder.createdAt) : monthOf(now),
+      currentMonth: monthOf(now),
+      received,
+      // Do que foi vendido no período, quanto ainda falta receber.
+      openFromPeriod: orders.reduce((sum, order) => sum + Math.max(order.totalAmount - order.paidAmount, 0), 0),
+      closingBalance,
+    },
+    ordersEver,
     totalSold,
     totalCost,
     grossProfit,
