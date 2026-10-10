@@ -67,6 +67,23 @@ const stages: SaleStage[] = ["PRODUCING", "AWAITING_DELIVERY", "DELIVERED"];
 const financialStatuses = ["PENDING", "PARTIAL", "PAID"];
 const paymentLabel: Record<string, string> = { PENDING: "Falta receber", PARTIAL: "Parcialmente recebido", PAID: "Recebido" };
 
+// Datas da venda no fuso de Brasília (UTC-3), igual ao Hoje e ao Fechamento.
+const BRT = 3 * 3_600_000;
+const dayKey = (iso: string | number) => new Date((typeof iso === "number" ? iso : Date.parse(iso)) - BRT).toISOString().slice(0, 10);
+const monthName = (month: string) => {
+  const [year, mon] = month.split("-").map(Number);
+  const name = new Date(Date.UTC(year, mon - 1, 15)).toLocaleDateString("pt-BR", { month: "short", timeZone: "UTC" }).replace(".", "");
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)}/${year}`;
+};
+/** Título do grupo do dia: "Hoje", "Ontem" ou "Sex, 09/10". */
+function dayTitle(day: string, today: string, yesterday: string) {
+  if (day === today) return "Hoje";
+  if (day === yesterday) return "Ontem";
+  const [year, mon, date] = day.split("-").map(Number);
+  const text = new Date(Date.UTC(year, mon - 1, date, 12)).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", timeZone: "UTC" }).replace(".", "");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 export default function SalesPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -80,6 +97,8 @@ export default function SalesPage() {
   // em produção ou aguardando entrega é o que precisa de atenção aqui.
   const [statusFilter, setStatusFilter] = useState("active");
   const [paymentFilter, setPaymentFilter] = useState("all");
+  // Período da venda: "all", "today", "7d" ou "month:AAAA-MM".
+  const [periodFilter, setPeriodFilter] = useState("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [needsLogin, setNeedsLogin] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
@@ -284,22 +303,55 @@ export default function SalesPage() {
     setFeedback(`Entrega de ${displayNumber(order.orderNumber)} registrada.`);
   }
 
+  // Momento em que a tela abriu (fixo durante a renderização).
+  const [openedAt] = useState(() => Date.now());
+  const today = dayKey(openedAt);
+  const yesterday = dayKey(openedAt - 86_400_000);
+  const weekStart = dayKey(openedAt - 6 * 86_400_000);
+
+  // Histórico mês a mês (da venda mais recente para trás) — cada mês vira um atalho de filtro.
+  const history = useMemo(() => {
+    const months = new Map<string, { count: number; total: number }>();
+    for (const order of orders) {
+      const month = dayKey(order.createdAt).slice(0, 7);
+      const current = months.get(month) ?? { count: 0, total: 0 };
+      months.set(month, { count: current.count + 1, total: current.total + order.totalAmount });
+    }
+    return [...months].sort((a, b) => (a[0] < b[0] ? 1 : -1)).map(([month, values]) => ({ month, ...values }));
+  }, [orders]);
+
+  function choosePeriod(value: string) {
+    setPeriodFilter(value);
+    // Histórico de um período mostra também as já entregues.
+    if (value !== "all") setStatusFilter("all");
+  }
+
   const filtered = useMemo(
     () =>
-      orders.filter((order) => {
-        // Pedido veio destacado de Produção ("Ver em Vendas") — aparece mesmo
-        // que os filtros de status/pagamento/busca o escondessem.
-        if (order.id === highlightId) return true;
-        const text = `${order.orderNumber} ${order.productName} ${order.customer?.name ?? ""}`.toLowerCase();
-        if (!text.includes(search.toLowerCase())) return false;
-        const stage = saleStage(order);
-        if (statusFilter === "active" && stage === "DELIVERED") return false;
-        if (statusFilter !== "all" && statusFilter !== "active" && stage !== statusFilter) return false;
-        if (paymentFilter !== "all" && order.paymentStatus !== paymentFilter) return false;
-        return true;
-      }),
-    [orders, search, statusFilter, paymentFilter, highlightId],
+      orders
+        .filter((order) => {
+          // Pedido veio destacado de Produção ("Ver em Vendas") — aparece mesmo
+          // que os filtros de status/pagamento/busca o escondessem.
+          if (order.id === highlightId) return true;
+          const text = `${order.orderNumber} ${order.productName} ${order.customer?.name ?? ""}`.toLowerCase();
+          if (!text.includes(search.toLowerCase())) return false;
+          if (periodFilter !== "all") {
+            const day = dayKey(order.createdAt);
+            if (periodFilter === "today" ? day !== today : periodFilter === "7d" ? day < weekStart : day.slice(0, 7) !== periodFilter.replace("month:", "")) return false;
+          }
+          const stage = saleStage(order);
+          if (statusFilter === "active" && stage === "DELIVERED") return false;
+          if (statusFilter !== "all" && statusFilter !== "active" && stage !== statusFilter) return false;
+          if (paymentFilter !== "all" && order.paymentStatus !== paymentFilter) return false;
+          return true;
+        })
+        // Mais recente primeiro: as últimas vendas no topo.
+        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
+    [orders, search, statusFilter, paymentFilter, periodFilter, highlightId, today, weekStart],
   );
+  const filteredTotal = filtered.reduce((sum, order) => sum + order.totalAmount, 0);
+  const filteredPaid = filtered.reduce((sum, order) => sum + order.paidAmount, 0);
+  const periodLabel = periodFilter === "all" ? "todas as datas" : periodFilter === "today" ? "hoje" : periodFilter === "7d" ? "últimos 7 dias" : monthName(periodFilter.replace("month:", ""));
 
   return (
     <main className="admin-shell">
@@ -388,14 +440,42 @@ export default function SalesPage() {
                 <option value="all">Todos status financeiros</option>
                 {financialStatuses.map((item) => <option key={item} value={item}>{paymentLabel[item]}</option>)}
               </select>
+              <select value={periodFilter} onChange={(event) => choosePeriod(event.target.value)} aria-label="Período da venda">
+                <option value="all">Todas as datas</option>
+                <option value="today">Hoje</option>
+                <option value="7d">Últimos 7 dias</option>
+                {history.map((item) => <option key={item.month} value={`month:${item.month}`}>{monthName(item.month)}</option>)}
+              </select>
             </div>
 
-            {filtered.map((order) => {
+            {history.length ? (
+              <div className="sales-history" aria-label="Histórico de vendas por mês">
+                <span>Histórico</span>
+                {history.map((item) => (
+                  <button key={item.month} type="button" className={periodFilter === `month:${item.month}` ? "active" : undefined} aria-pressed={periodFilter === `month:${item.month}`} onClick={() => choosePeriod(periodFilter === `month:${item.month}` ? "all" : `month:${item.month}`)}>
+                    <strong>{monthName(item.month)}</strong>
+                    <small>{item.count} {item.count === 1 ? "venda" : "vendas"} · <span className="num">{brl(item.total)}</span></small>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            <p className="sales-period-summary">
+              <strong>{filtered.length} {filtered.length === 1 ? "venda" : "vendas"}</strong> · {periodLabel}
+              {filtered.length ? <> · <span className="num">{brl(filteredTotal)}</span> vendidos · <span className="num">{brl(filteredPaid)}</span> recebidos</> : null}
+              {periodFilter !== "all" ? <button type="button" className="sales-period-clear" onClick={() => setPeriodFilter("all")}>limpar período</button> : null}
+            </p>
+
+            {filtered.map((order, index) => {
               const pending = order.totalAmount - order.paidAmount;
               const expanded = expandedOrder === order.id;
               const stage = saleStage(order);
+              const day = dayKey(order.createdAt);
+              const newDay = index === 0 || dayKey(filtered[index - 1].createdAt) !== day;
               return (
-                <article className={`operation-card${order.id === highlightId ? " highlight" : ""}`} id={`order-${order.id}`} key={order.id}>
+                <div key={order.id} className="sales-day-item">
+                {newDay ? <h3 className="sales-day-title">{dayTitle(day, today, yesterday)}<small>{day.split("-").reverse().join("/")}</small></h3> : null}
+                <article className={`operation-card${order.id === highlightId ? " highlight" : ""}`} id={`order-${order.id}`}>
                   <div className="card-top">
                     <a className="material-badge" href={`/sales/${order.id}`} title="Abrir a venda">{displayNumber(order.orderNumber)}</a>
                     <span className="card-actions">
@@ -457,6 +537,7 @@ export default function SalesPage() {
                     </div>
                   ) : null}
                 </article>
+                </div>
               );
             })}
             {filtered.length === 0 ? <div className="empty-note">Nenhuma venda encontrada.</div> : null}

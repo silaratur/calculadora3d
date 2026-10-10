@@ -63,6 +63,12 @@ const n = (value: string) => Number(value.replace(",", ".")) || 0;
 const pad = (value: number) => String(value).padStart(2, "0");
 const todayLocal = () => { const now = new Date(); return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`; };
 const currentMonth = () => todayLocal().slice(0, 7);
+/** "2026-10" → "Out/2026" */
+const monthName = (month: string) => {
+  const [year, mon] = month.split("-").map(Number);
+  const name = new Date(Date.UTC(year, mon - 1, 15)).toLocaleDateString("pt-BR", { month: "short", timeZone: "UTC" }).replace(".", "");
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)}/${year}`;
+};
 
 const fixedFields: { key: keyof typeof emptyFixed; label: string }[] = [
   { key: "rent", label: "Aluguel" },
@@ -166,6 +172,16 @@ export default function CostsPage() {
   }, [reloadToken]);
 
   const fixedTotal = useMemo(() => fixedFields.reduce((sum, field) => sum + n(fixedDraft[field.key]), 0), [fixedDraft]);
+  // Coluna só para categoria usada em algum mês (as zeradas em todos somem da tabela).
+  const fixedColumns = useMemo(() => fixedFields.filter((field) => fixedMonths.some((item) => item[field.key as keyof FixedCostMonth])) as { key: Exclude<keyof FixedCostMonth, "id" | "month">; label: string }[], [fixedMonths]);
+  const variableByMonth = useMemo(() => {
+    const groups = new Map<string, VariableCostEntry[]>();
+    for (const item of [...variableEntries].sort((a, b) => (a.date < b.date ? 1 : -1))) {
+      const month = item.date.slice(0, 7);
+      groups.set(month, [...(groups.get(month) ?? []), item]);
+    }
+    return [...groups].map(([month, items]) => ({ month, items, total: items.reduce((sum, item) => sum + item.total, 0) }));
+  }, [variableEntries]);
   const variableTotal = useMemo(() => variableFields.reduce((sum, field) => sum + n(variableDraft[field.key]), 0), [variableDraft]);
 
   async function saveFixed(event: FormEvent) {
@@ -264,23 +280,42 @@ export default function CostsPage() {
               <button className="primary-button" type="submit">Salvar custos fixos</button>
             </form>
 
-            <div className="preset-grid">
-              {fixedMonths.map((item) => (
-                <article className="preset-card" key={item.id}>
-                  <div className="card-top">
-                    <span className="material-badge">{item.month}</span>
-                    <span className="card-actions">
-                      <button className="edit-button" onClick={() => setFixedDraft(fixedMonthToDraft(item))}>Editar</button>
-                      <button className="delete-button" onClick={() => deleteFixed(item.id)} aria-label={`Excluir ${item.month}`}><IconTrash className="nav-icon" /></button>
-                    </span>
-                  </div>
-                  <h3>Total do mês</h3>
-                  <strong>{brl(item.total)}</strong>
-                  <p className="card-detail">Aluguel {brl(item.rent)} · Assinaturas {brl(item.subscriptions)} · Manutenção {brl(item.maintenance)}</p>
-                </article>
-              ))}
-              {fixedMonths.length === 0 ? <div className="empty-note">Nenhum mês lançado ainda.</div> : null}
-            </div>
+            {/* Mês a mês em tabela (antes um card por mês ocupava a tela toda).
+                Só as categorias com valor em algum mês viram coluna. */}
+            <section className="costs-table-panel">
+              <h2>Custos fixos mês a mês</h2>
+              {fixedMonths.length ? (
+                <div className="scroll-table">
+                  <table className="costs-table">
+                    <thead>
+                      <tr>
+                        <th>Mês</th>
+                        {/* Total logo depois do mês: no celular a tabela rola e o total segue à vista. */}
+                        <th className="money">Total</th>
+                        {fixedColumns.map((field) => <th key={field.key} className="money">{field.label}</th>)}
+                        <th aria-label="Ações" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...fixedMonths].sort((a, b) => (a.month < b.month ? 1 : -1)).map((item) => (
+                        <tr key={item.id} className={[item.month === currentMonth() ? "current" : "", item.month === fixedDraft.month ? "editing" : ""].filter(Boolean).join(" ") || undefined}>
+                          <td className="month">
+                            {monthName(item.month)}
+                            {item.month === currentMonth() ? <em className="today-tag">atual</em> : item.month > currentMonth() ? <em className="today-tag">previsto</em> : null}
+                          </td>
+                          <td className="money total">{brl(item.total)}</td>
+                          {fixedColumns.map((field) => <td key={field.key} className={item[field.key] ? "money" : "money zero"}>{item[field.key] ? brl(item[field.key]) : "—"}</td>)}
+                          <td className="actions">
+                            <button className="edit-button" onClick={() => { setRepeatedFromMonth(null); setFixedDraft(fixedMonthToDraft(item)); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Editar</button>
+                            <button className="delete-button" onClick={() => deleteFixed(item.id)} aria-label={`Excluir ${item.month}`}><IconTrash className="nav-icon" /></button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : <p className="empty-note">Nenhum mês lançado ainda.</p>}
+            </section>
           </div>
         ) : tab === "variable" ? (
           <div className="costs-stack">
@@ -302,19 +337,36 @@ export default function CostsPage() {
               <button className="primary-button" type="submit">Lançar custo</button>
             </form>
 
-            <div className="preset-grid">
-              {variableEntries.map((item) => (
-                <article className="preset-card" key={item.id}>
-                  <div className="card-top">
-                    <span className="material-badge">{new Date(item.date).toLocaleDateString("pt-BR")}</span>
-                    <button className="delete-button" onClick={() => deleteVariable(item.id)} aria-label="Excluir lançamento"><IconTrash className="nav-icon" /></button>
-                  </div>
-                  <h3>{item.description || "Custo variável"}</h3>
-                  <strong>{brl(item.total)}</strong>
-                </article>
-              ))}
-              {variableEntries.length === 0 ? <div className="empty-note">Nenhum custo variável lançado ainda.</div> : null}
-            </div>
+            <section className="costs-table-panel">
+              <h2>Custos variáveis mês a mês</h2>
+              {variableByMonth.length ? (
+                <div className="scroll-table">
+                  <table className="costs-table">
+                    <thead>
+                      <tr><th>Data</th><th>Descrição</th><th>Composição</th><th className="money">Total</th><th aria-label="Ações" /></tr>
+                    </thead>
+                    {variableByMonth.map((group) => (
+                      <tbody key={group.month}>
+                        <tr className="group">
+                          <td colSpan={3}>{monthName(group.month)} <small>{group.items.length} {group.items.length === 1 ? "lançamento" : "lançamentos"}</small></td>
+                          <td className="money total">{brl(group.total)}</td>
+                          <td />
+                        </tr>
+                        {group.items.map((item) => (
+                          <tr key={item.id}>
+                            <td className="date">{item.date.slice(0, 10).split("-").reverse().join("/")}</td>
+                            <td>{item.description || "Custo variável"}</td>
+                            <td className="parts">{variableFields.filter((field) => item[field.key as keyof VariableCostEntry]).map((field) => field.label.replace(/ \(.*\)/, "")).join(", ") || "—"}</td>
+                            <td className="money">{brl(item.total)}</td>
+                            <td className="actions"><button className="delete-button" onClick={() => deleteVariable(item.id)} aria-label="Excluir lançamento"><IconTrash className="nav-icon" /></button></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    ))}
+                  </table>
+                </div>
+              ) : <p className="empty-note">Nenhum custo variável lançado ainda.</p>}
+            </section>
           </div>
         ) : (
           <div className="costs-stack">

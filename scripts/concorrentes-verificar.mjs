@@ -13,6 +13,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { CREDENTIALS_FILE, loadCredentials, productById, shopeeIds } from "./shopee-afiliados.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const HOME = homedir();
@@ -109,7 +110,22 @@ async function checkMercadoLivre(tab, entry) {
   return { status: "OK", price };
 }
 
-/** Shopee: preço vem do JSON que a própria página carrega (pdp/get_pc). */
+/**
+ * Shopee pela API oficial de Afiliados (sem abrir página, sem antibot). Anúncio
+ * com variações: se o preço salvo está entre o mínimo e o máximo, não mudou.
+ */
+async function checkShopeeApi(credentials, entry) {
+  const ids = shopeeIds(entry.url);
+  if (!ids) return { status: "ERRO", note: "link sem id do anúncio" };
+  const item = await productById(credentials, ids.itemId);
+  if (!item) return { status: "INDISPONIVEL", note: "não encontrado na API de afiliados" };
+  const min = item.priceMin ?? item.price;
+  const max = item.priceMax ?? item.price;
+  if (min !== null && max !== null && entry.price >= min - 0.01 && entry.price <= max + 0.01) return { status: "OK", price: entry.price };
+  return item.price ? { status: "OK", price: item.price } : { status: "ERRO", note: "API sem preço" };
+}
+
+/** Shopee sem credenciais da API: preço do JSON que a própria página carrega (pdp/get_pc). */
 async function checkShopee(tab, entry) {
   await tab.send("Network.enable");
   let body = null;
@@ -146,10 +162,12 @@ async function main() {
   const entries = await fetch(`${BASE}/api/concorrentes/verificacao`, { headers }).then((r) => { if (!r.ok) throw new Error(`GET ${r.status}`); return r.json(); });
   const filtered = only ? entries.filter((entry) => entry.url.includes(only)) : entries;
   const list = limit ? filtered.slice(0, limit) : filtered;
-  log(`Verificação ${target}: ${list.length} anúncios`);
+  const shopeeApi = loadCredentials();
+  log(`Verificação ${target}: ${list.length} anúncios · Shopee ${shopeeApi ? "pela API de afiliados" : "pela página (sem credenciais em " + CREDENTIALS_FILE + ")"}`);
 
-  await ensureChrome();
-  const tab = await openTab();
+  const needsChrome = list.some((entry) => !/shopee\.com\.br/.test(entry.url) || !shopeeApi);
+  if (needsChrome) await ensureChrome();
+  const tab = needsChrome ? await openTab() : null;
   const results = [];
   let blockedInRow = 0;
   try {
@@ -157,7 +175,9 @@ async function main() {
       const isShopee = /shopee\.com\.br/.test(entry.url);
       let result;
       try {
-        result = blockedInRow >= 5 ? { status: "ERRO", note: "rodada pausada após bloqueios" } : isShopee ? await checkShopee(tab, entry) : await checkMercadoLivre(tab, entry);
+        result = isShopee && shopeeApi
+          ? await checkShopeeApi(shopeeApi, entry)
+          : blockedInRow >= 5 ? { status: "ERRO", note: "rodada pausada após bloqueios" } : isShopee ? await checkShopee(tab, entry) : await checkMercadoLivre(tab, entry);
       } catch (error) {
         result = { status: "ERRO", note: error.message };
       }
@@ -165,10 +185,10 @@ async function main() {
       const changed = result.status === "OK" && Math.abs(result.price - entry.price) >= 0.01;
       log(`${index + 1}/${list.length} ${entry.sku ?? "-"} ${entry.competitor}: ${result.status}${result.price ? ` R$ ${result.price.toFixed(2)}` : ""}${changed ? ` (era R$ ${entry.price.toFixed(2)})` : ""}${result.note ? ` — ${result.note}` : ""}`);
       results.push({ id: entry.id, status: result.status, ...(result.price ? { price: result.price } : {}) });
-      if (blockedInRow < 5) await sleep(isShopee ? 20000 : 3000 + Math.random() * 2000);
+      if (blockedInRow < 5) await sleep(isShopee ? (shopeeApi ? 1500 : 20000) : 3000 + Math.random() * 2000);
     }
   } finally {
-    await tab.close();
+    await tab?.close();
   }
 
   if (dryRun) { log("Simulação: nada enviado."); return; }
