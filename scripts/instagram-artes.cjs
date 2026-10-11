@@ -24,6 +24,9 @@ const MONOGRAM = path.join(ROOT, "public", "logo-ac3d-monograma.png");
 const C = { copper: "#602f32", copperDeep: "#4c2528", olive: "#777f5d", cream: "#f7f1e9", paper: "#fffdfb", ink: "#3d2225", muted: "#8a7472", border: "#e3cfc9", pink: "#f8dee7" };
 const HANDLE = "@ac3d_studio";
 const SITE = "ac3d.silaratur.cloud";
+// Endereço da peça na loja: aparece em toda arte (o clique vem pelo link da bio,
+// e a legenda leva o link completo com utm_source=ig para a loja saber a origem).
+const productUrl = (sku) => `${SITE}/p/${sku}`;
 const W = 1080;
 // Story 1080×1920: o Instagram cobre ~250 px no topo (barra e nome) e ~250 px
 // na base (caixa de resposta). O que importa precisa terminar antes daqui.
@@ -789,7 +792,7 @@ async function storyFull(story, product, products) {
   layers.push({ input: icon("link", 50, T.ctaInk, 2), left: 79, top: ctaTop + 19 });
   layers.push({ input: Buffer.from(`<svg width="2" height="60"><rect width="2" height="60" fill="${T.ctaInk}" opacity=".5"/></svg>`), left: 152, top: ctaTop + 14 });
   const l1 = await text("PEÇA SEU ORÇAMENTO PELO LINK DA BIO", { size: 25, weight: 800, color: T.ctaInk, spacing: 0.04 });
-  const l2 = await text(`loja completa em ${SITE}`, { size: 22, weight: 500, color: T.ctaInk });
+  const l2 = await text(`peça direto em ${productUrl(product.sku)}`, { size: 22, weight: 500, color: T.ctaInk });
   const th = l1.height + 8 + l2.height;
   layers.push({ ...l1, left: 176, top: ctaTop + Math.round((ctaH - th) / 2) });
   layers.push({ ...l2, left: 176, top: ctaTop + Math.round((ctaH - th) / 2) + l1.height + 8 });
@@ -826,7 +829,7 @@ async function storyFull(story, product, products) {
 // produção limitada, nada cobrindo o produto.
 const CH = 1350;
 
-function footerCheio(layers, { index, total, dark = false }) {
+function footerCheio(layers, { index, total, dark = false, url }) {
   return (async () => {
     const top = CH - 88;
     layers.push({ input: Buffer.from(`<svg width="${W - 88}" height="2"><rect width="${W - 88}" height="2" fill="${dark ? "#7a4a4d" : C.border}"/></svg>`), left: 44, top });
@@ -834,7 +837,7 @@ function footerCheio(layers, { index, total, dark = false }) {
     layers.push({ input: mark, left: 44, top: top + 22 });
     const brand = await text("AC3D STUDIO", { size: 20, weight: 700, color: dark ? C.cream : C.copper, spacing: 0.16 });
     layers.push({ ...brand, left: 100, top: top + 36 });
-    const cta = await text("Peça pelo link da bio", { size: 22, weight: 700, color: dark ? C.cream : C.copper });
+    const cta = await text(url ? `${url} · link na bio` : `${SITE} · link na bio`, { size: url ? 19 : 22, weight: 700, color: dark ? C.cream : C.copper });
     const ctaW = cta.width + 40;
     const cx = Math.round((W - ctaW) / 2) + 40;
     layers.push({ input: icon("link", 26, dark ? C.cream : C.copper, 2.2), left: cx - 40, top: top + 32 });
@@ -983,7 +986,7 @@ async function productCheio(slide, product, index, total) {
     const lab = await text(item.label, { size: 19, weight: 700, color: C.ink, width: colW - 72, lineHeight: 1.05 });
     layers.push({ ...lab, left: x + 62, top: y + Math.round((52 - lab.height) / 2) });
   }
-  await footerCheio(layers, { index, total });
+  await footerCheio(layers, { index, total, url: product ? productUrl(product.sku) : undefined });
   return sharp(canvas(CH)).composite(layers).jpeg({ quality: 92 }).toBuffer();
 }
 
@@ -1077,11 +1080,32 @@ function joinWithFades(segments, durations, out) {
 }
 
 // Trilha em loop até a duração do vídeo, com entrada e saída suaves.
+// Direitos autorais: só entra trilha/efeito registrado em trilhas/licencas.json
+// (origem, autor/gerador, licença). Música de terceiros sem licença, nunca.
+function musicLicense(music) {
+  const registry = path.join(PHOTOS, "trilhas", "licencas.json");
+  const list = fs.existsSync(registry) ? JSON.parse(fs.readFileSync(registry, "utf8")) : {};
+  const entry = list[path.basename(music)];
+  if (!entry || !entry.licenca) throw new Error(`Trilha sem licença registrada em trilhas/licencas.json: ${music}. Use só áudio próprio, gerado por nós ou com licença comercial.`);
+  return entry;
+}
+const THEME_MUSIC = (post) => (/natal|ceia|presép|quebra-nozes|rena|árvore/i.test(JSON.stringify(post)) ? "trilhas/natal-suave.m4a" : "trilhas/aconchego-violao.m4a");
+
 function addMusic(video, music, seconds, out) {
   const track = path.join(PHOTOS, music);
   if (!fs.existsSync(track)) throw new Error(`Trilha não encontrada: ${music}`);
+  musicLicense(music);
   ff(["-i", video, "-stream_loop", "-1", "-i", track, "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k",
     "-af", `volume=0.8,afade=t=in:st=0:d=0.6,afade=t=out:st=${Math.max(0, seconds - 1.4).toFixed(2)}:d=1.4`, "-t", seconds.toFixed(2), "-movflags", "+faststart", out]);
+}
+
+/** Story em vídeo (9:16, ~10 s, zoom leve) com a trilha do tema — o Instagram aceita story em MP4 pela API. */
+function storyVideo(jpg, music, out, seconds = 10) {
+  const frames = Math.round(seconds * FPS);
+  const silent = out.replace(/\.mp4$/, "-mudo.mp4");
+  zoomSegment(jpg, `[0:v]scale=2160:-1,zoompan=z='1+0.035*on/${frames}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=1080x1920:fps=${FPS},format=yuv420p[v]`, seconds, silent);
+  addMusic(silent, music, seconds, out);
+  fs.rmSync(silent, { force: true });
 }
 
 async function reelEndCard(file) {
@@ -1311,7 +1335,7 @@ async function sizeReal(spec, product, { height, index, total, story }) {
   // 2 · Palco em escala
   const stageTop = y;
   const detailsH = spec.details?.length ? (story ? 290 : 186) : 0;
-  const bottomReserve = story ? 1920 - 1690 + 140 : 96;
+  const bottomReserve = story ? 1920 - 1690 + 200 : 96;
   const stageH = H - stageTop - detailsH - bottomReserve - (detailsH ? 22 : 0);
   const sx = 40, sw2 = W - 80;
   const floorY = stageTop + stageH - Math.round(stageH * 0.16);
@@ -1408,13 +1432,15 @@ async function sizeReal(spec, product, { height, index, total, story }) {
     const cta = await text("Peça seu orçamento pelo link da bio", { size: 30, weight: 800, color: C.cream });
     const cw = cta.width + 120;
     const ctaTop = 1670 - 96 - 14;
+    const site = await text(productUrl(product.sku), { size: 26, weight: "mono", color: C.copper });
+    layers.push({ ...site, left: Math.round((W - site.width) / 2), top: ctaTop - site.height - 14 });
     layers.push({ input: pill("", { width: cw, height: 96, fill: "#5f6549" }), left: Math.round((W - cw) / 2), top: ctaTop });
     layers.push({ input: icon("link", 34, C.cream, 2.2), left: Math.round((W - cw) / 2) + 34, top: ctaTop + 31 });
     layers.push({ ...cta, left: Math.round((W - cw) / 2) + 84, top: ctaTop + Math.round((96 - cta.height) / 2) });
     if (ctaTop + 96 > STORY_SAFE_BOTTOM) throw new Error("tamanho-real: botão passou da área segura do story");
     return sharp({ create: { width: W, height: H, channels: 4, background: C.cream } }).composite(layers).jpeg({ quality: 92 }).toBuffer();
   }
-  await footerCheio(layers, { index, total });
+  await footerCheio(layers, { index, total, url: product ? productUrl(product.sku) : undefined });
   return sharp(canvas(CH)).composite(layers).jpeg({ quality: 92 }).toBuffer();
 }
 
@@ -1507,6 +1533,17 @@ async function syncWithCatalog(spec, products) {
     } else if (post.type === "story") {
       const buffer = post.kind === "cta" ? await ctaSlide(post, 1920) : await storySlide(post, productOf(post.sku));
       fs.writeFileSync(path.join(dir, "story.jpg"), buffer);
+    }
+    if (/^story/.test(post.type) && post.music !== false && fs.existsSync(path.join(dir, "story.jpg"))) {
+      storyVideo(path.join(dir, "story.jpg"), post.music || THEME_MUSIC(post), path.join(dir, "story.mp4"));
+    }
+    // Legenda sempre com o link da loja (utm_source=ig) antes das hashtags.
+    if (post.caption && !post.caption.includes(SITE)) {
+      const skus = [...new Set(JSON.stringify(post).match(/[A-Z]\.\d{3}/g) || [])];
+      const link = `https://${skus.length === 1 ? productUrl(skus[0]) : SITE}?utm_source=ig&utm_campaign=${spec.pack}`;
+      const lines = post.caption.trimEnd().split("\n");
+      const tags = /^#/.test(lines[lines.length - 1]) ? lines.pop() : null;
+      post.caption = [...lines, `🛒 Loja: ${link}`, ...(tags ? ["", tags] : [])].join("\n");
     }
     const header = [`${post.title || post.id}`, post.when ? `Quando: ${post.when}` : "", ""].filter((line, i) => line || i === 2).join("\n");
     fs.writeFileSync(path.join(dir, "legenda.txt"), `${header}\n${post.caption || ""}\n`);

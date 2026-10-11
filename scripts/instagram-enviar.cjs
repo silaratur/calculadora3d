@@ -19,8 +19,10 @@ const DAYS = { segunda: 1, terca: 2, terça: 2, quarta: 3, quinta: 4, sexta: 5, 
     // Horário de Brasília (UTC−3).
     const scheduledAt = when ? new Date(Date.UTC(new Date().getFullYear(), Number(when[2]) - 1, Number(when[1]), Number(when[3]) + 3, Number(when[4] || 0))).toISOString() : null;
     const caption = kind === "STORY" ? "" : lines.slice(2).join("\n").trim();
-    const files = fs.readdirSync(full).filter((f) => (kind === "REEL" ? f.endsWith(".mp4") : f.endsWith(".jpg"))).sort();
-    const images = files.map((f) => `data:${kind === "REEL" ? "video/mp4" : "image/jpeg"};base64,${fs.readFileSync(path.join(full, f)).toString("base64")}`);
+    // Story com trilha: manda o story.mp4 quando existir (senão a imagem).
+    const video = kind === "REEL" || (kind === "STORY" && fs.existsSync(path.join(full, "story.mp4")));
+    const files = fs.readdirSync(full).filter((f) => (video ? f.endsWith(".mp4") && !f.includes("-mudo") : f.endsWith(".jpg"))).sort();
+    const images = files.map((f) => `data:${video ? "video/mp4" : "image/jpeg"};base64,${fs.readFileSync(path.join(full, f)).toString("base64")}`);
     const response = await fetch(`${base}/api/instagram/posts`, { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ title: rest.join("·").trim(), kind, caption, scheduledAt, images }) });
     const body = await response.json();
     console.log(response.status, folder, kind, images.length, scheduledAt, body.error || body.id);

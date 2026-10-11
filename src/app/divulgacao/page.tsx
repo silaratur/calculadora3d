@@ -122,7 +122,7 @@ export default function DivulgacaoPage() {
         return { key: `${file.name}-${Math.random().toString(36).slice(2)}`, src, preview: src };
       }));
       const fromCaption = captionFile ? parseCaptionFile(await captionFile.text()) : {};
-      setForm((current) => ({ ...current, ...fromCaption, ...(hasVideo ? { kind: "REEL" as const } : {}), images: [...current.images, ...images].slice(0, 10) }));
+      setForm((current) => ({ ...current, ...fromCaption, ...(hasVideo && (fromCaption.kind ?? current.kind) !== "STORY" ? { kind: "REEL" as const } : {}), images: [...current.images, ...images].slice(0, 10) }));
       setFeedback(captionFile ? "Legenda, tipo e horário lidos do legenda.txt — confira antes de salvar." : "");
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Não foi possível ler as imagens.");

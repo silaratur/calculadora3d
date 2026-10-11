@@ -1,18 +1,147 @@
 {
   "pack": "exemplo-tamanho-real",
   "posts": [
-    { "id": "01-carrossel", "type": "carousel", "title": "Teste · Tamanho real", "slides": [
-      { "kind": "tamanho-real", "sku": "D.026", "cutout": { "photo": "d026-revisao/5.png", "box": [240, 88, 245, 562] },
-        "items": [ { "label": "Pequena", "altura": 15, "largura": 7.5 }, { "label": "Grande", "altura": 20, "largura": 10 } ],
-        "compare": ["caneca", "caneta"], "phrase": "Pequena no tamanho,\ngrande no encanto", "seal": "Lançamento · produção limitada",
-        "details": [ { "photo": "carrossel/D.026-3.png", "title": "Na ceia", "sub": "Centro de mesa" }, { "photo": "carrossel/D.026-2.png", "title": "2 cores", "sub": "Base bege ou marrom" }, { "photo": "carrossel/D.026-4.png", "title": "Estrela no topo", "sub": "Copa em camadas" } ] },
-      { "kind": "tamanho-real", "sku": "B.009", "cutout": { "photo": "carrossel/B.009-5.png", "box": [340, 55, 265, 582] },
-        "items": [ { "altura": 8 } ], "compare": ["celular", "caneca", "moeda"], "phrase": "Cabe em qualquer\ncantinho", "seal": "Fé em cada detalhe",
-        "details": [ { "photo": "carrossel/B.009-3.png", "title": "No carro", "sub": "No seu caminho" }, { "photo": "carrossel/B.009-2.png", "title": "No trabalho", "sub": "Na mesa ou no monitor" }, { "photo": "carrossel/B.006-3.png", "title": "Kit com 4", "sub": "Para a família" } ] }
-    ] },
-    { "id": "02-story", "type": "story-tamanho", "title": "Teste · Story tamanho real", "sku": "D.018",
-      "cutout": { "photo": "carrossel/D.018-5.png", "box": [380, 16, 205, 700] },
-      "items": [ { "altura": 20 } ], "compare": ["caneca", "caneta", "celular"], "phrase": "O guardião\nda sua estante", "seal": "Coleção de Natal",
-      "details": [ { "photo": "carrossel/D.018-2.png", "title": "Na lareira", "sub": "Clima de Natal" }, { "photo": "carrossel/D.018-3.png", "title": "Na entrada", "sub": "Recebe as visitas" }, { "photo": "carrossel/D.018-4.png", "title": "4 cores", "sub": "Monte o seu conjunto" } ] }
+    {
+      "id": "01-carrossel",
+      "type": "carousel",
+      "title": "Carrossel · Tamanho real (exemplo)",
+      "slides": [
+        {
+          "kind": "tamanho-real",
+          "sku": "D.026",
+          "cutout": {
+            "photo": "d026-revisao/5.png",
+            "box": [
+              240,
+              88,
+              245,
+              562
+            ]
+          },
+          "items": [
+            {
+              "label": "Pequena",
+              "altura": 15,
+              "largura": 7.5
+            },
+            {
+              "label": "Grande",
+              "altura": 20,
+              "largura": 10
+            }
+          ],
+          "compare": [
+            "caneca",
+            "caneta"
+          ],
+          "phrase": "Pequena no tamanho,\ngrande no encanto",
+          "seal": "Lançamento · produção limitada",
+          "details": [
+            {
+              "photo": "carrossel/D.026-3.png",
+              "title": "Na ceia",
+              "sub": "Centro de mesa"
+            },
+            {
+              "photo": "carrossel/D.026-2.png",
+              "title": "2 cores",
+              "sub": "Base bege ou marrom"
+            },
+            {
+              "photo": "carrossel/D.026-4.png",
+              "title": "Estrela no topo",
+              "sub": "Copa em camadas"
+            }
+          ]
+        },
+        {
+          "kind": "tamanho-real",
+          "sku": "B.009",
+          "cutout": {
+            "photo": "carrossel/B.009-5.png",
+            "box": [
+              340,
+              55,
+              265,
+              582
+            ]
+          },
+          "items": [
+            {
+              "altura": 8
+            }
+          ],
+          "compare": [
+            "celular",
+            "caneca",
+            "moeda"
+          ],
+          "phrase": "Cabe em qualquer\ncantinho",
+          "seal": "Fé em cada detalhe",
+          "details": [
+            {
+              "photo": "carrossel/B.009-3.png",
+              "title": "No carro",
+              "sub": "No seu caminho"
+            },
+            {
+              "photo": "carrossel/B.009-2.png",
+              "title": "No trabalho",
+              "sub": "Na mesa ou no monitor"
+            },
+            {
+              "photo": "carrossel/B.006-3.png",
+              "title": "Kit com 4",
+              "sub": "Para a família"
+            }
+          ]
+        }
+      ],
+      "caption": "Veja o tamanho real da Árvore de Natal Japandi e do Mini Jesus. 🎄\n\n📌 Salve e envie para quem ama decorar.\n\n#decoracaodenatal #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "02-story",
+      "type": "story-tamanho",
+      "title": "Story · Tamanho real (exemplo)",
+      "sku": "D.018",
+      "cutout": {
+        "photo": "carrossel/D.018-5.png",
+        "box": [
+          380,
+          16,
+          205,
+          700
+        ]
+      },
+      "items": [
+        {
+          "altura": 20
+        }
+      ],
+      "compare": [
+        "caneca",
+        "caneta",
+        "celular"
+      ],
+      "phrase": "O guardião\nda sua estante",
+      "seal": "Coleção de Natal",
+      "details": [
+        {
+          "photo": "carrossel/D.018-2.png",
+          "title": "Na lareira",
+          "sub": "Clima de Natal"
+        },
+        {
+          "photo": "carrossel/D.018-3.png",
+          "title": "Na entrada",
+          "sub": "Recebe as visitas"
+        },
+        {
+          "photo": "carrossel/D.018-4.png",
+          "title": "4 cores",
+          "sub": "Monte o seu conjunto"
+        }
+      ]
+    }
   ]
 }

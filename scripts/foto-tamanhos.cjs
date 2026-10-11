@@ -5,7 +5,9 @@
 // sumirem no fundo claro.
 //
 //   node scripts/foto-tamanhos.cjs <entrada> <saida.png> --item "Grande|20|10|44,90" --item "Pequena|15|7,5|37,90"
-//        (um --item por peça, da esquerda para a direita: nome|altura cm|largura cm|preço)
+//        (um --item por peça, da esquerda para a direita: nome|altura cm|largura cm|preço; preço "-" = sem preço,
+//         para produto de preço único em que o tamanho não muda o valor)
+//        [--caixas "x,y,w,h;..."]  (contorno manual de cada peça, se a detecção errar)
 //        [--legenda-largura diâmetro] [--encolher 0.8]  (reduz a foto espelhando o fundo, abrindo espaço embaixo)
 const sharp = require("sharp");
 
@@ -73,7 +75,10 @@ async function main() {
     const side = (WIDTH - scaledWidth) / 2;
     base = await sharp(scaled).extend({ left: Math.floor(side), right: Math.ceil(side), extendWith: "mirror" }).png().toBuffer();
   }
-  const boxes = await detectBoxes(base, items.length);
+  // --caixas "x,y,w,h;x,y,w,h": contorno manual (na foto 1024×768), quando a detecção
+  // pega algo além da peça (ex.: a argola do chaveiro somando na altura).
+  const manual = args.includes("--caixas") ? args[args.indexOf("--caixas") + 1].split(";").map((box) => { const [x, y, w, h] = box.split(",").map(Number); return { x, y, w, h }; }) : null;
+  const boxes = manual || (await detectBoxes(base, items.length));
   const tallest = items.reduce((best, item, i) => (item.height > items[best].height ? i : best), 0);
   const pxPerCm = boxes[tallest].h / items[tallest].height;
   const floor = Math.max(...boxes.map((box) => box.y + box.h));
@@ -109,7 +114,7 @@ async function main() {
     // Etiqueta com nome e preço.
     const label = `${item.name.toUpperCase()} · ${cm(item.height)}`;
     parts.push(pill(cx, wy + 66, label, 15));
-    parts.push(`<text x="${cx}" y="${wy + 112}" text-anchor="middle" font-family="${FONT}" font-size="30" font-weight="800" fill="${INK}">R$&#160;${item.price}</text>`);
+    if (item.price !== "-") parts.push(`<text x="${cx}" y="${wy + 112}" text-anchor="middle" font-family="${FONT}" font-size="30" font-weight="800" fill="${INK}">R$&#160;${item.price}</text>`);
   });
 
   const svg = `<svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">

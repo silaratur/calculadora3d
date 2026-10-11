@@ -54,13 +54,17 @@ export async function publishInstagramPost(postId: string) {
         children.push(child.id);
       }
       creationId = (await create({ media_type: "CAROUSEL", children: children.join(","), caption: post.caption })).id;
+    } else if (post.kind === "STORY" && media.length === 1 && media[0].endsWith(".mp4")) {
+      // Story em vídeo (com trilha): mesmo processamento demorado do reel.
+      creationId = (await create({ media_type: "STORIES", video_url: imageUrl(media[0]) })).id;
+      await waitReady(creationId, token, 60, 5000);
     } else {
       if (media.length !== 1) throw new Error("Este tipo de post usa exatamente 1 imagem.");
       // Story não tem legenda pela API (nem figurinhas de link/enquete).
       const params: Record<string, string> = post.kind === "STORY" ? { image_url: imageUrl(media[0]), media_type: "STORIES" } : { image_url: imageUrl(media[0]), caption: post.caption };
       creationId = (await create(params)).id;
     }
-    if (post.kind !== "REEL") await waitReady(creationId, token);
+    if (post.kind !== "REEL" && !media[0].endsWith(".mp4")) await waitReady(creationId, token);
 
     const published = await graphPost<Container>(`/${igUserId}/media_publish`, { creation_id: creationId, access_token: token });
     const details = await graphGet<{ permalink?: string }>(`/${published.id}`, { fields: "permalink", access_token: token }).catch(() => ({ permalink: "" }));

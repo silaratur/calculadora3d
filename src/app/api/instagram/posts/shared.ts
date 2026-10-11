@@ -17,7 +17,9 @@ export const postSchema = z.object({
 export function mediaProblem(kind: string, items: string[]) {
   const videos = items.filter((item) => item.startsWith("data:video/") || item.endsWith(".mp4")).length;
   if (kind === "REEL") return items.length === 1 && videos === 1 ? null : "Reel usa exatamente 1 vídeo MP4.";
-  if (videos) return "Vídeo só pode ser publicado como Reel.";
+  // Story aceita 1 imagem ou 1 vídeo MP4 (story com trilha sonora).
+  if (kind === "STORY" && videos) return items.length === 1 ? null : "Story usa exatamente 1 imagem ou 1 vídeo.";
+  if (videos) return "Vídeo só pode ser publicado como Reel ou Story.";
   if (kind === "CAROUSEL" && (items.length < 2 || items.length > 10)) return "Carrossel precisa de 2 a 10 imagens.";
   if (kind !== "CAROUSEL" && items.length !== 1) return "Post único e story usam exatamente 1 imagem.";
   return null;

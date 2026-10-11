@@ -81,7 +81,13 @@ function runChecks(post: PreviewPost, metas: Meta[]): Check[] {
   }
   if (post.kind === "CAROUSEL" && (metas.length < 2 || metas.length > 10)) checks.push({ level: "error", text: `Carrossel precisa de 2 a 10 imagens (tem ${metas.length}).` });
 
-  if (post.kind !== "REEL") metas.forEach((meta, index) => {
+  // Story em vídeo: só formato, peso e duração (as regras de imagem não se aplicam).
+  if (story && metas.length === 1 && metas[0].type === "video/mp4") {
+    const meta = metas[0];
+    if (meta.bytes > 100 * 1024 * 1024) checks.push({ level: "error", text: `${formatBytes(meta.bytes)} — acima do limite de 100 MB para story.` });
+    if (meta.duration !== undefined && meta.duration > 60) checks.push({ level: "error", text: "Story em vídeo pode ter no máximo 60 segundos." });
+    if (Math.abs(meta.width / meta.height - STORY) / STORY > 0.02) checks.push({ level: "warn", text: `Proporção ${ratioLabel(meta.width, meta.height)} — story é 9:16.` });
+  } else if (post.kind !== "REEL") metas.forEach((meta, index) => {
     const label = metas.length > 1 ? `Imagem ${index + 1}: ` : "";
     const ratio = meta.width / meta.height;
     if (meta.type && meta.type !== "image/jpeg") checks.push({ level: "error", text: `${label}formato ${meta.type} — o Instagram só aceita JPEG.` });
@@ -207,8 +213,12 @@ export function ApprovalPreview({ post, mediaUrl, busy, onCancel, onApprove, onR
               </div>
             ) : story ? (
               <div className="ig-story">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={urls[0]} alt="Story" />
+                {urls[0]?.endsWith(".mp4") ? (
+                  <video src={urls[0]} autoPlay muted loop playsInline controls />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={urls[0]} alt="Story" />
+                )}
                 <div className="ig-story-top">
                   <div className="ig-progress"><span /></div>
                   <div className="ig-user light">
