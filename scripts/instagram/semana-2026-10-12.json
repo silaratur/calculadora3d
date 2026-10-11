@@ -1,0 +1,544 @@
+{
+  "pack": "semana-2026-10-12",
+  "posts": [
+    {
+      "id": "01-story-presepio",
+      "type": "story-cheio",
+      "title": "Story · Presépio",
+      "when": "segunda 12/10, 12h",
+      "sku": "D.014",
+      "background": "stories-fundo/D.014.png",
+      "tag": "Coleção de Natal",
+      "headline": "Presépio",
+      "script": "Sagrada Família",
+      "subline": "Traço minimalista, significado eterno",
+      "uses": [
+        { "icon": "estrela", "label": "Estrela de Belém no topo" },
+        { "icon": "casa", "label": "Sala, aparador ou recepção" },
+        { "icon": "presente", "label": "Presente que emociona" }
+      ],
+      "note": "o centro\ndo seu Natal",
+      "noteTarget": [0.26, 0.5],
+      "fomo": "Produção limitada para o Natal",
+      "scenes": [
+        { "photo": "carrossel/D.014-2.png", "icon": "casa", "title": "Na sala", "sub": "Perto das velas e da árvore" },
+        { "photo": "carrossel/D.014-3.png", "icon": "presente", "title": "De presente", "sub": "Emociona quem recebe" },
+        { "photo": "carrossel/D.014-4.png", "icon": "paleta", "title": "3 cores", "sub": "Branco, bege ou marrom" }
+      ],
+      "size": "12 cm de altura",
+      "signature": "O verdadeiro sentido do Natal",
+      "bgScale": 1.02,
+      "bgShift": 19,
+      "productBox": [310, 705, 757, 1242],
+      "noteSize": 40,
+      "noteWidth": 220
+    },
+    {
+      "id": "02-story-ponteira-professor",
+      "type": "story-cheio",
+      "title": "Story · Ponteira (Dia do Professor)",
+      "when": "terça 13/10, 12h",
+      "sku": "B.018",
+      "background": "stories-fundo/B.018.png",
+      "tag": "Dia do Professor",
+      "headline": "Com o nome",
+      "script": "de cada aluno",
+      "subline": "Ponteira de lápis personalizada",
+      "uses": [
+        { "icon": "livro", "label": "Material escolar" },
+        { "icon": "estrela", "label": "Nome em relevo" },
+        { "icon": "presente", "label": "Lembrancinha da turma" }
+      ],
+      "note": "a professora\nvai amar!",
+      "fomo": "Para a turma toda · produção limitada",
+      "scenes": [
+        { "photo": "carrossel/B.018-3.png", "icon": "livro", "title": "No estojo", "sub": "Fácil de achar" },
+        { "photo": "carrossel/B.018-4.png", "icon": "paleta", "title": "8 cores", "sub": "Uma para cada um" },
+        { "photo": "carrossel/B.018-5.png", "icon": "presente", "title": "Na sala de aula", "sub": "Lembrança da turma" }
+      ],
+      "colorsNote": "8 cores",
+      "signature": "Cada um com o seu",
+      "productBox": [290, 627, 862, 1215],
+      "bgScale": 1.06,
+      "bgShift": -57,
+      "fomoTop": 316,
+      "noteTarget": [0.24, 0.56]
+    },
+    {
+      "id": "03-carrossel-professor",
+      "type": "carousel",
+      "title": "Carrossel · Lembrancinhas para professores",
+      "when": "terça 13/10, 19h",
+      "slides": [
+        {
+          "kind": "cover-cheio",
+          "title": "professor",
+          "tag": "Dia do Professor",
+          "headline": "Lembrancinhas para",
+          "script": "professores",
+          "subline": "Mimos impressos em 3D aqui no estúdio",
+          "fomo": "Para a turma toda · produção limitada",
+          "items": [
+            { "sku": "B.018", "photo": "carrossel/B.018-2.png", "name": "Ponteira com Nome" },
+            { "sku": "B.013", "photo": "carrossel/B.013-2.png", "name": "Guia de Leitura" },
+            { "sku": "D.003", "photo": "carrossel/D.003-2.png", "name": "Vasinho Mãozinhas" },
+            { "sku": "D.005", "photo": "carrossel/D.005-2.png", "name": "Porta-Joias Redondo" },
+            { "sku": "U.001", "photo": "carrossel/U.001-2.png", "name": "Chaveiro Porta-Anel" },
+            { "sku": "B.004", "photo": "carrossel/B.004-2.png", "name": "Chaveiro Estrela" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.018",
+          "photo": "carrossel/B.018-3.png",
+          "label": "Dia do Professor",
+          "name": "Ponteira com Nome",
+          "accent": "um para cada aluno",
+          "line": "Com o nome em relevo, encaixa no lápis. 8 cores.",
+          "uses": [
+            { "icon": "livro", "label": "Material escolar" },
+            { "icon": "estrela", "label": "Nome em relevo" },
+            { "icon": "presente", "label": "Lembrança da turma" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.013",
+          "photo": "carrossel/B.013-3.png",
+          "label": "Dia do Professor",
+          "name": "Guia de Leitura",
+          "accent": "foco linha por linha",
+          "line": "Mostra só a linha que está sendo lida. Ajuda na alfabetização.",
+          "uses": [
+            { "icon": "livro", "label": "Leitura em sala" },
+            { "icon": "estrela", "label": "Mais foco" },
+            { "icon": "presente", "label": "Presente útil" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.003",
+          "photo": "carrossel/D.003-3.png",
+          "label": "Dia do Professor",
+          "name": "Vasinho Mãozinhas de Coração",
+          "accent": "carinho em forma de vaso",
+          "line": "Para suculentas e cactos pequenos, na mesa da professora.",
+          "uses": [
+            { "icon": "folha", "label": "Suculentas e cactos" },
+            { "icon": "coracao", "label": "Mãozinhas de coração" },
+            { "icon": "presente", "label": "Presente de gratidão" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.005",
+          "photo": "carrossel/D.005-3.png",
+          "label": "Dia do Professor",
+          "name": "Porta-Joias Redondo",
+          "accent": "organiza com delicadeza",
+          "line": "Bandeja com borda de esferas para anéis, brincos e chaves.",
+          "uses": [
+            { "icon": "casa", "label": "Penteadeira ou mesa" },
+            { "icon": "paleta", "label": "3 cores neutras" },
+            { "icon": "presente", "label": "Presente elegante" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "U.001",
+          "photo": "carrossel/U.001-3.png",
+          "label": "Dia do Professor",
+          "name": "Chaveiro Porta-Anel",
+          "accent": "a aliança sempre segura",
+          "line": "Potinho com tampa de rosca e argola de chaveiro. 8 cores.",
+          "uses": [
+            { "icon": "chave", "label": "Vai no chaveiro" },
+            { "icon": "escudo", "label": "Tampa de rosca" },
+            { "icon": "presente", "label": "Lembrancinha prática" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.004",
+          "photo": "carrossel/B.004-3.png",
+          "label": "Dia do Professor",
+          "name": "Chaveiro Estrela Sensorial",
+          "accent": "gira e acalma",
+          "line": "Estrelas encaixadas que giram. Lembrancinha para a turma toda.",
+          "uses": [
+            { "icon": "mao", "label": "Ocupa as mãos" },
+            { "icon": "estrela", "label": "Articulado" },
+            { "icon": "presente", "label": "Para cada aluno" }
+          ]
+        },
+        {
+          "kind": "cta-cheio",
+          "heading": "Como pedir",
+          "accent": "é rapidinho",
+          "fomo": "Produção limitada — garanta as lembrancinhas da turma",
+          "signature": "Gratidão em cada detalhe"
+        }
+      ],
+      "caption": "Lembrancinhas para o Dia do Professor a partir de R$ 3,90 — impressas em 3D aqui no estúdio. 🍎\n\nNeste carrossel:\n\n• Ponteira de Lápis com o nome de cada aluno\n• Guia de Leitura\n• Vasinho Mãozinhas de Coração\n• Porta-Joias Redondo\n• Chaveiro Porta-Anel\n• Chaveiro Estrela Sensorial\n\nServem também para o encerramento do ano letivo. Arraste para ver preços e cores.\n\n📌 Salve e envie para quem está organizando o presente da turma.\nProdução limitada — pedidos pelo link da bio.\n\n#diadoprofessor #lembrancinhas #presenteparaprofessora #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "04-story-mini-jesus",
+      "type": "story-cheio",
+      "title": "Story · Mini Jesus (combo)",
+      "when": "quarta 14/10, 12h",
+      "sku": "B.009",
+      "background": "stories-fundo/B.009.png",
+      "tag": "Fé e decoração",
+      "headline": "Mini",
+      "script": "Jesus",
+      "subline": "Um pequeno símbolo de fé para o seu dia",
+      "uses": [
+        { "icon": "coracao", "label": "Mais fé no dia a dia" },
+        { "icon": "casa", "label": "Acolhe qualquer cantinho" },
+        { "icon": "presente", "label": "Presente com significado" }
+      ],
+      "note": "Que Ele esteja\nsempre com você",
+      "noteTarget": [0.33, 0.5],
+      "fomo": "Produção limitada · garanta o seu",
+      "scenes": [
+        { "photo": "carrossel/B.009-3.png", "icon": "carro", "title": "No carro", "sub": "No seu caminho" },
+        { "photo": "carrossel/B.009-2.png", "icon": "monitor", "title": "No trabalho", "sub": "Mais leveza no seu dia" },
+        { "photo": "capas-sem-logo/B.009.webp", "icon": "livro", "title": "Na leitura", "sub": "No seu devocional" },
+        { "photo": "carrossel/B.006-3.png", "icon": "casa", "title": "Na estante", "sub": "Decora com significado" }
+      ],
+      "combos": { "unit": "B.009", "kit": "B.006", "kitQty": 4 },
+      "signature": "Fé em cada detalhe",
+      "productBox": [395, 675, 670, 1222]
+    },
+    {
+      "id": "05-reel-professor",
+      "type": "reel-carrossel",
+      "title": "Reel · Lembrancinhas para professores",
+      "when": "quarta 14/10, 19h",
+      "source": "03-carrossel-professor",
+      "music": "trilhas/aconchego-lofi.m4a",
+      "caption": "Mimos para o Dia do Professor que cabem na mesa da sala de aula. 🍎\n\nPonteira com o nome de cada aluno, Guia de Leitura, Vasinho Mãozinhas de Coração e mais — tudo impresso em 3D aqui no estúdio.\n\n📌 Salve e envie para quem organiza o presente da turma.\nPedidos pelo link da bio.\n\n#diadoprofessor #lembrancinhas #reels #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "06-story-arvore-japandi",
+      "type": "story-cheio",
+      "title": "Story · Árvore de Natal Japandi (lançamento)",
+      "when": "quinta 15/10, 12h",
+      "sku": "D.026",
+      "background": "stories-fundo/D.026.png",
+      "tag": "Lançamento",
+      "headline": "Árvore",
+      "script": "Japandi",
+      "subline": "O clima de Natal sem ocupar espaço",
+      "uses": [
+        { "icon": "casa", "label": "Mesa, estante ou aparador" },
+        { "icon": "estrela", "label": "Estrela no topo" },
+        { "icon": "presente", "label": "Presente de Natal" }
+      ],
+      "note": "cabe em\nqualquer cantinho",
+      "noteTarget": [0.3, 0.5],
+      "fomo": "Lançamento · produção limitada",
+      "scenes": [
+        { "photo": "carrossel/D.026-3.png", "icon": "mesa", "title": "Na ceia", "sub": "Centro de mesa" },
+        { "photo": "carrossel/D.026-5.png", "icon": "regua", "title": "2 tamanhos", "sub": "15 ou 20 cm" },
+        { "photo": "carrossel/D.026-2.png", "icon": "paleta", "title": "2 cores", "sub": "Base bege ou marrom" }
+      ],
+      "size": "15 ou 20 cm",
+      "signature": "O Natal começa nos detalhes",
+      "productBox": [355, 675, 615, 1240]
+    },
+    {
+      "id": "07-carrossel-natal-sala",
+      "type": "carousel",
+      "title": "Carrossel · Natal na sala",
+      "when": "quinta 15/10, 19h",
+      "slides": [
+        {
+          "kind": "cover-cheio",
+          "title": "natal-sala",
+          "tag": "Coleção de Natal",
+          "headline": "O Natal chega",
+          "script": "na sua sala",
+          "subline": "Decoração impressa em 3D aqui no estúdio",
+          "fomo": "Produção limitada para o Natal",
+          "items": [
+            { "sku": "D.026", "photo": "carrossel/D.026-2.png", "name": "Árvore Japandi" },
+            { "sku": "D.018", "photo": "carrossel/D.018-2.png", "name": "Quebra-Nozes Canelado" },
+            { "sku": "N.001", "photo": "carrossel/N.001-3.png", "name": "Quebra-Nozes Vermelho" },
+            { "sku": "D.010", "photo": "carrossel/D.010-3.png", "name": "Renas Natalinas" },
+            { "sku": "D.002", "photo": "carrossel/D.002-3.png", "name": "Placa Feliz Natal" },
+            { "sku": "D.012", "photo": "carrossel/D.012-2.png", "name": "Porta-Guardanapo Árvore" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.026",
+          "photo": "carrossel/D.026-4.png",
+          "label": "Lançamento",
+          "name": "Árvore de Natal Japandi",
+          "accent": "o clima de Natal em 15 ou 20 cm",
+          "line": "Copa verde em camadas, estrela no topo e base bege ou marrom.",
+          "size": "15 ou 20 cm",
+          "uses": [
+            { "icon": "casa", "label": "Mesa ou estante" },
+            { "icon": "regua", "label": "2 tamanhos" },
+            { "icon": "presente", "label": "Presente de Natal" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.018",
+          "photo": "carrossel/D.018-3.png",
+          "label": "Natal na sala",
+          "name": "Quebra-Nozes Canelado",
+          "accent": "o guardião da estante",
+          "line": "Versão moderna e canelada do soldadinho, com cerca de 20 cm.",
+          "uses": [
+            { "icon": "casa", "label": "Lareira ou aparador" },
+            { "icon": "paleta", "label": "4 cores" },
+            { "icon": "presente", "label": "Presente de Natal" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "N.001",
+          "photo": "carrossel/N.001-2.png",
+          "label": "Natal na sala",
+          "name": "Quebra-Nozes Vermelho",
+          "accent": "o soldadinho clássico",
+          "line": "Chapéu alto e linhas retas, com cerca de 20 cm. 5 cores.",
+          "uses": [
+            { "icon": "casa", "label": "Estante ou entrada" },
+            { "icon": "paleta", "label": "Combine as cores" },
+            { "icon": "presente", "label": "Presente de Natal" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.010",
+          "photo": "carrossel/D.010-4.png",
+          "label": "Natal na sala",
+          "name": "Renas Natalinas",
+          "accent": "linhas modernas",
+          "line": "Renas estilizadas de 14,5 cm, para aparador ou estante.",
+          "size": "14,5 cm de altura",
+          "uses": [
+            { "icon": "casa", "label": "Aparador ou estante" },
+            { "icon": "paleta", "label": "5 cores" },
+            { "icon": "presente", "label": "Presente de Natal" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.002",
+          "photo": "carrossel/D.002-4.png",
+          "label": "Natal na sala",
+          "name": "Placa Feliz Natal",
+          "accent": "o Natal já começa aqui",
+          "line": "Com floco de neve, para mesa, estante ou perto da árvore.",
+          "uses": [
+            { "icon": "casa", "label": "Mesa ou estante" },
+            { "icon": "paleta", "label": "5 cores" },
+            { "icon": "presente", "label": "Lembrancinha de Natal" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.012",
+          "photo": "carrossel/D.012-4.png",
+          "label": "Natal na sala",
+          "name": "Porta-Guardanapo Árvore",
+          "accent": "organiza e ainda decora",
+          "line": "Para guardanapos de papel ou de tecido na mesa posta.",
+          "size": "15 × 15 cm",
+          "uses": [
+            { "icon": "mesa", "label": "Mesa posta" },
+            { "icon": "estrela", "label": "Decora a ceia" },
+            { "icon": "folha", "label": "Reutilizável todo ano" }
+          ]
+        },
+        {
+          "kind": "cta-cheio",
+          "heading": "Como pedir",
+          "accent": "é rapidinho",
+          "fomo": "Produção limitada — garanta a sua decoração de Natal",
+          "signature": "O Natal começa nos detalhes"
+        }
+      ],
+      "caption": "Decoração de Natal para a sala, com lançamento: a Árvore de Natal Japandi. 🎄\n\nNeste carrossel:\n\n• Árvore de Natal Japandi (15 ou 20 cm) — novidade\n• Quebra-Nozes Canelado\n• Quebra-Nozes Vermelho\n• Renas Natalinas\n• Placa Feliz Natal\n• Porta-Guardanapo Árvore\n\nTudo impresso em 3D aqui no estúdio, em várias cores para combinar com a sua casa. Arraste para ver preços.\n\n📌 Salve para montar a sua decoração e envie para quem já está no clima do Natal.\nA produção é limitada — pedidos pelo link da bio.\n\n#decoracaodenatal #arvoredenatal #natal #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "08-story-quebra-nozes",
+      "type": "story-cheio",
+      "title": "Story · Quebra-Nozes Canelado",
+      "when": "sexta 16/10, 12h",
+      "sku": "D.018",
+      "background": "stories-fundo/D.018.png",
+      "tag": "Coleção de Natal",
+      "headline": "Quebra-Nozes",
+      "script": "canelado",
+      "uses": [
+        { "icon": "casa", "label": "Estante, aparador ou lareira" },
+        { "icon": "paleta", "label": "Combine as cores" },
+        { "icon": "presente", "label": "Presente de Natal" }
+      ],
+      "note": "o guardião\nda sua estante",
+      "fomo": "Produção limitada para o Natal",
+      "scenes": [
+        { "photo": "carrossel/D.018-2.png", "icon": "casa", "title": "Na lareira", "sub": "Clima de Natal" },
+        { "photo": "carrossel/D.018-3.png", "icon": "coracao", "title": "Na entrada", "sub": "Recebe as visitas" },
+        { "photo": "carrossel/D.018-4.png", "icon": "paleta", "title": "4 cores", "sub": "Monte o seu conjunto" }
+      ],
+      "size": "cerca de 20 cm",
+      "signature": "O Natal começa na decoração",
+      "productBox": [446, 618, 632, 1237],
+      "noteTarget": [0.39, 0.5]
+    },
+    {
+      "id": "09-reel-natal-sala",
+      "type": "reel-vitrine",
+      "title": "Reel · Natal na sala",
+      "when": "sexta 16/10, 19h",
+      "hook": "O Natal chega na sua sala",
+      "music": "trilhas/natal-suave.m4a",
+      "scenes": [
+        { "sku": "D.026", "photo": "carrossel/D.026-4.png", "label": "Árvore de Natal Japandi" },
+        { "sku": "D.018", "photo": "carrossel/D.018-2.png", "label": "Quebra-Nozes Canelado" },
+        { "sku": "D.010", "photo": "carrossel/D.010-4.png", "label": "Renas Natalinas" },
+        { "sku": "D.002", "photo": "carrossel/D.002-3.png", "label": "Placa Feliz Natal" },
+        { "sku": "D.026", "photo": "carrossel/D.026-3.png", "label": "Árvore Japandi na ceia" }
+      ],
+      "caption": "O Natal chega na sua sala em peças impressas em 3D aqui no estúdio. 🎄\n\nÁrvore de Natal Japandi (nossa novidade), Quebra-Nozes Canelado, Renas e Placa Feliz Natal — cada uma em várias cores para combinar com a sua casa.\n\n📌 Salve para montar a sua decoração e envie para quem ama o Natal.\nProdução limitada — pedidos pelo link da bio.\n\n#decoracaodenatal #arvoredenatal #natal #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "10-story-como-pedir",
+      "type": "story",
+      "kind": "cta-cheio",
+      "title": "Story · Como pedir",
+      "when": "sábado 17/10, 12h",
+      "heading": "Como pedir",
+      "accent": "é rapidinho",
+      "fomo": "Produção limitada — garanta o seu",
+      "signature": "Feito à mão, camada por camada"
+    },
+    {
+      "id": "11-carrossel-fe",
+      "type": "carousel",
+      "title": "Carrossel · Presentes com significado",
+      "when": "domingo 18/10, 19h",
+      "slides": [
+        {
+          "kind": "cover-cheio",
+          "title": "fe",
+          "tag": "Fé e decoração",
+          "headline": "Presentes com",
+          "script": "significado",
+          "subline": "Peças de fé impressas em 3D aqui no estúdio",
+          "fomo": "Feito à mão · produção limitada",
+          "items": [
+            { "sku": "B.009", "photo": "carrossel/B.009-2.png", "name": "Mini Jesus Sentado" },
+            { "sku": "B.006", "photo": "carrossel/B.006-2.png", "name": "Kit 4 Mini Jesus" },
+            { "sku": "D.014", "photo": "carrossel/D.014-2.png", "name": "Presépio Minimalista" },
+            { "sku": "D.015", "photo": "carrossel/D.015-2.png", "name": "Túmulo Vazio Ele Vive" },
+            { "sku": "D.003", "photo": "carrossel/D.003-4.png", "name": "Vasinho Mãozinhas" },
+            { "sku": "B.013", "photo": "carrossel/B.013-4.png", "name": "Guia de Leitura" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.009",
+          "photo": "carrossel/B.009-3.png",
+          "label": "Fé e decoração",
+          "name": "Mini Jesus Sentado",
+          "accent": "fé no seu caminho",
+          "line": "8 cm, para o carro, a mesa de trabalho ou a estante.",
+          "size": "8 cm",
+          "uses": [
+            { "icon": "carro", "label": "No carro" },
+            { "icon": "monitor", "label": "No trabalho" },
+            { "icon": "presente", "label": "Presente com fé" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.006",
+          "photo": "carrossel/B.006-3.png",
+          "label": "Fé e decoração",
+          "name": "Kit 4 Mini Jesus",
+          "accent": "para presentear quem você ama",
+          "line": "Quatro Mini Jesus sentados, para a família ou o grupo.",
+          "uses": [
+            { "icon": "coracao", "label": "Para a família" },
+            { "icon": "casa", "label": "Na estante" },
+            { "icon": "presente", "label": "Lembrança do grupo" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.014",
+          "photo": "carrossel/D.014-3.png",
+          "label": "Fé e decoração",
+          "name": "Presépio Minimalista",
+          "accent": "o verdadeiro sentido do Natal",
+          "line": "José, Maria e o Menino Jesus sob a estrela de Belém.",
+          "size": "12 cm de altura",
+          "uses": [
+            { "icon": "estrela", "label": "Estrela de Belém" },
+            { "icon": "casa", "label": "Sala ou aparador" },
+            { "icon": "presente", "label": "Presente que emociona" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.015",
+          "photo": "carrossel/D.015-3.png",
+          "label": "Fé e decoração",
+          "name": "Túmulo Vazio Ele Vive",
+          "accent": "Ele vive!",
+          "line": "O túmulo vazio com a pedra \"Ele vive\", em design minimalista.",
+          "uses": [
+            { "icon": "coracao", "label": "Lembra da esperança" },
+            { "icon": "casa", "label": "Mesa ou estante" },
+            { "icon": "presente", "label": "Presente com fé" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.003",
+          "photo": "carrossel/D.003-3.png",
+          "label": "Fé e decoração",
+          "name": "Vasinho Mãozinhas de Coração",
+          "accent": "amor que floresce",
+          "line": "Para suculentas e cactos pequenos. Branco, bege ou marrom.",
+          "uses": [
+            { "icon": "folha", "label": "Suculentas e cactos" },
+            { "icon": "coracao", "label": "Mãozinhas de coração" },
+            { "icon": "presente", "label": "Presente de carinho" }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.013",
+          "photo": "carrossel/B.013-3.png",
+          "label": "Fé e decoração",
+          "name": "Guia de Leitura",
+          "accent": "para o seu devocional",
+          "line": "Mostra só a linha que está sendo lida. Ajuda a manter o foco.",
+          "uses": [
+            { "icon": "livro", "label": "Leitura da Bíblia" },
+            { "icon": "estrela", "label": "Mais foco" },
+            { "icon": "presente", "label": "Presente útil" }
+          ]
+        },
+        {
+          "kind": "cta-cheio",
+          "heading": "Como pedir",
+          "accent": "é rapidinho",
+          "fomo": "Produção limitada — garanta o seu presente",
+          "signature": "Fé em cada detalhe"
+        }
+      ],
+      "caption": "Presentes com significado para quem caminha com fé. ✝️\n\nNeste carrossel:\n\n• Mini Jesus Sentado (8 cm)\n• Kit 4 Mini Jesus\n• Presépio Minimalista Sagrada Família\n• Túmulo Vazio Ele Vive\n• Vasinho Mãozinhas de Coração\n• Guia de Leitura para o devocional\n\nTudo impresso em 3D aqui no estúdio. Arraste para ver preços e cores.\n\n📌 Salve e envie para quem merece um presente com fé.\nProdução limitada — pedidos pelo link da bio.\n\n#presentecomfe #decoracaocrista #presepio #impressao3d #ac3dstudio"
+    }
+  ]
+}
