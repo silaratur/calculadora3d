@@ -1174,6 +1174,254 @@ async function reelShowcase(post, products, dir) {
 // loja lê): sobrescreve o banco local, que costuma estar desatualizado, e para
 // a geração se um produto da pauta não estiver à venda na loja ou se a legenda
 // citar um valor em R$ que não é preço de nenhum produto daquele post.
+
+// ── "Veja o tamanho real" (guia da marca, seção 09) ─────────────────────────
+// A peça recortada da foto de fundo liso, desenhada na MESMA escala de objetos
+// que todo mundo conhece (caneta, caneca, celular…), com cotas em cm, preço e
+// uma faixa de detalhes. As medidas têm de estar na descrição do Catálogo.
+//
+// slide/story: { kind|type: "tamanho-real", sku, cutout: { photo, box:[x,y,w,h] } (box na foto 1024×768),
+//   items: [{ label?, altura, largura?, profundidade? }]  (P/M/G = um item por tamanho, mesma peça),
+//   compare: ["caneca", "caneta"], phrase?, seal?, details: [{ photo, title, sub }] }
+const REFS = {
+  caneta: { label: "Caneta", cm: 14, w: 1.1 },
+  caneca: { label: "Caneca", cm: 9.5, w: 8.6 },
+  celular: { label: "Celular", cm: 15, w: 7.2 },
+  lapis: { label: "Lápis", cm: 17.5, w: 0.8 },
+  moeda: { label: "Moeda R$ 1", cm: 2.7, w: 2.7 },
+};
+const cmText = (value) => `${String(value).replace(".", ",")} cm`;
+
+/** Objeto de comparação em SVG, já na escala (px por cm). */
+function refObject(kind, k) {
+  const r = REFS[kind];
+  const h = Math.round(r.cm * k);
+  const w = Math.max(Math.round(r.w * k), 6);
+  if (kind === "caneta") {
+    const tip = Math.round(h * 0.09);
+    return { w: w + 8, h, svg: `<rect x="4" y="0" width="${w}" height="${h - tip}" rx="${w / 2}" fill="#2b2628"/><rect x="${w + 1}" y="${h * 0.04}" width="5" height="${h * 0.3}" rx="2.5" fill="#55494c"/><path d="M4 ${h - tip} L${4 + w} ${h - tip} L${4 + w / 2} ${h} Z" fill="#b9b3ad"/><rect x="4" y="${h * 0.62}" width="${w}" height="${h * 0.05}" fill="#3d3638"/>` };
+  }
+  if (kind === "lapis") {
+    const tip = Math.round(h * 0.07);
+    return { w, h, svg: `<rect x="0" y="0" width="${w}" height="${h - tip}" fill="#e8b93a"/><rect x="0" y="0" width="${w}" height="${h * 0.04}" fill="#d98c8c"/><path d="M0 ${h - tip} L${w} ${h - tip} L${w / 2} ${h} Z" fill="#e6c9a4"/>` };
+  }
+  if (kind === "celular") {
+    return { w, h, svg: `<rect x="0" y="0" width="${w}" height="${h}" rx="${w * 0.14}" fill="#26232a"/><rect x="${w * 0.06}" y="${w * 0.06}" width="${w * 0.88}" height="${h - w * 0.12}" rx="${w * 0.1}" fill="#3b4250"/><rect x="${w * 0.38}" y="${w * 0.1}" width="${w * 0.24}" height="${w * 0.06}" rx="${w * 0.03}" fill="#16141a"/>` };
+  }
+  if (kind === "moeda") {
+    return { w, h: w, svg: `<circle cx="${w / 2}" cy="${w / 2}" r="${w / 2}" fill="#c9a25a"/><circle cx="${w / 2}" cy="${w / 2}" r="${w * 0.33}" fill="#d8d2c6"/>` };
+  }
+  // caneca: corpo, alça, borda e café
+  const body = Math.round(w * 0.8);
+  const handle = w - body;
+  return { w, h, svg: `<path d="M${body} ${h * 0.22} q ${handle * 1.6} 0 ${handle * 1.2} ${h * 0.28} q -${handle * 0.3} ${h * 0.2} -${handle * 1.2} ${h * 0.22}" fill="none" stroke="#efe7dc" stroke-width="${Math.max(handle * 0.45, 5)}"/><rect x="0" y="${h * 0.04}" width="${body}" height="${h * 0.96}" rx="${body * 0.12}" fill="#fbf7f1" stroke="#e1d6c8" stroke-width="2"/><ellipse cx="${body / 2}" cy="${h * 0.05}" rx="${body / 2}" ry="${h * 0.045}" fill="#e9e0d4"/><ellipse cx="${body / 2}" cy="${h * 0.065}" rx="${body * 0.42}" ry="${h * 0.03}" fill="#6b4a36"/>` };
+}
+
+/** Recorta a peça da foto de fundo liso (fundo vira transparente pela distância à cor dos cantos). */
+async function cutoutPiece(photo, box) {
+  const base = await sharp(path.join(PHOTOS, photo)).resize(1024, 768, { fit: "cover" }).extract({ left: box[0], top: box[1], width: box[2], height: box[3] }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { data, info } = base;
+  const at = (x, y) => { const i = (y * info.width + x) * 3; return [data[i], data[i + 1], data[i + 2]]; };
+  // Cor do fundo = mediana da borda inteira (cantos sozinhos erram com sombra ou degradê).
+  const border = [];
+  for (let x = 0; x < info.width; x += 2) border.push(at(x, 1), at(x, info.height - 2));
+  for (let y = 0; y < info.height; y += 2) border.push(at(1, y), at(info.width - 2, y));
+  const bg = [0, 1, 2].map((c) => border.map((px) => px[c]).sort((p, q) => p - q)[Math.floor(border.length / 2)]);
+  // Fundo = tudo que é parecido com os cantos E está ligado à borda (preenchimento),
+  // assim as partes claras de dentro da peça não somem.
+  const n = info.width * info.height;
+  const dist = new Float32Array(n);
+  for (let p = 0; p < n; p++) dist[p] = Math.abs(data[p * 3] - bg[0]) + Math.abs(data[p * 3 + 1] - bg[1]) + Math.abs(data[p * 3 + 2] - bg[2]);
+  const limit = 60;
+  const isBg = new Uint8Array(n);
+  const stack = [];
+  const push = (p) => { if (!isBg[p] && dist[p] < limit) { isBg[p] = 1; stack.push(p); } };
+  for (let x = 0; x < info.width; x++) { push(x); push((info.height - 1) * info.width + x); }
+  for (let y = 0; y < info.height; y++) { push(y * info.width); push(y * info.width + info.width - 1); }
+  while (stack.length) {
+    const p = stack.pop(); const x = p % info.width; const y = (p - x) / info.width;
+    if (x > 0) push(p - 1); if (x < info.width - 1) push(p + 1); if (y > 0) push(p - info.width); if (y < info.height - 1) push(p + info.width);
+  }
+  const mask = Buffer.alloc(n);
+  for (let p = 0; p < n; p++) mask[p] = isBg[p] ? 0 : 255;
+  const soft = await sharp(mask, { raw: { width: info.width, height: info.height, channels: 1 } }).blur(1.2).extractChannel(0).raw().toBuffer();
+  const rgba = Buffer.alloc(n * 4);
+  for (let p = 0; p < n; p++) { rgba[p * 4] = data[p * 3]; rgba[p * 4 + 1] = data[p * 3 + 1]; rgba[p * 4 + 2] = data[p * 3 + 2]; rgba[p * 4 + 3] = soft[p]; }
+  return sharp(rgba, { raw: { width: info.width, height: info.height, channels: 4 } }).png().toBuffer();
+}
+
+/** Seta de cota com as pontas e o valor numa pílula vinho (JetBrains Mono). */
+async function dimension({ vertical, length, label }) {
+  const pillText = await text(label, { size: 22, weight: "mono", color: C.cream });
+  const pw = pillText.width + 26;
+  const ph = 38;
+  const a = 9;
+  if (vertical) {
+    const W0 = pw + 22;
+    const svg = `<svg width="${W0}" height="${length}"><line x1="${W0 - 10}" y1="2" x2="${W0 - 10}" y2="${length - 2}" stroke="${C.copper}" stroke-width="3"/><line x1="${W0 - 18}" y1="2" x2="${W0 - 2}" y2="2" stroke="${C.copper}" stroke-width="3"/><line x1="${W0 - 18}" y1="${length - 2}" x2="${W0 - 2}" y2="${length - 2}" stroke="${C.copper}" stroke-width="3"/><path d="M${W0 - 10 - a / 1.4} ${a + 4} L${W0 - 10} 4 L${W0 - 10 + a / 1.4} ${a + 4}" fill="none" stroke="${C.copper}" stroke-width="3"/><path d="M${W0 - 10 - a / 1.4} ${length - a - 4} L${W0 - 10} ${length - 4} L${W0 - 10 + a / 1.4} ${length - a - 4}" fill="none" stroke="${C.copper}" stroke-width="3"/><rect x="0" y="${length / 2 - ph / 2}" width="${pw}" height="${ph}" rx="${ph / 2}" fill="${C.copper}"/></svg>`;
+    const img = await sharp(Buffer.from(svg)).composite([{ input: pillText.input, left: 13, top: Math.round(length / 2 - pillText.height / 2) }]).png().toBuffer();
+    return { input: img, width: W0, height: length };
+  }
+  const H0 = ph + 20;
+  const svg = `<svg width="${Math.max(length, pw)}" height="${H0}"><line x1="2" y1="8" x2="${length - 2}" y2="8" stroke="${C.copper}" stroke-width="3"/><line x1="2" y1="0" x2="2" y2="16" stroke="${C.copper}" stroke-width="3"/><line x1="${length - 2}" y1="0" x2="${length - 2}" y2="16" stroke="${C.copper}" stroke-width="3"/><rect x="${(Math.max(length, pw) - pw) / 2}" y="${H0 - ph}" width="${pw}" height="${ph}" rx="${ph / 2}" fill="${C.copper}"/></svg>`;
+  const img = await sharp(Buffer.from(svg)).composite([{ input: pillText.input, left: Math.round((Math.max(length, pw) - pillText.width) / 2), top: H0 - ph + Math.round((ph - pillText.height) / 2) }]).png().toBuffer();
+  return { input: img, width: Math.max(length, pw), height: H0 };
+}
+
+/** Confere que cada medida usada está na descrição do Catálogo (nunca inventar medida). */
+function checkMeasures(spec, product) {
+  const description = product.description || "";
+  for (const item of spec.items) {
+    for (const value of [item.altura, item.largura, item.profundidade].filter(Boolean)) {
+      if (!description.includes(String(value).replace(".", ","))) throw new Error(`${spec.id || spec.sku}: a medida ${cmText(value)} não está na descrição do Catálogo de ${product.sku} — cadastre a medida antes de publicar.`);
+    }
+  }
+}
+
+async function sizeReal(spec, product, { height, index, total, story }) {
+  checkMeasures(spec, product);
+  const rand = random(seedOf(`${spec.sku}-tamanho`));
+  const H = height;
+  const top = story ? 150 : 0;
+  const layers = [];
+  // 1 · Gancho
+  layers.push({ input: await logo(LOGO, story ? 104 : 92), left: 44, top: top + 34 });
+  const seal = spec.seal || "Impressão 3D com amor";
+  const d = story ? 196 : 176;
+  const words = await text(seal, { size: story ? 34 : 31, weight: "hand", color: C.cream, width: d - 50, align: "centre", lineHeight: 0.92 });
+  const disc = Buffer.from(`<svg width="${d}" height="${d}"><circle cx="${d / 2}" cy="${d / 2}" r="${d / 2 - 4}" fill="${C.copper}"/><circle cx="${d / 2}" cy="${d / 2}" r="${d / 2 - 14}" fill="none" stroke="${C.cream}" stroke-opacity=".45" stroke-width="2" stroke-dasharray="7 7"/></svg>`);
+  const tilted = await rotated({ input: await sharp(disc).composite([{ input: words.input, left: Math.round((d - words.width) / 2), top: Math.round((d - words.height) / 2) }]).png().toBuffer() }, 8);
+  layers.push({ input: tilted.input, left: W - 36 - tilted.width, top: top + 26 });
+  let y = top + (story ? 150 : 134);
+  const head = await text(spec.headline || "Veja o", { size: story ? 84 : 72, weight: 800, color: C.ink });
+  layers.push({ ...head, left: 44, top: y });
+  y += head.height - 18;
+  const script = await rotated(await text(spec.script || "tamanho real", { size: story ? 150 : 128, weight: "hand", color: C.copper }), -3);
+  layers.push({ input: brush(script.width + 40, Math.round(script.height * 0.5), "#ead9c6", rand), left: 30, top: y + Math.round(script.height * 0.42) });
+  layers.push({ ...script, left: 44, top: y });
+  const heart = doodle.heart(56, C.copper, rand);
+  layers.push({ ...heart, left: 44 + script.width + 4, top: y + Math.round(script.height * 0.32) });
+  y += script.height + 8;
+  const sub = await text((spec.subline || product.name).toUpperCase(), { size: 21, weight: 800, color: C.cream, spacing: 0.1 });
+  const sw = Math.min(sub.width + 44, W - 88);
+  layers.push({ input: pill("", { width: sw, height: 48, fill: C.copper }), left: 44, top: y });
+  layers.push({ ...sub, left: 66, top: y + Math.round((48 - sub.height) / 2) });
+  y += 48 + 22;
+
+  // 2 · Palco em escala
+  const stageTop = y;
+  const detailsH = spec.details?.length ? (story ? 290 : 186) : 0;
+  const bottomReserve = story ? 1920 - 1690 + 140 : 96;
+  const stageH = H - stageTop - detailsH - bottomReserve - (detailsH ? 22 : 0);
+  const sx = 40, sw2 = W - 80;
+  const floorY = stageTop + stageH - Math.round(stageH * 0.16);
+  layers.push({ input: Buffer.from(`<svg width="${sw2}" height="${stageH}"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6ece1"/><stop offset="1" stop-color="#ead9c6"/></linearGradient></defs><rect width="${sw2}" height="${stageH}" rx="26" fill="url(#g)"/><rect x="0" y="${floorY - stageTop}" width="${sw2}" height="${stageTop + stageH - floorY}" rx="0" fill="#dcc3a6" opacity=".55"/><rect x="0" y="${floorY - stageTop}" width="${sw2}" height="3" fill="#c9ab8a" opacity=".7"/></svg>`), left: sx, top: stageTop });
+  // Frase e preço dentro do palco
+  let dimsTop = stageTop + 24;
+  if (spec.phrase) {
+    const ph = await rotated(await text(spec.phrase, { size: story ? 42 : 36, weight: "hand", color: C.copper, width: 430, lineHeight: 0.95 }), -2);
+    layers.push({ ...ph, left: sx + 26, top: stageTop + 20 });
+    dimsTop = stageTop + 30 + ph.height;
+  }
+  const sizes = parseSizeList(product);
+  const priceValue = sizes.length ? Math.min(...sizes.map((s) => s.price)) : product.price;
+  const price = await text(money(priceValue), { size: story ? 50 : 44, weight: "mono", color: C.ink });
+  const pxp = sx + sw2 - 30 - price.width;
+  if (sizes.length > 1) {
+    const from = await text("a partir de", { size: 28, weight: "hand", color: C.copper });
+    layers.push({ ...from, left: pxp - from.width - 8, top: stageTop + 30 });
+  }
+  layers.push({ input: brush(price.width + 44, price.height + 16, "#f3c9a8", rand), left: pxp - 16, top: stageTop + 18 });
+  layers.push({ ...price, left: pxp + 4, top: stageTop + 26 });
+
+  const piece = await cutoutPiece(spec.cutout.photo, spec.cutout.box);
+  const aspect = spec.cutout.box[2] / spec.cutout.box[3];
+  const compare = (spec.compare || ["caneca", "caneta"]).filter((kind) => REFS[kind]);
+  const usableH = floorY - (stageTop + (story ? 190 : 160)) - 10;
+  const tallest = Math.max(...spec.items.map((item) => item.altura), ...compare.map((kind) => REFS[kind].cm));
+  const gap = 46;
+  const widthCm = spec.items.reduce((sum, item) => sum + item.altura * aspect, 0) + compare.reduce((sum, kind) => sum + REFS[kind].w + (kind === "caneta" ? 0.4 : 0), 0);
+  const dimRoom = 120 * spec.items.length;
+  const k = Math.min(usableH / tallest, (sw2 - 80 - dimRoom - gap * (spec.items.length + compare.length)) / widthCm);
+  let x = sx + 40;
+  const labelOf = async (label) => text(label, { size: 19, weight: 700, color: C.ink });
+  for (const item of spec.items) {
+    const ph = Math.round(item.altura * k);
+    const pw = Math.round(ph * aspect);
+    const dim = await dimension({ vertical: true, length: ph, label: cmText(item.altura) });
+    layers.push({ ...dim, left: x, top: floorY - ph });
+    x += dim.width + 10;
+    layers.push({ input: Buffer.from(`<svg width="${pw + 40}" height="24"><ellipse cx="${(pw + 40) / 2}" cy="12" rx="${pw / 2 + 12}" ry="9" fill="#5a3a2a" opacity=".18"/></svg>`), left: x - 20, top: floorY - 14 });
+    layers.push({ input: await sharp(piece).resize(pw, ph, { fit: "fill" }).png().toBuffer(), left: x, top: floorY - ph });
+    if (item.largura) {
+      const wdim = await dimension({ vertical: false, length: Math.round(item.largura * k), label: cmText(item.largura) });
+      layers.push({ ...wdim, left: x + Math.round((pw - wdim.width) / 2), top: floorY + 10 });
+    } else if (item.label) {
+      const lab = await labelOf(item.label);
+      layers.push({ ...lab, left: x + Math.round((pw - lab.width) / 2), top: floorY + 16 });
+    }
+    if (item.label && item.largura) {
+      const lab = await text(item.label, { size: 18, weight: 700, color: C.copper });
+      layers.push({ ...lab, left: x + Math.round((pw - lab.width) / 2), top: floorY - ph - lab.height - 8 });
+    }
+    x += pw + gap;
+  }
+  let labelRight = -1;
+  for (const kind of compare) {
+    const obj = refObject(kind, k);
+    layers.push({ input: Buffer.from(`<svg width="${obj.w}" height="${obj.h}">${obj.svg}</svg>`), left: x, top: floorY - obj.h });
+    const lab = await text(`${REFS[kind].label} · ${cmText(REFS[kind].cm)}`, { size: story ? 22 : 18, weight: 500, color: C.muted });
+    // Legendas que se encostariam descem para uma segunda linha.
+    const lx = Math.max(sx + 8, Math.min(x + Math.round((obj.w - lab.width) / 2), sx + sw2 - lab.width - 8));
+    const row = lx < labelRight + 10 ? 1 : 0;
+    layers.push({ ...lab, left: lx, top: floorY + 18 + row * (lab.height + 8) });
+    if (!row) labelRight = lx + lab.width;
+    x += obj.w + gap;
+  }
+  // Dimensões completas por escrito, no rodapé do palco
+  const dimsLine = spec.items.map((item) => `${item.label ? `${item.label}: ` : ""}${[item.altura, item.largura, item.profundidade].filter(Boolean).map((v) => String(v).replace(".", ",")).join(" × ")} cm`).join("   ·   ");
+  const dl = await text(dimsLine, { size: 20, weight: 700, color: C.ink });
+  layers.push({ input: icon("regua", 24, C.copper), left: sx + 26, top: dimsTop });
+  layers.push({ ...dl, left: sx + 58, top: dimsTop + 2 });
+
+  // 4 · Faixa de detalhes (cartões translúcidos)
+  if (detailsH) {
+    const cards = spec.details.slice(0, 3);
+    const cy = stageTop + stageH + 22;
+    const cw = Math.floor((W - 88 - 20 * (cards.length - 1)) / cards.length);
+    const photoH = detailsH - (story ? 78 : 66);
+    for (const [i, card] of cards.entries()) {
+      const cx = 44 + i * (cw + 20);
+      layers.push({ input: Buffer.from(`<svg width="${cw}" height="${detailsH}"><rect x="1" y="1" width="${cw - 2}" height="${detailsH - 2}" rx="18" fill="${C.paper}" fill-opacity=".86" stroke="${C.border}" stroke-width="2"/></svg>`), left: cx, top: cy });
+      layers.push({ input: await roundedPhoto(card.photo, cw - 16, photoH, 13), left: cx + 8, top: cy + 8 });
+      const t = await text(card.title.toUpperCase(), { size: story ? 24 : 18, weight: 800, color: C.copper, spacing: 0.06, width: cw - 24 });
+      layers.push({ ...t, left: cx + 12, top: cy + photoH + 16 });
+      if (card.sub) {
+        const s = await text(card.sub, { size: story ? 21 : 16, weight: 500, color: C.muted, width: cw - 24 });
+        layers.push({ ...s, left: cx + 12, top: cy + photoH + 18 + t.height });
+      }
+    }
+  }
+
+  // 5 · Fechamento
+  if (story) {
+    const cta = await text("Peça seu orçamento pelo link da bio", { size: 30, weight: 800, color: C.cream });
+    const cw = cta.width + 120;
+    const ctaTop = 1670 - 96 - 14;
+    layers.push({ input: pill("", { width: cw, height: 96, fill: "#5f6549" }), left: Math.round((W - cw) / 2), top: ctaTop });
+    layers.push({ input: icon("link", 34, C.cream, 2.2), left: Math.round((W - cw) / 2) + 34, top: ctaTop + 31 });
+    layers.push({ ...cta, left: Math.round((W - cw) / 2) + 84, top: ctaTop + Math.round((96 - cta.height) / 2) });
+    if (ctaTop + 96 > STORY_SAFE_BOTTOM) throw new Error("tamanho-real: botão passou da área segura do story");
+    return sharp({ create: { width: W, height: H, channels: 4, background: C.cream } }).composite(layers).jpeg({ quality: 92 }).toBuffer();
+  }
+  await footerCheio(layers, { index, total });
+  return sharp(canvas(CH)).composite(layers).jpeg({ quality: 92 }).toBuffer();
+}
+
+function parseSizeList(product) {
+  try { return JSON.parse(product.sizeOptions || "[]").filter((s) => s && s.price > 0); } catch { return []; }
+}
+
 const CATALOG_URL = process.env.INSTAGRAM_CATALOG_URL || "https://calculadora3d.silaratur.cloud/api/public/products";
 async function syncWithCatalog(spec, products) {
   const response = await fetch(CATALOG_URL, { signal: AbortSignal.timeout(15000) }).catch((error) => ({ ok: false, statusText: error.message }));
@@ -1192,7 +1440,7 @@ async function syncWithCatalog(spec, products) {
     for (const sku of skus) {
       const item = catalog[sku];
       if (!item) { problems.push(`${post.id}: ${sku} não está à venda na loja`); continue; }
-      products[sku] = { ...(products[sku] || { sku, name: item.name, description: item.description || "" }), price: item.price, colors: JSON.stringify(item.colors || []) };
+      products[sku] = { ...(products[sku] || { sku, name: item.name, description: item.description || "" }), price: item.price, colors: JSON.stringify(item.colors || []), description: item.description || "", sizeOptions: JSON.stringify(item.sizes || []) };
     }
     const prices = new Set(skus.filter((sku) => catalog[sku]).map((sku) => money(catalog[sku].price)));
     for (const [value] of (post.caption || "").matchAll(/R\$\s?\d+(?:,\d{2})?/g)) {
@@ -1236,12 +1484,15 @@ async function syncWithCatalog(spec, products) {
           for (const item of slide.items || []) productOf(item.sku);
           buffer = await coverCheio(slide, products);
         } else if (slide.kind === "cta-cheio") buffer = await ctaCheio(slide, i + 1, post.slides.length);
+        else if (slide.kind === "tamanho-real") buffer = await sizeReal(slide, productOf(slide.sku), { height: CH, index: i + 1, total: post.slides.length });
         else if (slide.kind === "product-cheio") buffer = await productCheio(slide, productOf(slide.sku), i + 1, post.slides.length);
         else buffer = await productSlide(slide, productOf(slide.sku), ++index, numbered);
         fs.writeFileSync(file, buffer);
       }
     } else if (post.type === "story-cheio") {
       fs.writeFileSync(path.join(dir, "story.jpg"), await storyFull(post, productOf(post.sku), products));
+    } else if (post.type === "story-tamanho") {
+      fs.writeFileSync(path.join(dir, "story.jpg"), await sizeReal(post, productOf(post.sku), { height: 1920, story: true }));
     } else if (post.type === "story-rico") {
       fs.writeFileSync(path.join(dir, "story.jpg"), await storyRich(post, productOf(post.sku)));
     } else if (post.type === "story" && post.kind === "cta-cheio") {
