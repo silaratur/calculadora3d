@@ -624,7 +624,14 @@ export default function CatalogPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!response.ok) { setFeedback("Não foi possível salvar o produto. Verifique o login e os campos."); return; }
+    if (!response.ok) {
+      // Diz qual campo foi recusado em vez da mensagem genérica.
+      const body = (await response.json().catch(() => null)) as { error?: string | { fieldErrors?: Record<string, string[]> } } | null;
+      const fields = typeof body?.error === "object" ? Object.keys(body.error.fieldErrors ?? {}) : [];
+      const fieldNames: Record<string, string> = { sizeOptions: "tamanhos (nome com até 80 letras e preço maior que zero)", name: "nome", category: "categoria", colors: "cores", extraImages: "fotos", description: "descrição", sourceUrl: "link de origem" };
+      setFeedback(response.status === 401 ? "Sua sessão expirou — entre de novo para salvar." : fields.length ? `Não foi possível salvar: confira ${fields.map((field) => fieldNames[field] ?? field).join(", ")}.` : typeof body?.error === "string" ? body.error : "Não foi possível salvar o produto. Verifique os campos.");
+      return;
+    }
     setPublishAsk(false);
     setDraft(emptyDraft);
     setEditingId(null);
@@ -867,7 +874,7 @@ export default function CatalogPage() {
                     <p className="field-hint">Deixe vazio para tamanho único. Comece pelo tamanho deste cadastro; os outros têm o preço que você definir aqui (promoções aplicam o mesmo % em todos).</p>
                     {draft.sizes.map((size, index) => (
                       <div className="size-option-row" key={index}>
-                        <label>Nome<input value={size.name} onChange={(event) => setDraft({ ...draft, sizes: draft.sizes.map((item, i) => (i === index ? { ...item, name: event.target.value } : item)) })} placeholder="Ex.: Grande · 20 cm" /></label>
+                        <label>Nome<input maxLength={80} value={size.name} onChange={(event) => setDraft({ ...draft, sizes: draft.sizes.map((item, i) => (i === index ? { ...item, name: event.target.value } : item)) })} placeholder="Ex.: Grande · 20 cm" /></label>
                         <label>Preço (R$)<input inputMode="decimal" value={size.price} onChange={(event) => setDraft({ ...draft, sizes: draft.sizes.map((item, i) => (i === index ? { ...item, price: event.target.value } : item)) })} placeholder="44,90" /></label>
                         <button type="button" className="quiet-button" onClick={() => setDraft({ ...draft, sizes: draft.sizes.filter((_, i) => i !== index) })}>Remover</button>
                       </div>

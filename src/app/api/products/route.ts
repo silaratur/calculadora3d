@@ -33,7 +33,8 @@ const productSchema = z.object({
   colors: z.array(z.string().trim().min(1).max(30)).max(12).optional(),
   personalizable: z.boolean().optional(),
   // Tamanhos com preço próprio na loja (vazio = tamanho único).
-  sizeOptions: z.array(z.object({ name: z.string().trim().min(1).max(40), price: z.number().positive() })).max(6).optional(),
+  // Nome com até 80 letras: cabe a medida completa ("M: aproximadamente 17,6 cm de largura × 19 cm de altura.").
+  sizeOptions: z.array(z.object({ name: z.string().trim().min(1).max(80), price: z.number().positive() })).max(6).optional(),
   sourceUrl: z.string().trim().max(500).optional(),
   brandReview: z.enum(["PENDING", "PROPOSED", "DONE"]).optional(),
   // Campos do formulário atual (src/app/catalog) — produtos antigos, criados

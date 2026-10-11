@@ -26,7 +26,7 @@ const itemSchema = z.object({
   sku: z.string().trim().min(1).max(20),
   qty: z.coerce.number().int().min(1).max(999).catch(1),
   color: text(30),
-  size: text(40),
+  size: text(80), // mesmo limite do cadastro de tamanhos — cortar trocaria o tamanho escolhido
   personalization: text(60),
 });
 
