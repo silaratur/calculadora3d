@@ -106,10 +106,10 @@
           "sub": "Uma para cada um"
         },
         {
-          "photo": "carrossel/B.018-5.png",
-          "icon": "presente",
-          "title": "Na sala de aula",
-          "sub": "Lembrança da turma"
+          "photo": "carrossel/B.018-6.png",
+          "icon": "regua",
+          "title": "Tamanho real",
+          "sub": "1,5 × 1,3 cm"
         }
       ],
       "colorsNote": "8 cores",
@@ -126,7 +126,8 @@
       "noteTarget": [
         0.24,
         0.56
-      ]
+      ],
+      "size": "furo de 7 mm · lápis padrão"
     },
     {
       "id": "03-carrossel-professor",
@@ -146,12 +147,12 @@
             {
               "sku": "B.018",
               "photo": "carrossel/B.018-2.png",
-              "name": "Ponteira com Nome"
+              "name": "Ponteira · 1,5 cm"
             },
             {
               "sku": "B.013",
               "photo": "carrossel/B.013-2.png",
-              "name": "Guia de Leitura"
+              "name": "Guia de Leitura · 15 cm"
             },
             {
               "sku": "D.003",
@@ -178,7 +179,7 @@
         {
           "kind": "product-cheio",
           "sku": "B.018",
-          "photo": "carrossel/B.018-3.png",
+          "photo": "carrossel/B.018-6.png",
           "label": "Dia do Professor",
           "name": "Ponteira com Nome",
           "accent": "um para cada aluno",
@@ -196,12 +197,13 @@
               "icon": "presente",
               "label": "Lembrança da turma"
             }
-          ]
+          ],
+          "size": "1,5 × 1,3 cm · furo de 7 mm"
         },
         {
           "kind": "product-cheio",
           "sku": "B.013",
-          "photo": "carrossel/B.013-3.png",
+          "photo": "carrossel/B.013-6.png",
           "label": "Dia do Professor",
           "name": "Guia de Leitura",
           "accent": "foco linha por linha",
@@ -219,7 +221,8 @@
               "icon": "presente",
               "label": "Presente útil"
             }
-          ]
+          ],
+          "size": "15 cm de comprimento"
         },
         {
           "kind": "product-cheio",
@@ -322,7 +325,7 @@
           "signature": "Gratidão em cada detalhe"
         }
       ],
-      "caption": "Lembrancinhas para o Dia do Professor a partir de R$ 3,90 — impressas em 3D aqui no estúdio. 🍎\n\nNeste carrossel:\n\n• Ponteira de Lápis com o nome de cada aluno\n• Guia de Leitura\n• Vasinho Mãozinhas de Coração\n• Porta-Joias Redondo (15 cm de diâmetro)\n• Chaveiro Porta-Anel\n• Chaveiro Estrela Sensorial\n\nServem também para o encerramento do ano letivo. Arraste para ver preços e cores.\n\n📌 Salve e envie para quem está organizando o presente da turma.\nProdução limitada — pedidos pelo link da bio.\n\n#diadoprofessor #lembrancinhas #presenteparaprofessora #impressao3d #ac3dstudio"
+      "caption": "Lembrancinhas para o Dia do Professor a partir de R$ 3,90 — impressas em 3D aqui no estúdio. 🍎\n\nNeste carrossel:\n\n• Ponteira de Lápis com o nome de cada aluno (1,5 × 1,3 cm, para lápis redondo padrão)\n• Guia de Leitura (15 cm)\n• Vasinho Mãozinhas de Coração\n• Porta-Joias Redondo (15 cm de diâmetro)\n• Chaveiro Porta-Anel\n• Chaveiro Estrela Sensorial\n\nServem também para o encerramento do ano letivo. Arraste para ver preços e cores.\n\n📌 Salve e envie para quem está organizando o presente da turma.\nProdução limitada — pedidos pelo link da bio.\n\n#diadoprofessor #lembrancinhas #presenteparaprofessora #impressao3d #ac3dstudio"
     },
     {
       "id": "04-story-mini-jesus",
@@ -401,7 +404,7 @@
       "when": "quarta 14/10, 19h",
       "source": "03-carrossel-professor",
       "music": "trilhas/aconchego-lofi.m4a",
-      "caption": "Mimos para o Dia do Professor que cabem na mesa da sala de aula. 🍎\n\nPonteira com o nome de cada aluno, Guia de Leitura, Vasinho Mãozinhas de Coração e mais — tudo impresso em 3D aqui no estúdio.\n\n📌 Salve e envie para quem organiza o presente da turma.\nPedidos pelo link da bio.\n\n#diadoprofessor #lembrancinhas #reels #impressao3d #ac3dstudio"
+      "caption": "Mimos para o Dia do Professor que cabem na mesa da sala de aula. 🍎\n\nPonteira com o nome de cada aluno, Guia de Leitura (15 cm), Vasinho Mãozinhas de Coração e mais — tudo impresso em 3D aqui no estúdio.\n\n📌 Salve e envie para quem organiza o presente da turma.\nPedidos pelo link da bio.\n\n#diadoprofessor #lembrancinhas #reels #impressao3d #ac3dstudio"
     },
     {
       "id": "06-story-arvore-japandi",
@@ -812,7 +815,7 @@
             {
               "sku": "B.013",
               "photo": "carrossel/B.013-4.png",
-              "name": "Guia de Leitura"
+              "name": "Guia de Leitura · 15 cm"
             }
           ]
         },
@@ -938,7 +941,7 @@
         {
           "kind": "product-cheio",
           "sku": "B.013",
-          "photo": "carrossel/B.013-3.png",
+          "photo": "carrossel/B.013-6.png",
           "label": "Fé e decoração",
           "name": "Guia de Leitura",
           "accent": "para o seu devocional",
@@ -956,7 +959,8 @@
               "icon": "presente",
               "label": "Presente útil"
             }
-          ]
+          ],
+          "size": "15 cm de comprimento"
         },
         {
           "kind": "cta-cheio",
@@ -966,7 +970,7 @@
           "signature": "Fé em cada detalhe"
         }
       ],
-      "caption": "Presentes com significado para quem caminha com fé. ✝️\n\nNeste carrossel:\n\n• Mini Jesus Sentado (cerca de 8 cm)\n• Kit 4 Mini Jesus (4 unidades de 8 cm)\n• Presépio Minimalista Sagrada Família (12 cm de altura)\n• Túmulo Vazio Ele Vive (11 × 3,5 × 9 cm)\n• Vasinho Mãozinhas de Coração\n• Guia de Leitura para o devocional\n\nTudo impresso em 3D aqui no estúdio. Arraste para ver preços, cores e medidas.\n\n📌 Salve e envie para quem merece um presente com fé.\nProdução limitada — pedidos pelo link da bio.\n\n#presentecomfe #decoracaocrista #presepio #impressao3d #ac3dstudio"
+      "caption": "Presentes com significado para quem caminha com fé. ✝️\n\nNeste carrossel:\n\n• Mini Jesus Sentado (cerca de 8 cm)\n• Kit 4 Mini Jesus (4 unidades de 8 cm)\n• Presépio Minimalista Sagrada Família (12 cm de altura)\n• Túmulo Vazio Ele Vive (11 × 3,5 × 9 cm)\n• Vasinho Mãozinhas de Coração\n• Guia de Leitura para o devocional (15 cm)\n\nTudo impresso em 3D aqui no estúdio. Arraste para ver preços, cores e medidas.\n\n📌 Salve e envie para quem merece um presente com fé.\nProdução limitada — pedidos pelo link da bio.\n\n#presentecomfe #decoracaocrista #presepio #impressao3d #ac3dstudio"
     }
   ]
 }
