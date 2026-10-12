@@ -11,11 +11,18 @@ export function notifyStore() {
   const url = process.env.STORE_URL?.replace(/\/$/, "");
   const key = process.env.STORE_API_KEY;
   if (!url || !key) return;
-  after(async () => {
+  const ping = async () => {
     try {
       await fetch(`${url}/api/revalidar`, { method: "POST", headers: { "x-store-key": key }, signal: AbortSignal.timeout(5000) });
     } catch {
       // Loja fora do ar: o ISR de 60 s dela cobre.
     }
-  });
+  };
+  // Dentro de uma requisição roda depois da resposta; fora dela (agendador das
+  // campanhas) o after() não existe e o aviso vai direto.
+  try {
+    after(ping);
+  } catch {
+    void ping();
+  }
 }
