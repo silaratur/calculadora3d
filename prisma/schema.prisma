@@ -671,3 +671,30 @@ model InstagramPost {
 
   @@index([status, scheduledAt])
 }
+
+// Loja → Plano de campanhas: campanhas sugeridas até o fim do ano. Cada uma junta
+// promoção % em peças, cupom, coleção da Vitrine e banner (JSON com a receita).
+// SUGGESTED = só proposta; ACTIVE = ligada (promoção/cupom/coleção/banner valem no
+// período); PAUSED = desligada pelo usuário. Ativar/pausar: src/lib/campaign-plan.ts.
+model StoreCampaign {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  title        String
+  objective    String   @default("")
+  mechanic     String   @default("")
+  startsAt     DateTime
+  endsAt       DateTime
+  status       String   @default("SUGGESTED")
+  promoPercent Float    @default(0)
+  promoLabel   String   @default("")
+  productSkus  String   @default("[]")
+  coupon       String   @default("")
+  collection   String   @default("")
+  banner       String   @default("")
+  couponId     String?
+  collectionId String?
+  bannerId     String?
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

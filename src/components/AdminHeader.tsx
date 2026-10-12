@@ -21,6 +21,7 @@ import {
   IconCoins,
   IconWallet,
   IconX,
+  IconClock,
 } from "@/components/Icons";
 import { canAccessPath } from "@/lib/roles";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -44,6 +45,7 @@ type Section =
   | "loja-promocoes"
   | "loja-vitrine"
   | "loja-campanhas"
+  | "loja-plano"
   | "loja-config";
 
 type NavLink = {
@@ -72,13 +74,14 @@ const storeGroups: Group[] = [
     links: [
       { id: "loja-vitrine", hrefs: ["/loja/vitrine"], label: "Vitrine", icon: IconGrid },
       { id: "loja-promocoes", hrefs: ["/loja/promocoes"], label: "Promoções", icon: IconTag },
+      { id: "loja-plano", hrefs: ["/loja/plano"], label: "Plano de campanhas", icon: IconClock },
       { id: "loja-campanhas", hrefs: ["/loja/campanhas"], label: "Campanhas", icon: IconBookmark },
       { id: "divulgacao", hrefs: ["/divulgacao"], label: "Divulgação", icon: IconSparkles },
       { id: "loja-config", hrefs: ["/loja/configuracoes"], label: "Configurações da loja", icon: IconSettings },
     ],
   },
 ];
-const storeSections: Section[] = ["loja", "loja-vitrine", "loja-promocoes", "loja-campanhas", "loja-config", "divulgacao"];
+const storeSections: Section[] = ["loja", "loja-vitrine", "loja-promocoes", "loja-plano", "loja-campanhas", "loja-config", "divulgacao"];
 const groups: Group[] = [
   {
     label: "Vender",

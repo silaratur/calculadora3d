@@ -8,6 +8,7 @@ import { AuthBanner } from "@/components/AuthBanner";
 import { IconClock, IconTrash, IconX } from "@/components/Icons";
 import { resizeImage } from "@/lib/image";
 import { ApprovalPreview } from "./ApprovalPreview";
+import { Timeline, type TimelinePost } from "./Timeline";
 
 type Kind = "CAROUSEL" | "IMAGE" | "STORY" | "REEL";
 type Status = "DRAFT" | "APPROVED" | "REJECTED" | "PUBLISHING" | "PUBLISHED" | "FAILED";
@@ -87,6 +88,14 @@ export default function DivulgacaoPage() {
   const [review, setReview] = useState<Post | null>(null);
   // Formulário (novo/editar) abre numa janela para a fila usar a largura toda.
   const [formOpen, setFormOpen] = useState(false);
+  // Linha do tempo (padrão) ou lista por situação; a escolha fica salva neste navegador.
+  const [view, setView] = useState<"timeline" | "list">(() => {
+    try { return typeof window !== "undefined" && window.localStorage.getItem("divulgacao-view") === "list" ? "list" : "timeline"; } catch { return "timeline"; }
+  });
+  const chooseView = (next: "timeline" | "list") => {
+    setView(next);
+    try { window.localStorage.setItem("divulgacao-view", next); } catch { /* sem armazenamento: só não lembra */ }
+  };
 
   useEffect(() => {
     async function load() {
@@ -237,6 +246,15 @@ export default function DivulgacaoPage() {
 
   const captionLength = form.caption.length;
 
+  // Clique na linha do tempo: publicado abre no Instagram; os outros abrem a revisão (prévia + aprovar).
+  function openFromTimeline(item: TimelinePost) {
+    const post = posts.find((candidate) => candidate.id === item.id);
+    if (!post) return;
+    if (post.status === "PUBLISHED") { if (post.permalink) window.open(post.permalink, "_blank", "noopener"); return; }
+    if (post.status === "PUBLISHING") return;
+    setReview(post);
+  }
+
   const postForm = (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={form.id ? "Editar post" : "Novo post"} onClick={closeForm}>
       <form className="modal-card modal-card-wide social-form" onSubmit={savePost} onClick={(event) => event.stopPropagation()}>
@@ -333,7 +351,14 @@ export default function DivulgacaoPage() {
 
         {feedback && !formOpen ? <p className="admin-feedback social-top-feedback">{feedback}</p> : null}
 
-        <div className="social-sections">
+        <div className="view-switch" role="group" aria-label="Como ver a fila">
+          <button type="button" className={view === "timeline" ? "active" : undefined} aria-pressed={view === "timeline"} onClick={() => chooseView("timeline")}>Linha do tempo</button>
+          <button type="button" className={view === "list" ? "active" : undefined} aria-pressed={view === "list"} onClick={() => chooseView("list")}>Lista</button>
+        </div>
+
+        {view === "timeline" && posts.length ? <Timeline posts={posts} onOpen={openFromTimeline} /> : null}
+
+        <div className="social-sections" hidden={view === "timeline" && posts.length > 0}>
           {!posts.length && !needsLogin ? <p className="preset-empty">Nenhum post na fila ainda. Clique em &quot;Novo post&quot; para começar.</p> : null}
           {sections.filter((section) => section.items.length).map((section) => (
             <section key={section.title} className="social-section">
