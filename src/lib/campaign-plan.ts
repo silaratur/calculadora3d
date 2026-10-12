@@ -4,8 +4,14 @@ import { applyPercent, marginAt } from "@/lib/promotions";
 
 // Loja → Plano de campanhas. Cada campanha guarda a "receita" (promoção % em
 // peças, cupom, coleção e banner). Ativar liga tudo no período da campanha —
-// promoção, cupom, coleção e banner já respeitam as datas, então ativar uma
-// campanha futura só a deixa agendada. Pausar desliga só o que ela ligou.
+// cupom, coleção e banner já respeitam as datas, então ativar uma campanha
+// futura só a deixa agendada. Pausar desliga só o que ela ligou.
+//
+// Promoção: cada peça tem UM campo de promoção. Por isso ela não é gravada ao
+// ativar; syncCampaignPromos() escolhe, peça a peça, a campanha que vale agora
+// (empate no período → maior %) ou a próxima que vai começar, e roda ao
+// ativar/pausar e a cada 10 min no servidor. Promoção manual (nome que não é
+// de nenhuma campanha) nunca é tocada.
 
 type CouponSpec = { code: string; kind: "PERCENT" | "FIXED"; value: number; minOrder: number; maxUses?: number };
 type CollectionSpec = { title: string; lead: string; tone: string; skus: string[] };
@@ -47,22 +53,10 @@ export async function marginPreview(campaign: StoreCampaign) {
 
 export async function activateCampaign(id: string) {
   const campaign = await prisma.storeCampaign.findUniqueOrThrow({ where: { id } });
-  const { skus, coupon, collection, banner } = recipe(campaign);
-
-  // Peça em promoção de outra campanha ativa no mesmo período: não sobrescreve.
-  if (campaign.promoPercent > 0 && skus.length) {
-    const others = await prisma.storeCampaign.findMany({ where: { status: "ACTIVE", id: { not: id }, promoPercent: { gt: 0 }, startsAt: { lt: campaign.endsAt }, endsAt: { gt: campaign.startsAt } } });
-    for (const other of others) {
-      const clash = recipe(other).skus.filter((sku) => skus.includes(sku));
-      if (clash.length) throw new Error(`As peças ${clash.join(", ")} já estão em promoção na campanha "${other.title}" no mesmo período. Pause aquela antes ou ative depois que ela terminar.`);
-    }
-  }
+  const { coupon, collection, banner } = recipe(campaign);
 
   await prisma.$transaction(async (tx) => {
     const data: Partial<StoreCampaign> = { status: "ACTIVE" };
-    if (campaign.promoPercent > 0 && skus.length) {
-      await tx.product.updateMany({ where: { sku: { in: skus } }, data: { promoPercent: campaign.promoPercent, promoLabel: campaign.promoLabel, promoStartsAt: campaign.startsAt, promoEndsAt: campaign.endsAt } });
-    }
     if (coupon) {
       const fields = { kind: coupon.kind, value: coupon.value, minOrder: coupon.minOrder, maxUses: coupon.maxUses ?? null, startsAt: campaign.startsAt, endsAt: campaign.endsAt, active: true, notes: `Campanha: ${campaign.title}` };
       const saved = await tx.coupon.upsert({ where: { code: coupon.code }, update: fields, create: { code: coupon.code, ...fields } });
@@ -89,19 +83,59 @@ export async function activateCampaign(id: string) {
     }
     await tx.storeCampaign.update({ where: { id }, data });
   });
+  await syncCampaignPromos();
 }
 
 export async function pauseCampaign(id: string) {
   const campaign = await prisma.storeCampaign.findUniqueOrThrow({ where: { id } });
-  const { skus } = recipe(campaign);
   await prisma.$transaction(async (tx) => {
-    // Só tira a promoção que é desta campanha (mesmo nome), nunca a de outra.
-    if (skus.length && campaign.promoLabel) {
-      await tx.product.updateMany({ where: { sku: { in: skus }, promoLabel: campaign.promoLabel }, data: { promoPercent: 0, promoLabel: "", promoStartsAt: null, promoEndsAt: null } });
-    }
     if (campaign.couponId) await tx.coupon.updateMany({ where: { id: campaign.couponId }, data: { active: false } });
     if (campaign.collectionId) await tx.storeCollection.updateMany({ where: { id: campaign.collectionId }, data: { active: false } });
     if (campaign.bannerId) await tx.storeBanner.updateMany({ where: { id: campaign.bannerId }, data: { active: false } });
     await tx.storeCampaign.update({ where: { id }, data: { status: "PAUSED" } });
   });
+  await syncCampaignPromos();
+}
+
+/**
+ * Põe em cada peça a promoção da campanha que vale agora (se duas valem ao mesmo
+ * tempo, a de maior %) ou, se nenhuma vale ainda, a da próxima que começa — o
+ * período gravado faz a loja só mostrar o desconto na hora certa. Quando a
+ * campanha acaba, a próxima assume na volta seguinte. Devolve quantas peças mudaram.
+ */
+export async function syncCampaignPromos(now = new Date()) {
+  const campaigns = await prisma.storeCampaign.findMany({ where: { promoPercent: { gt: 0 } } });
+  const labels = new Set(campaigns.map((campaign) => campaign.promoLabel).filter(Boolean));
+  const live = campaigns.filter((campaign) => campaign.status === "ACTIVE" && campaign.endsAt > now);
+  const bySku = new Map<string, StoreCampaign[]>();
+  for (const campaign of live) for (const sku of recipe(campaign).skus) bySku.set(sku, [...(bySku.get(sku) ?? []), campaign]);
+  const products = await prisma.product.findMany({
+    where: { OR: [{ sku: { in: [...bySku.keys()] } }, { promoLabel: { in: [...labels] } }] },
+    select: { id: true, sku: true, promoPercent: true, promoLabel: true, promoStartsAt: true, promoEndsAt: true },
+  });
+  let changed = 0;
+  for (const product of products) {
+    // Promoção manual (Loja → Promoções) com outro nome: não mexe.
+    if (product.promoLabel && !labels.has(product.promoLabel) && product.promoPercent > 0) continue;
+    const options = bySku.get(product.sku) ?? [];
+    const current = options.filter((campaign) => campaign.startsAt <= now).sort((a, b) => b.promoPercent - a.promoPercent)[0];
+    const next = options.filter((campaign) => campaign.startsAt > now).sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())[0];
+    const pick = current ?? next;
+    // Grava até a próxima troca: fim da campanha atual ou início de outra que dê mais desconto antes disso.
+    let endsAt = pick?.endsAt ?? null;
+    if (pick && current) {
+      const better = options.filter((campaign) => campaign.startsAt > now && campaign.promoPercent > pick.promoPercent && campaign.startsAt < pick.endsAt).sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())[0];
+      if (better) endsAt = better.startsAt;
+    }
+    const target = pick
+      ? { promoPercent: pick.promoPercent, promoLabel: pick.promoLabel, promoStartsAt: pick.startsAt, promoEndsAt: endsAt }
+      : { promoPercent: 0, promoLabel: "", promoStartsAt: null, promoEndsAt: null };
+    const same = product.promoPercent === target.promoPercent && product.promoLabel === target.promoLabel
+      && (product.promoStartsAt?.getTime() ?? null) === (target.promoStartsAt?.getTime() ?? null)
+      && (product.promoEndsAt?.getTime() ?? null) === (target.promoEndsAt?.getTime() ?? null);
+    if (same) continue;
+    await prisma.product.update({ where: { id: product.id }, data: target });
+    changed += 1;
+  }
+  return changed;
 }
