@@ -29,7 +29,7 @@ jobs:
         run: npm run build
 
       - name: Empacotar
-        run: tar --exclude='.next/cache' -czf calculadora3d.tar.gz .next public package.json package-lock.json next.config.ts prisma/schema.prisma prisma/migrations
+        run: tar --exclude='.next/cache' -czf calculadora3d.tar.gz .next public package.json package-lock.json next.config.ts prisma/schema.prisma prisma/migrations scripts/instagram-importar.cjs $( [ -d instagram-import ] && echo instagram-import )
 
       - name: Configurar SSH
         run: |
@@ -54,6 +54,13 @@ jobs:
         run: |
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
             "tar -xzf /tmp/calculadora3d.tar.gz -C /opt/calculadora3d && cd /opt/calculadora3d && npm install --omit=dev && npx prisma generate && npx prisma migrate deploy && docker compose restart"
+
+      # Pautas do Instagram versionadas em instagram-import/ entram na fila da
+      # Divulgação como RASCUNHO (aprovação na tela). Post já existente é pulado.
+      - name: Importar pautas do Instagram
+        run: |
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "cd /opt/calculadora3d && if [ -d instagram-import ]; then DATABASE_URL=file:/opt/calculadora3d/data/prod.db node scripts/instagram-importar.cjs instagram-import; else echo 'sem pautas para importar'; fi"
 
       # O container instala o openssl a cada boot antes de subir o Next, então
       # pode levar mais de um minuto: tenta por até 3 min antes de dar falha.

@@ -1,0 +1,947 @@
+{
+  "pack": "semana-2026-11-23",
+  "posts": [
+    {
+      "id": "01-story-vasinho",
+      "type": "story-cheio",
+      "title": "Story · Vasinho Mãozinhas de Coração",
+      "when": "segunda 23/11, 12h",
+      "sku": "D.003",
+      "background": "stories-fundo/D.003.png",
+      "tag": "Presente com carinho",
+      "headline": "Um abraço",
+      "script": "em forma de vaso",
+      "subline": "Vasinho com mãozinhas de coração",
+      "uses": [
+        {
+          "icon": "folha",
+          "label": "Para suculentas"
+        },
+        {
+          "icon": "monitor",
+          "label": "Mesa de trabalho"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente fofo"
+        }
+      ],
+      "note": "sorriso\ngarantido",
+      "fomo": "Feito à mão · produção limitada",
+      "scenes": [
+        {
+          "photo": "carrossel/D.003-2.png",
+          "icon": "monitor",
+          "title": "No trabalho",
+          "sub": "Mais leveza no dia"
+        },
+        {
+          "photo": "carrossel/D.003-3.png",
+          "icon": "casa",
+          "title": "Na estante",
+          "sub": "Verde em casa"
+        },
+        {
+          "photo": "carrossel/D.003-4.png",
+          "icon": "paleta",
+          "title": "3 cores",
+          "sub": "Branco, bege ou marrom"
+        }
+      ],
+      "signature": "Carinho em cada detalhe",
+      "productBox": [
+        340,
+        680,
+        725,
+        1162
+      ],
+      "noteTarget": [
+        0.29,
+        0.52
+      ]
+    },
+    {
+      "id": "02-story-tamanho-mini-jesus",
+      "type": "story-tamanho",
+      "title": "Story · Tamanho real do Mini Jesus",
+      "when": "terça 24/11, 12h",
+      "sku": "B.009",
+      "cutout": {
+        "photo": "carrossel/B.009-5.png",
+        "box": [
+          340,
+          55,
+          265,
+          582
+        ]
+      },
+      "items": [
+        {
+          "altura": 8
+        }
+      ],
+      "compare": [
+        "celular",
+        "caneca",
+        "moeda"
+      ],
+      "phrase": "Cabe em qualquer\ncantinho",
+      "seal": "Fé em cada detalhe",
+      "details": [
+        {
+          "photo": "carrossel/B.009-3.png",
+          "title": "No carro",
+          "sub": "No seu caminho"
+        },
+        {
+          "photo": "carrossel/B.009-2.png",
+          "title": "No trabalho",
+          "sub": "Na mesa ou no monitor"
+        },
+        {
+          "photo": "carrossel/B.006-3.png",
+          "title": "Kit com 4",
+          "sub": "Para a família"
+        }
+      ]
+    },
+    {
+      "id": "03-carrossel-black-friday",
+      "type": "carousel",
+      "title": "Carrossel · Black Friday AC3D",
+      "when": "terça 24/11, 19h",
+      "slides": [
+        {
+          "kind": "cover-cheio",
+          "title": "black-friday",
+          "tag": "Black Friday",
+          "headline": "Black Friday",
+          "script": "15% OFF",
+          "subline": "Em peças selecionadas, impressas em 3D aqui no estúdio",
+          "fomo": "Black Friday · produção limitada",
+          "items": [
+            {
+              "sku": "B.012",
+              "photo": "carrossel/B.012-2.png",
+              "name": "Unicórnio · 9 cm"
+            },
+            {
+              "sku": "B.011",
+              "photo": "b011-8cm/B.011-1.png",
+              "name": "Dinossauro · 8 cm"
+            },
+            {
+              "sku": "D.001",
+              "photo": "carrossel/D.001-2.png",
+              "name": "Bandeja · 19 × 11 cm"
+            },
+            {
+              "sku": "D.006",
+              "photo": "carrossel/D.006-2.png",
+              "name": "Porta-Joias Canelado"
+            },
+            {
+              "sku": "D.010",
+              "photo": "carrossel/D.010-3.png",
+              "name": "Renas · 14,5 cm"
+            },
+            {
+              "sku": "B.010",
+              "photo": "carrossel/B.010-2.png",
+              "name": "Checklist de Tarefas"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.012",
+          "photo": "carrossel/B.012-5.png",
+          "label": "Black Friday",
+          "name": "Chaveiro Unicórnio",
+          "accent": "mexe de todo jeito",
+          "line": "Unicórnio articulado, brinquedo sensorial que acalma. 8 cores.",
+          "uses": [
+            {
+              "icon": "mao",
+              "label": "Sensorial"
+            },
+            {
+              "icon": "paleta",
+              "label": "8 cores"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente fofo"
+            }
+          ],
+          "size": "9 cm de altura"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.011",
+          "photo": "b011-8cm/B.011-2.png",
+          "label": "Black Friday",
+          "name": "Chaveiro Dinossauro",
+          "accent": "mexe inteirinho",
+          "line": "T-Rex articulado de 8 cm, para chave, mochila ou estojo.",
+          "uses": [
+            {
+              "icon": "mao",
+              "label": "Ocupa as mãos"
+            },
+            {
+              "icon": "chave",
+              "label": "Vai no chaveiro"
+            },
+            {
+              "icon": "paleta",
+              "label": "6 cores"
+            }
+          ],
+          "size": "8 cm"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.001",
+          "photo": "carrossel/D.001-5.png",
+          "label": "Black Friday",
+          "name": "Bandeja Oval Minimalista",
+          "accent": "tudo no lugar",
+          "line": "Para perfumes, velas, joias e pequenos objetos. 4 cores.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Banheiro ou cômoda"
+            },
+            {
+              "icon": "paleta",
+              "label": "4 cores"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente elegante"
+            }
+          ],
+          "size": "19 × 11 cm"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.006",
+          "photo": "carrossel/D.006-5.png",
+          "label": "Black Friday",
+          "name": "Porta-Joias Oval Canelado",
+          "accent": "anéis sempre à mão",
+          "line": "Bandeja fina com borda canelada para o criado-mudo ou a cômoda.",
+          "uses": [
+            {
+              "icon": "coracao",
+              "label": "Anéis e brincos"
+            },
+            {
+              "icon": "casa",
+              "label": "Criado-mudo"
+            },
+            {
+              "icon": "paleta",
+              "label": "4 cores"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.010",
+          "photo": "carrossel/D.010-4.png",
+          "label": "Black Friday",
+          "name": "Renas Natalinas",
+          "accent": "linhas modernas",
+          "line": "Renas estilizadas de 14,5 cm, para aparador ou estante.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Aparador ou estante"
+            },
+            {
+              "icon": "paleta",
+              "label": "5 cores"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente de Natal"
+            }
+          ],
+          "size": "14,5 cm de altura"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.010",
+          "photo": "carrossel/B.010-5.png",
+          "label": "Black Friday",
+          "name": "Checklist Infantil de Tarefas",
+          "accent": "rotina vira brincadeira",
+          "line": "Cada tarefa feita é marcada no próprio quadro. 6 cores.",
+          "uses": [
+            {
+              "icon": "estrela",
+              "label": "Mais autonomia"
+            },
+            {
+              "icon": "casa",
+              "label": "No quarto"
+            },
+            {
+              "icon": "paleta",
+              "label": "6 cores"
+            }
+          ]
+        },
+        {
+          "kind": "cta-cheio",
+          "heading": "Como pedir",
+          "accent": "é rapidinho",
+          "fomo": "15% OFF já no preço da loja — produção limitada",
+          "signature": "Feito à mão, camada por camada"
+        }
+      ],
+      "caption": "Black Friday na AC3D: 15% OFF em peças selecionadas, já no preço da loja. 🖤\n\nNeste carrossel:\n\n• Chaveiro Unicórnio Articulado (9 cm de altura)\n• Chaveiro Dinossauro Articulado (8 cm)\n• Bandeja Decorativa Oval (19 × 11 cm)\n• Porta-Joias Oval Canelado\n• Renas Natalinas (14,5 cm)\n• Checklist Infantil de Tarefas\n\nTambém com 15%: Ponteira com Nome, Guia de Leitura, Chaveiros Estrela e Hexagonal, Cachorrinho e mais. No resto da loja, o cupom BLACK10 dá 10% em pedidos a partir de 100 reais.\n\n📌 Salve e envie para quem está esperando a Black Friday para comprar os presentes.\nProdução limitada — pedidos pelo link da bio.\n\n#blackfriday #presentedenatal #decoracao #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "04-story-ponteira-black",
+      "type": "story-cheio",
+      "title": "Story · Ponteira (Black Friday)",
+      "when": "quarta 25/11, 12h",
+      "sku": "B.018",
+      "background": "stories-fundo/B.018.png",
+      "tag": "Black Friday",
+      "headline": "Com o nome",
+      "script": "de cada um",
+      "subline": "Ponteira de lápis personalizada",
+      "uses": [
+        {
+          "icon": "livro",
+          "label": "Material escolar"
+        },
+        {
+          "icon": "estrela",
+          "label": "Nome em relevo"
+        },
+        {
+          "icon": "presente",
+          "label": "Lembrancinha da turma"
+        }
+      ],
+      "note": "ninguém troca\no lápis!",
+      "fomo": "15% OFF na Black Friday",
+      "scenes": [
+        {
+          "photo": "carrossel/B.018-3.png",
+          "icon": "livro",
+          "title": "No estojo",
+          "sub": "Fácil de achar"
+        },
+        {
+          "photo": "carrossel/B.018-4.png",
+          "icon": "paleta",
+          "title": "8 cores",
+          "sub": "Uma para cada um"
+        },
+        {
+          "photo": "carrossel/B.018-6.png",
+          "icon": "regua",
+          "title": "Tamanho real",
+          "sub": "1,5 × 1,3 cm"
+        }
+      ],
+      "colorsNote": "8 cores",
+      "signature": "Cada um com o seu",
+      "productBox": [
+        290,
+        627,
+        862,
+        1215
+      ],
+      "bgScale": 1.06,
+      "bgShift": -57,
+      "fomoTop": 316,
+      "noteTarget": [
+        0.24,
+        0.56
+      ],
+      "size": "1,5 × 1,3 cm · furo de 7 mm"
+    },
+    {
+      "id": "05-reel-black-friday",
+      "type": "reel-carrossel",
+      "title": "Reel · Black Friday AC3D",
+      "when": "quarta 25/11, 19h",
+      "source": "03-carrossel-black-friday",
+      "music": "trilhas/aconchego-lofi.m4a",
+      "caption": "Black Friday na AC3D: 15% OFF em peças selecionadas, já no preço da loja. 🖤\n\nUnicórnio (9 cm), Dinossauro (8 cm), Bandeja Oval (19 × 11 cm), Porta-Joias Canelado, Renas (14,5 cm) e Checklist de Tarefas. No resto da loja, cupom BLACK10.\n\n📌 Salve e envie para quem está fazendo a lista de presentes.\nPedidos pelo link da bio.\n\n#blackfriday #presentedenatal #reels #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "06-story-tamanho-quebra-nozes",
+      "type": "story-tamanho",
+      "title": "Story · Tamanho real do Quebra-Nozes",
+      "when": "quinta 26/11, 12h",
+      "sku": "D.018",
+      "cutout": {
+        "photo": "carrossel/D.018-5.png",
+        "box": [
+          380,
+          16,
+          205,
+          700
+        ]
+      },
+      "items": [
+        {
+          "altura": 20
+        }
+      ],
+      "compare": [
+        "caneca",
+        "caneta",
+        "celular"
+      ],
+      "phrase": "O guardião\nda sua estante",
+      "seal": "Coleção de Natal",
+      "details": [
+        {
+          "photo": "carrossel/D.018-2.png",
+          "title": "Na lareira",
+          "sub": "Clima de Natal"
+        },
+        {
+          "photo": "carrossel/D.018-3.png",
+          "title": "Na entrada",
+          "sub": "Recebe as visitas"
+        },
+        {
+          "photo": "carrossel/D.018-4.png",
+          "title": "4 cores",
+          "sub": "Monte o seu conjunto"
+        }
+      ]
+    },
+    {
+      "id": "07-carrossel-articulados",
+      "type": "carousel",
+      "title": "Carrossel · Articulados que acalmam",
+      "when": "quinta 26/11, 19h",
+      "slides": [
+        {
+          "kind": "cover-cheio",
+          "title": "articulados",
+          "tag": "Articulados",
+          "headline": "Mexe, dobra",
+          "script": "e acalma",
+          "subline": "Brinquedos sensoriais impressos em 3D aqui no estúdio",
+          "fomo": "Produção limitada · garanta o seu",
+          "items": [
+            {
+              "sku": "B.023",
+              "photo": "b023-revisao/2.png",
+              "name": "10 Mini Sapos"
+            },
+            {
+              "sku": "B.012",
+              "photo": "carrossel/B.012-2.png",
+              "name": "Unicórnio · 9 cm"
+            },
+            {
+              "sku": "B.011",
+              "photo": "b011-8cm/B.011-1.png",
+              "name": "Dinossauro · 8 cm"
+            },
+            {
+              "sku": "B.019",
+              "photo": "b019/B.019-2.png",
+              "name": "4 Macacos · 8 cm"
+            },
+            {
+              "sku": "B.007",
+              "photo": "carrossel/B.007-2.png",
+              "name": "Cachorrinho"
+            },
+            {
+              "sku": "B.005",
+              "photo": "carrossel/B.005-2.png",
+              "name": "Hexagonal · 3,7 cm"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.023",
+          "photo": "b023-revisao/6.png",
+          "label": "Articulados",
+          "name": "10 Mini Sapos Articulados",
+          "accent": "dez sapinhos que mudam de pose",
+          "line": "Com argola de chaveiro: enfeite da árvore, lembrancinha ou antiestresse.",
+          "uses": [
+            {
+              "icon": "estrela",
+              "label": "Na árvore de Natal"
+            },
+            {
+              "icon": "chave",
+              "label": "Com argola"
+            },
+            {
+              "icon": "presente",
+              "label": "Amigo secreto"
+            }
+          ],
+          "size": "de 5 × 3 cm a 7 × 4,5 cm"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.012",
+          "photo": "carrossel/B.012-5.png",
+          "label": "Articulados",
+          "name": "Chaveiro Unicórnio",
+          "accent": "mexe de todo jeito",
+          "line": "Unicórnio articulado, brinquedo sensorial que acalma. 8 cores.",
+          "uses": [
+            {
+              "icon": "mao",
+              "label": "Sensorial"
+            },
+            {
+              "icon": "paleta",
+              "label": "8 cores"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente fofo"
+            }
+          ],
+          "size": "9 cm de altura"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.011",
+          "photo": "b011-8cm/B.011-2.png",
+          "label": "Articulados",
+          "name": "Chaveiro Dinossauro",
+          "accent": "mexe inteirinho",
+          "line": "T-Rex articulado de 8 cm, para chave, mochila ou estojo.",
+          "uses": [
+            {
+              "icon": "mao",
+              "label": "Ocupa as mãos"
+            },
+            {
+              "icon": "chave",
+              "label": "Vai no chaveiro"
+            },
+            {
+              "icon": "paleta",
+              "label": "6 cores"
+            }
+          ],
+          "size": "8 cm"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.019",
+          "photo": "b019/B.019-2.png",
+          "label": "Articulados",
+          "name": "Kit 4 Mini Macacos",
+          "accent": "balança e diverte",
+          "line": "Macaquinhos articulados de 8 cm: 2 chaveiros e 2 brinquedos.",
+          "uses": [
+            {
+              "icon": "mao",
+              "label": "Articulado"
+            },
+            {
+              "icon": "chave",
+              "label": "2 chaveiros"
+            },
+            {
+              "icon": "presente",
+              "label": "Kit com 4"
+            }
+          ],
+          "size": "8 cm cada"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.007",
+          "photo": "carrossel/B.007-5.png",
+          "label": "Articulados",
+          "name": "Cachorrinho Articulado",
+          "accent": "textura de pelinho",
+          "line": "Cada parte do corpo se mexe. 4 cores.",
+          "uses": [
+            {
+              "icon": "mao",
+              "label": "Mexe inteiro"
+            },
+            {
+              "icon": "paleta",
+              "label": "4 cores"
+            },
+            {
+              "icon": "presente",
+              "label": "Lembrancinha"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.005",
+          "photo": "carrossel/B.005-5.png",
+          "label": "Articulados",
+          "name": "Chaveiro Sensorial Hexagonal",
+          "accent": "hexágonos que deslizam",
+          "line": "Leve e fácil de carregar. Muito pedido para brindes. 8 cores.",
+          "uses": [
+            {
+              "icon": "mao",
+              "label": "Antiestresse"
+            },
+            {
+              "icon": "chave",
+              "label": "No chaveiro"
+            },
+            {
+              "icon": "paleta",
+              "label": "8 cores"
+            }
+          ],
+          "size": "3,7 × 3,2 × 0,8 cm"
+        },
+        {
+          "kind": "cta-cheio",
+          "heading": "Como pedir",
+          "accent": "é rapidinho",
+          "fomo": "Produção limitada — garanta os seus articulados",
+          "signature": "Diversão que cabe no bolso"
+        }
+      ],
+      "caption": "Articulados que mexem, dobram e acalmam — para crianças e para adultos na correria do fim de ano. 🐸\n\nNeste carrossel:\n\n• 10 Mini Sapos Articulados (de 5 a 7 cm), novidade\n• Chaveiro Unicórnio (9 cm de altura) — 15% OFF na Black Friday\n• Chaveiro Dinossauro (8 cm) — 15% OFF\n• Kit 4 Mini Macacos (8 cm cada)\n• Cachorrinho Articulado — 15% OFF\n• Chaveiro Sensorial Hexagonal (3,7 × 3,2 cm) — 15% OFF\n\nNão indicados para menores de 3 anos (peças pequenas).\n\n📌 Salve e envie para quem vive mexendo em alguma coisa nas mãos.\nProdução limitada — pedidos pelo link da bio.\n\n#articulados #brinquedosensorial #antiestresse #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "08-story-black-friday",
+      "type": "story",
+      "kind": "cta-cheio",
+      "title": "Story · Como pedir (Black Friday)",
+      "when": "sexta 27/11, 12h",
+      "heading": "Como pedir",
+      "accent": "é rapidinho",
+      "fomo": "Black Friday: 15% OFF + cupom BLACK10",
+      "signature": "Feito à mão, camada por camada"
+    },
+    {
+      "id": "09-reel-black-friday-vitrine",
+      "type": "reel-vitrine",
+      "title": "Reel · Black Friday vitrine",
+      "when": "sexta 27/11, 19h",
+      "hook": "Black Friday: 15% OFF",
+      "music": "trilhas/aconchego-violao.m4a",
+      "scenes": [
+        {
+          "sku": "B.012",
+          "photo": "carrossel/B.012-3.png",
+          "label": "Chaveiro Unicórnio · 9 cm"
+        },
+        {
+          "sku": "D.001",
+          "photo": "carrossel/D.001-3.png",
+          "label": "Bandeja Oval · 19 × 11 cm"
+        },
+        {
+          "sku": "D.010",
+          "photo": "carrossel/D.010-4.png",
+          "label": "Renas Natalinas · 14,5 cm"
+        },
+        {
+          "sku": "B.018",
+          "photo": "carrossel/B.018-3.png",
+          "label": "Ponteira com Nome · 1,5 cm"
+        },
+        {
+          "sku": "D.006",
+          "photo": "carrossel/D.006-3.png",
+          "label": "Porta-Joias Oval Canelado"
+        }
+      ],
+      "caption": "É hoje: Black Friday com 15% OFF em peças selecionadas da AC3D. 🖤\n\nUnicórnio (9 cm), Bandeja Oval (19 × 11 cm), Renas (14,5 cm), Ponteira com Nome e Porta-Joias Canelado — o desconto já está no preço da loja. No resto da loja, cupom BLACK10.\n\n📌 Envie para quem ainda não fechou a lista de presentes.\nPedidos pelo link da bio.\n\n#blackfriday #presentedenatal #reels #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "10-story-dinossauro-black",
+      "type": "story-cheio",
+      "title": "Story · Chaveiro Dinossauro (Black Friday)",
+      "sku": "B.011",
+      "background": "stories-fundo/B.011.png",
+      "tag": "Black Friday",
+      "headline": "Dino",
+      "script": "articulado",
+      "subline": "Mexe, dobra e vai junto na chave",
+      "uses": [
+        {
+          "icon": "mao",
+          "label": "Mexe inteirinho nas mãos"
+        },
+        {
+          "icon": "chave",
+          "label": "Chave, mochila ou estojo"
+        },
+        {
+          "icon": "presente",
+          "label": "Lembrancinha de festa"
+        }
+      ],
+      "note": "8 cm de pura diversão",
+      "noteTarget": [
+        0.2,
+        0.57
+      ],
+      "fomo": "15% OFF na Black Friday",
+      "scenes": [
+        {
+          "photo": "b011-8cm/B.011-3.png",
+          "icon": "presente",
+          "title": "Na festa",
+          "sub": "Sacolinhas surpresa"
+        },
+        {
+          "photo": "b011-8cm/B.011-2.png",
+          "icon": "mao",
+          "title": "Na mão",
+          "sub": "Cabe na palma"
+        },
+        {
+          "photo": "b011-8cm/B.011-1.png",
+          "icon": "chave",
+          "title": "Na chave",
+          "sub": "Vai pra todo lado"
+        }
+      ],
+      "size": "8 cm",
+      "signature": "Diversão que cabe no bolso",
+      "productBox": [
+        232,
+        766,
+        778,
+        1130
+      ],
+      "noteTop": 1152,
+      "noteSize": 40,
+      "noteWidth": 440,
+      "when": "sábado 28/11, 12h",
+      "colorsNote": "6 cores"
+    },
+    {
+      "id": "11-carrossel-natal-fe",
+      "type": "carousel",
+      "title": "Carrossel · Natal com Jesus",
+      "when": "domingo 29/11, 19h",
+      "slides": [
+        {
+          "kind": "cover-cheio",
+          "title": "natal-fe",
+          "tag": "Natal com Jesus",
+          "headline": "O sentido do",
+          "script": "Natal",
+          "subline": "Peças de fé impressas em 3D aqui no estúdio",
+          "fomo": "Feito à mão · produção limitada",
+          "items": [
+            {
+              "sku": "D.014",
+              "photo": "carrossel/D.014-2.png",
+              "name": "Presépio · 12 cm"
+            },
+            {
+              "sku": "B.009",
+              "photo": "carrossel/B.009-2.png",
+              "name": "Mini Jesus · 8 cm"
+            },
+            {
+              "sku": "B.006",
+              "photo": "carrossel/B.006-2.png",
+              "name": "Kit 4 Mini Jesus"
+            },
+            {
+              "sku": "D.015",
+              "photo": "carrossel/D.015-2.png",
+              "name": "Túmulo Ele Vive"
+            },
+            {
+              "sku": "D.003",
+              "photo": "carrossel/D.003-4.png",
+              "name": "Vasinho Mãozinhas"
+            },
+            {
+              "sku": "B.013",
+              "photo": "carrossel/B.013-4.png",
+              "name": "Guia de Leitura · 15 cm"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.014",
+          "photo": "carrossel/D.014-5.png",
+          "label": "Natal com Jesus",
+          "name": "Presépio Minimalista",
+          "accent": "o verdadeiro sentido do Natal",
+          "line": "José, Maria e o Menino Jesus sob a estrela de Belém.",
+          "uses": [
+            {
+              "icon": "estrela",
+              "label": "Estrela de Belém"
+            },
+            {
+              "icon": "casa",
+              "label": "Sala ou aparador"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente que emociona"
+            }
+          ],
+          "size": "12 cm de altura"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.009",
+          "photo": "carrossel/B.009-5.png",
+          "label": "Natal com Jesus",
+          "name": "Mini Jesus Sentado",
+          "accent": "fé no seu caminho",
+          "line": "Para o carro, a mesa de trabalho ou a estante.",
+          "uses": [
+            {
+              "icon": "carro",
+              "label": "No carro"
+            },
+            {
+              "icon": "monitor",
+              "label": "No trabalho"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente com fé"
+            }
+          ],
+          "size": "cerca de 8 cm de altura"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.006",
+          "photo": "carrossel/B.006-5.png",
+          "label": "Natal com Jesus",
+          "name": "Kit 4 Mini Jesus",
+          "accent": "para presentear quem você ama",
+          "line": "Quatro Mini Jesus sentados, para a família ou o grupo.",
+          "uses": [
+            {
+              "icon": "coracao",
+              "label": "Para a família"
+            },
+            {
+              "icon": "casa",
+              "label": "Na estante"
+            },
+            {
+              "icon": "presente",
+              "label": "Lembrança do grupo"
+            }
+          ],
+          "size": "4 unidades de 8 cm"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.015",
+          "photo": "carrossel/D.015-5.png",
+          "label": "Natal com Jesus",
+          "name": "Túmulo Vazio Ele Vive",
+          "accent": "Ele vive!",
+          "line": "O túmulo vazio com a pedra \"Ele vive\", em design minimalista.",
+          "uses": [
+            {
+              "icon": "coracao",
+              "label": "Lembra da esperança"
+            },
+            {
+              "icon": "casa",
+              "label": "Mesa ou estante"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente com fé"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.003",
+          "photo": "carrossel/D.003-3.png",
+          "label": "Natal com Jesus",
+          "name": "Vasinho Mãozinhas de Coração",
+          "accent": "carinho em forma de vaso",
+          "line": "Para suculentas e cactos pequenos. Branco, bege ou marrom.",
+          "uses": [
+            {
+              "icon": "folha",
+              "label": "Suculentas e cactos"
+            },
+            {
+              "icon": "coracao",
+              "label": "Mãozinhas de coração"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente de carinho"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.013",
+          "photo": "carrossel/B.013-6.png",
+          "label": "Natal com Jesus",
+          "name": "Guia de Leitura",
+          "accent": "foco linha por linha",
+          "line": "Mostra só a linha que está sendo lida. Ajuda na alfabetização.",
+          "uses": [
+            {
+              "icon": "livro",
+              "label": "Leitura em sala"
+            },
+            {
+              "icon": "estrela",
+              "label": "Mais foco"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente útil"
+            }
+          ],
+          "size": "15 cm de comprimento"
+        },
+        {
+          "kind": "cta-cheio",
+          "heading": "Como pedir",
+          "accent": "é rapidinho",
+          "fomo": "Produção limitada — garanta o seu presente",
+          "signature": "Fé em cada detalhe"
+        }
+      ],
+      "caption": "O verdadeiro sentido do Natal, em presentes com significado. ✝️\n\nNeste carrossel:\n\n• Presépio Minimalista Sagrada Família (12 cm de altura)\n• Mini Jesus Sentado (cerca de 8 cm)\n• Kit 4 Mini Jesus (4 unidades de 8 cm)\n• Túmulo Vazio Ele Vive\n• Vasinho Mãozinhas de Coração\n• Guia de Leitura para o devocional (15 cm)\n\nTudo impresso em 3D aqui no estúdio. Arraste para ver preços, cores e medidas.\n\n📌 Salve e envie para quem merece um presente com fé neste Natal.\nProdução limitada — pedidos pelo link da bio.\n\n#natalcomjesus #presepio #presentecomfe #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "12-story-cyber-monday",
+      "type": "story",
+      "kind": "cta-cheio",
+      "title": "Story · Como pedir (Cyber Monday)",
+      "when": "segunda 30/11, 12h",
+      "heading": "Como pedir",
+      "accent": "é rapidinho",
+      "fomo": "Cyber Monday: cupom CYBER10",
+      "signature": "Feito à mão, camada por camada"
+    }
+  ]
+}

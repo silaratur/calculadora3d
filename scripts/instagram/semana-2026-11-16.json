@@ -1,0 +1,1007 @@
+{
+  "pack": "semana-2026-11-16",
+  "posts": [
+    {
+      "id": "01-story-tigelas",
+      "type": "story-cheio",
+      "title": "Story · Tigelas Árvore de Natal (MESA10)",
+      "when": "segunda 16/11, 12h",
+      "sku": "D.013",
+      "background": "stories-fundo/D.013.png",
+      "tag": "Mesa de Natal",
+      "headline": "A ceia mais",
+      "script": "gostosa",
+      "subline": "Tigelas em forma de árvore, empilháveis",
+      "uses": [
+        {
+          "icon": "mesa",
+          "label": "Petiscos da ceia"
+        },
+        {
+          "icon": "folha",
+          "label": "Empilháveis"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente para quem recebe"
+        }
+      ],
+      "fomo": "Mesa completa: cupom MESA10",
+      "scenes": [
+        {
+          "photo": "carrossel/D.013-2.png",
+          "icon": "mesa",
+          "title": "Na ceia",
+          "sub": "Petiscos à mão"
+        },
+        {
+          "photo": "carrossel/D.013-4.png",
+          "icon": "folha",
+          "title": "Empilha",
+          "sub": "Guarda fácil"
+        },
+        {
+          "photo": "carrossel/D.013-5.png",
+          "icon": "estrela",
+          "title": "Em conjunto",
+          "sub": "Viram centro de mesa"
+        }
+      ],
+      "signature": "Detalhes que fazem a ceia",
+      "productBox": [
+        125,
+        735,
+        690,
+        1242
+      ]
+    },
+    {
+      "id": "02-story-porta-guardanapo",
+      "type": "story-cheio",
+      "title": "Story · Porta-Guardanapo Árvore",
+      "when": "terça 17/11, 12h",
+      "sku": "D.012",
+      "background": "stories-fundo/D.012.png",
+      "tag": "Mesa da ceia",
+      "headline": "A ceia começa",
+      "script": "pela mesa",
+      "uses": [
+        {
+          "icon": "mesa",
+          "label": "Organiza os guardanapos"
+        },
+        {
+          "icon": "estrela",
+          "label": "Decora a mesa posta"
+        },
+        {
+          "icon": "folha",
+          "label": "Reutilizável todo ano"
+        }
+      ],
+      "note": "e ainda\ndecora",
+      "fomo": "Produção limitada para o Natal",
+      "scenes": [
+        {
+          "photo": "carrossel/D.012-2.png",
+          "icon": "mesa",
+          "title": "Na ceia",
+          "sub": "Mesa pronta e organizada"
+        },
+        {
+          "photo": "carrossel/D.012-3.png",
+          "icon": "coracao",
+          "title": "No café",
+          "sub": "Clima de Natal todo dia"
+        },
+        {
+          "photo": "carrossel/D.012-4.png",
+          "icon": "paleta",
+          "title": "4 cores",
+          "sub": "Combina com sua mesa"
+        }
+      ],
+      "size": "15 × 15 cm",
+      "signature": "Detalhes que fazem a ceia",
+      "productBox": [
+        316,
+        636,
+        810,
+        1201
+      ],
+      "noteTarget": [
+        0.27,
+        0.52
+      ],
+      "noteSize": 40,
+      "noteWidth": 220,
+      "fomoTop": 326
+    },
+    {
+      "id": "03-carrossel-brindes-empresas",
+      "type": "carousel",
+      "title": "Carrossel · Brindes de fim de ano para empresas",
+      "when": "terça 17/11, 19h",
+      "slides": [
+        {
+          "kind": "cover-cheio",
+          "title": "brindes",
+          "tag": "Brindes de fim de ano",
+          "headline": "Brindes que",
+          "script": "ficam na mão",
+          "subline": "Para clientes e equipe, impressos em 3D aqui no estúdio",
+          "fomo": "Pedidos em quantidade · produção limitada",
+          "items": [
+            {
+              "sku": "B.008",
+              "photo": "carrossel/B.008-2.png",
+              "name": "Kit 15 com logo"
+            },
+            {
+              "sku": "B.005",
+              "photo": "carrossel/B.005-2.png",
+              "name": "Hexagonal · 3,7 cm"
+            },
+            {
+              "sku": "B.004",
+              "photo": "carrossel/B.004-2.png",
+              "name": "Chaveiro Estrela"
+            },
+            {
+              "sku": "A.001",
+              "photo": "carrossel/A.001-2.png",
+              "name": "Suporte · 7,3 cm"
+            },
+            {
+              "sku": "U.001",
+              "photo": "carrossel/U.001-2.png",
+              "name": "Porta-Anel"
+            },
+            {
+              "sku": "D.003",
+              "photo": "carrossel/D.003-2.png",
+              "name": "Vasinho Mãozinhas"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.008",
+          "photo": "carrossel/B.008-5.png",
+          "label": "Brindes de fim de ano",
+          "name": "Kit 15 Chaveiros com Logo",
+          "accent": "sua marca em alto relevo",
+          "line": "Exemplo: kit de 15 chaveiros com logo que fizemos para a Silaratur.",
+          "uses": [
+            {
+              "icon": "estrela",
+              "label": "Logo em relevo"
+            },
+            {
+              "icon": "chave",
+              "label": "Brinde que é usado"
+            },
+            {
+              "icon": "presente",
+              "label": "Para clientes e equipe"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.005",
+          "photo": "carrossel/B.005-5.png",
+          "label": "Brindes de fim de ano",
+          "name": "Chaveiro Sensorial Hexagonal",
+          "accent": "hexágonos que deslizam",
+          "line": "Leve e fácil de carregar. Muito pedido para brindes. 8 cores.",
+          "uses": [
+            {
+              "icon": "mao",
+              "label": "Antiestresse"
+            },
+            {
+              "icon": "chave",
+              "label": "No chaveiro"
+            },
+            {
+              "icon": "paleta",
+              "label": "8 cores"
+            }
+          ],
+          "size": "3,7 × 3,2 × 0,8 cm"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.004",
+          "photo": "carrossel/B.004-3.png",
+          "label": "Brindes de fim de ano",
+          "name": "Chaveiro Estrela Sensorial",
+          "accent": "gira e acalma",
+          "line": "Estrelas encaixadas que giram. Lembrancinha para a turma toda.",
+          "uses": [
+            {
+              "icon": "mao",
+              "label": "Ocupa as mãos"
+            },
+            {
+              "icon": "estrela",
+              "label": "Articulado"
+            },
+            {
+              "icon": "paleta",
+              "label": "8 cores"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "A.001",
+          "photo": "carrossel/A.001-5.png",
+          "label": "Brindes de fim de ano",
+          "name": "Suporte de Celular Dobrável",
+          "accent": "cabe no bolso",
+          "line": "Dobra e apoia o celular para vídeos e chamadas. 8 cores.",
+          "uses": [
+            {
+              "icon": "monitor",
+              "label": "Mesa de trabalho"
+            },
+            {
+              "icon": "mao",
+              "label": "Dobrável"
+            },
+            {
+              "icon": "paleta",
+              "label": "8 cores"
+            }
+          ],
+          "size": "7,3 × 3,5 × 1,2 cm fechado"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "U.001",
+          "photo": "carrossel/U.001-3.png",
+          "label": "Brindes de fim de ano",
+          "name": "Chaveiro Porta-Anel",
+          "accent": "a aliança sempre segura",
+          "line": "Potinho com tampa de rosca e argola de chaveiro. 8 cores.",
+          "uses": [
+            {
+              "icon": "chave",
+              "label": "Vai no chaveiro"
+            },
+            {
+              "icon": "escudo",
+              "label": "Tampa de rosca"
+            },
+            {
+              "icon": "presente",
+              "label": "Lembrancinha prática"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.003",
+          "photo": "carrossel/D.003-3.png",
+          "label": "Brindes de fim de ano",
+          "name": "Vasinho Mãozinhas de Coração",
+          "accent": "carinho em forma de vaso",
+          "line": "Para suculentas e cactos pequenos. Branco, bege ou marrom.",
+          "uses": [
+            {
+              "icon": "folha",
+              "label": "Suculentas e cactos"
+            },
+            {
+              "icon": "coracao",
+              "label": "Mãozinhas de coração"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente de carinho"
+            }
+          ]
+        },
+        {
+          "kind": "cta-cheio",
+          "heading": "Como pedir",
+          "accent": "é rapidinho",
+          "fomo": "Peça cedo: a produção de fim de ano é limitada",
+          "signature": "Sua marca em cada detalhe"
+        }
+      ],
+      "caption": "Brindes de fim de ano para clientes e equipe a partir de R$ 3,90 — impressos em 3D aqui no estúdio. 🎁\n\nNeste carrossel:\n\n• Kit de 15 chaveiros com a logo da sua empresa em alto relevo\n• Chaveiro Sensorial Hexagonal (3,7 × 3,2 cm)\n• Chaveiro Estrela Sensorial\n• Suporte de Celular Dobrável (7,3 × 3,5 cm fechado)\n• Chaveiro Porta-Anel\n• Vasinho Mãozinhas de Coração\n\nPara empresas: cupom EMPRESA10 dá 10% em pedidos a partir de 300 reais, além do desconto por quantidade da loja.\n\n📌 Salve e envie para quem cuida dos brindes da sua empresa.\nProdução limitada — orçamento pelo link da bio.\n\n#brindespersonalizados #brindescorporativos #fimdeano #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "04-story-quebra-nozes",
+      "type": "story-cheio",
+      "title": "Story · Quebra-Nozes Canelado",
+      "when": "quarta 18/11, 12h",
+      "sku": "D.018",
+      "background": "stories-fundo/D.018.png",
+      "tag": "Coleção de Natal",
+      "headline": "Quebra-Nozes",
+      "script": "canelado",
+      "uses": [
+        {
+          "icon": "casa",
+          "label": "Estante, aparador ou lareira"
+        },
+        {
+          "icon": "paleta",
+          "label": "Combine as cores"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente de Natal"
+        }
+      ],
+      "note": "o guardião\nda sua estante",
+      "fomo": "Produção limitada para o Natal",
+      "scenes": [
+        {
+          "photo": "carrossel/D.018-2.png",
+          "icon": "casa",
+          "title": "Na lareira",
+          "sub": "Clima de Natal"
+        },
+        {
+          "photo": "carrossel/D.018-3.png",
+          "icon": "coracao",
+          "title": "Na entrada",
+          "sub": "Recebe as visitas"
+        },
+        {
+          "photo": "carrossel/D.018-5.png",
+          "icon": "regua",
+          "title": "Tamanho real",
+          "sub": "20 cm"
+        }
+      ],
+      "size": "cerca de 20 cm de altura",
+      "signature": "O Natal começa na decoração",
+      "productBox": [
+        446,
+        618,
+        632,
+        1237
+      ],
+      "noteTarget": [
+        0.39,
+        0.5
+      ]
+    },
+    {
+      "id": "05-reel-mesa-natal",
+      "type": "reel-vitrine",
+      "title": "Reel · Mesa de Natal completa",
+      "when": "quarta 18/11, 19h",
+      "hook": "A ceia começa pela mesa",
+      "music": "trilhas/natal-suave.m4a",
+      "scenes": [
+        {
+          "sku": "D.013",
+          "photo": "carrossel/D.013-2.png",
+          "label": "Tigelas Árvore de Natal"
+        },
+        {
+          "sku": "D.012",
+          "photo": "carrossel/D.012-2.png",
+          "label": "Porta-Guardanapo Árvore · 15 cm"
+        },
+        {
+          "sku": "D.009",
+          "photo": "carrossel/D.009-2.png",
+          "label": "Jogo de Porta-Velas"
+        },
+        {
+          "sku": "D.004",
+          "photo": "carrossel/D.004-2.png",
+          "label": "Kit Porta-Copos Canelado"
+        },
+        {
+          "sku": "D.002",
+          "photo": "carrossel/D.002-3.png",
+          "label": "Placa Feliz Natal · P, M ou G"
+        }
+      ],
+      "caption": "A ceia começa pela mesa. 🎄\n\nTigelas Árvore de Natal, Porta-Guardanapo (15 × 15 cm), Porta-Velas, Porta-Copos Canelado e Placa Feliz Natal — impressos em 3D aqui no estúdio, em cores para combinar com a sua mesa.\n\nCupom MESA10: 10% em pedidos a partir de 120 reais.\n\n📌 Salve para montar a sua ceia.\nPedidos pelo link da bio.\n\n#mesadenatal #ceiadenatal #reels #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "06-story-presepio",
+      "type": "story-cheio",
+      "title": "Story · Presépio",
+      "when": "quinta 19/11, 12h",
+      "sku": "D.014",
+      "background": "stories-fundo/D.014.png",
+      "tag": "Coleção de Natal",
+      "headline": "Presépio",
+      "script": "Sagrada Família",
+      "subline": "Traço minimalista, significado eterno",
+      "uses": [
+        {
+          "icon": "estrela",
+          "label": "Estrela de Belém no topo"
+        },
+        {
+          "icon": "casa",
+          "label": "Sala, aparador ou recepção"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente que emociona"
+        }
+      ],
+      "note": "o centro\ndo seu Natal",
+      "noteTarget": [
+        0.26,
+        0.5
+      ],
+      "fomo": "Produção limitada para o Natal",
+      "scenes": [
+        {
+          "photo": "carrossel/D.014-2.png",
+          "icon": "casa",
+          "title": "Na sala",
+          "sub": "Perto das velas e da árvore"
+        },
+        {
+          "photo": "carrossel/D.014-3.png",
+          "icon": "presente",
+          "title": "De presente",
+          "sub": "Emociona quem recebe"
+        },
+        {
+          "photo": "carrossel/D.014-5.png",
+          "icon": "regua",
+          "title": "Tamanho real",
+          "sub": "12 cm"
+        }
+      ],
+      "size": "12 cm de altura",
+      "signature": "O verdadeiro sentido do Natal",
+      "bgScale": 1.02,
+      "bgShift": 19,
+      "productBox": [
+        310,
+        705,
+        757,
+        1242
+      ],
+      "noteSize": 40,
+      "noteWidth": 220
+    },
+    {
+      "id": "07-carrossel-natal-sala",
+      "type": "carousel",
+      "title": "Carrossel · O Natal chega na sua casa",
+      "when": "quinta 19/11, 19h",
+      "slides": [
+        {
+          "kind": "cover-cheio",
+          "title": "natal-casa",
+          "tag": "Coleção de Natal",
+          "headline": "O Natal chega",
+          "script": "na sua casa",
+          "subline": "Decoração impressa em 3D aqui no estúdio",
+          "fomo": "Produção limitada para o Natal",
+          "items": [
+            {
+              "sku": "D.026",
+              "photo": "carrossel/D.026-2.png",
+              "name": "Árvore · 15 ou 20 cm"
+            },
+            {
+              "sku": "D.018",
+              "photo": "carrossel/D.018-2.png",
+              "name": "Canelado · 20 cm"
+            },
+            {
+              "sku": "N.001",
+              "photo": "carrossel/N.001-3.png",
+              "name": "Soldadinho · 20 cm"
+            },
+            {
+              "sku": "D.010",
+              "photo": "carrossel/D.010-3.png",
+              "name": "Renas · 14,5 cm"
+            },
+            {
+              "sku": "B.023",
+              "photo": "b023-revisao/3.png",
+              "name": "Sapinhos na árvore"
+            },
+            {
+              "sku": "D.002",
+              "photo": "carrossel/D.002-3.png",
+              "name": "Placa · 14 a 24 cm"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.026",
+          "photo": "carrossel/D.026-5.png",
+          "label": "Coleção de Natal",
+          "name": "Árvore de Natal Japandi",
+          "accent": "o clima de Natal em 15 ou 20 cm",
+          "line": "Copa verde em camadas, estrela no topo e base bege ou marrom.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Mesa ou estante"
+            },
+            {
+              "icon": "regua",
+              "label": "2 tamanhos"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente de Natal"
+            }
+          ],
+          "size": "15 ou 20 cm de altura"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.018",
+          "photo": "carrossel/D.018-5.png",
+          "label": "Coleção de Natal",
+          "name": "Quebra-Nozes Canelado",
+          "accent": "o guardião da estante",
+          "line": "Versão moderna e canelada do soldadinho.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Lareira ou aparador"
+            },
+            {
+              "icon": "paleta",
+              "label": "4 cores"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente de Natal"
+            }
+          ],
+          "size": "cerca de 20 cm de altura"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "N.001",
+          "photo": "carrossel/N.001-5.png",
+          "label": "Coleção de Natal",
+          "name": "Quebra-Nozes Vermelho",
+          "accent": "o soldadinho clássico",
+          "line": "Chapéu alto e linhas retas. 5 cores.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Estante ou entrada"
+            },
+            {
+              "icon": "paleta",
+              "label": "5 cores"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente de Natal"
+            }
+          ],
+          "size": "cerca de 20 cm de altura"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.010",
+          "photo": "carrossel/D.010-4.png",
+          "label": "Coleção de Natal",
+          "name": "Renas Natalinas",
+          "accent": "linhas modernas",
+          "line": "Renas estilizadas de 14,5 cm, para aparador ou estante.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Aparador ou estante"
+            },
+            {
+              "icon": "paleta",
+              "label": "5 cores"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente de Natal"
+            }
+          ],
+          "size": "14,5 cm de altura"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.023",
+          "photo": "b023-revisao/6.png",
+          "label": "Coleção de Natal",
+          "name": "10 Mini Sapos Articulados",
+          "accent": "dez sapinhos que mudam de pose",
+          "line": "Com argola de chaveiro: enfeite da árvore, lembrancinha ou antiestresse.",
+          "uses": [
+            {
+              "icon": "estrela",
+              "label": "Na árvore de Natal"
+            },
+            {
+              "icon": "chave",
+              "label": "Com argola"
+            },
+            {
+              "icon": "presente",
+              "label": "Amigo secreto"
+            }
+          ],
+          "size": "de 5 × 3 cm a 7 × 4,5 cm"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.002",
+          "photo": "carrossel/D.002-4.png",
+          "label": "Coleção de Natal",
+          "name": "Placa Feliz Natal",
+          "accent": "o Natal já começa aqui",
+          "line": "Com floco de neve, em 3 tamanhos, para mesa, estante ou perto da árvore.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Mesa ou estante"
+            },
+            {
+              "icon": "regua",
+              "label": "P, M ou G"
+            },
+            {
+              "icon": "paleta",
+              "label": "5 cores"
+            }
+          ],
+          "size": "P 14 · M 19 · G 24 cm de altura"
+        },
+        {
+          "kind": "cta-cheio",
+          "heading": "Como pedir",
+          "accent": "é rapidinho",
+          "fomo": "Produção limitada — garanta a sua decoração de Natal",
+          "signature": "O Natal começa nos detalhes"
+        }
+      ],
+      "caption": "Decoração de Natal para a casa toda — e uma novidade para pendurar na árvore. 🎄\n\nNeste carrossel:\n\n• Árvore de Natal Japandi (15 ou 20 cm) — 10% OFF na Black November\n• Quebra-Nozes Canelado (cerca de 20 cm)\n• Quebra-Nozes Vermelho (cerca de 20 cm)\n• Renas Natalinas (14,5 cm) — 10% OFF na Black November\n• 10 Mini Sapos Articulados com argola, para a árvore (de 5 a 7 cm)\n• Placa Feliz Natal (P 14, M 19 ou G 24 cm)\n\nTudo impresso em 3D aqui no estúdio. Arraste para ver preços, cores e medidas.\n\n📌 Salve para montar a sua decoração e envie para quem já está no clima do Natal.\nProdução limitada — pedidos pelo link da bio.\n\n#decoracaodenatal #arvoredenatal #natal #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "08-story-mini-jesus",
+      "type": "story-cheio",
+      "title": "Story · Mini Jesus (combo)",
+      "when": "sexta 20/11, 12h",
+      "sku": "B.009",
+      "background": "stories-fundo/B.009.png",
+      "tag": "Fé e decoração",
+      "headline": "Mini",
+      "script": "Jesus",
+      "subline": "Um pequeno símbolo de fé para o seu dia",
+      "uses": [
+        {
+          "icon": "coracao",
+          "label": "Mais fé no dia a dia"
+        },
+        {
+          "icon": "casa",
+          "label": "Acolhe qualquer cantinho"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente com significado"
+        }
+      ],
+      "note": "Que Ele esteja\nsempre com você",
+      "noteTarget": [
+        0.33,
+        0.5
+      ],
+      "fomo": "Produção limitada · garanta o seu",
+      "scenes": [
+        {
+          "photo": "carrossel/B.009-3.png",
+          "icon": "carro",
+          "title": "No carro",
+          "sub": "No seu caminho"
+        },
+        {
+          "photo": "carrossel/B.009-2.png",
+          "icon": "monitor",
+          "title": "No trabalho",
+          "sub": "Mais leveza no seu dia"
+        },
+        {
+          "photo": "capas-sem-logo/B.009.webp",
+          "icon": "livro",
+          "title": "Na leitura",
+          "sub": "No seu devocional"
+        },
+        {
+          "photo": "carrossel/B.009-5.png",
+          "icon": "regua",
+          "title": "Tamanho real",
+          "sub": "8 cm"
+        }
+      ],
+      "combos": {
+        "unit": "B.009",
+        "kit": "B.006",
+        "kitQty": 4
+      },
+      "signature": "Fé em cada detalhe",
+      "productBox": [
+        395,
+        675,
+        670,
+        1222
+      ]
+    },
+    {
+      "id": "09-reel-natal-casa",
+      "type": "reel-carrossel",
+      "title": "Reel · O Natal chega na sua casa",
+      "when": "sexta 20/11, 19h",
+      "source": "07-carrossel-natal-sala",
+      "music": "trilhas/natal-suave.m4a",
+      "caption": "O Natal chega na sua casa em peças impressas em 3D aqui no estúdio. 🎄\n\nÁrvore Japandi (15 ou 20 cm), Quebra-Nozes (cerca de 20 cm), Renas (14,5 cm), Placa Feliz Natal e os novos Mini Sapos para pendurar na árvore.\n\n📌 Salve e envie para quem ama o Natal.\nProdução limitada — pedidos pelo link da bio.\n\n#decoracaodenatal #natal #reels #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "10-story-tamanho-arvore",
+      "type": "story-tamanho",
+      "title": "Story · Tamanho real da Árvore Japandi",
+      "when": "sábado 21/11, 12h",
+      "sku": "D.026",
+      "cutout": {
+        "photo": "d026-revisao/5.png",
+        "box": [
+          240,
+          88,
+          245,
+          562
+        ]
+      },
+      "items": [
+        {
+          "label": "Pequena",
+          "altura": 15,
+          "largura": 7.5
+        },
+        {
+          "label": "Grande",
+          "altura": 20,
+          "largura": 10
+        }
+      ],
+      "compare": [
+        "caneca",
+        "caneta"
+      ],
+      "phrase": "Pequena no tamanho,\ngrande no encanto",
+      "seal": "Black November · 10% OFF",
+      "details": [
+        {
+          "photo": "carrossel/D.026-3.png",
+          "title": "Na ceia",
+          "sub": "Centro de mesa"
+        },
+        {
+          "photo": "carrossel/D.026-2.png",
+          "title": "2 cores",
+          "sub": "Base bege ou marrom"
+        },
+        {
+          "photo": "carrossel/D.026-4.png",
+          "title": "Estrela no topo",
+          "sub": "Copa em camadas"
+        }
+      ]
+    },
+    {
+      "id": "11-carrossel-ate-30",
+      "type": "carousel",
+      "title": "Carrossel · Presentes de Natal até 30 reais",
+      "when": "domingo 22/11, 19h",
+      "slides": [
+        {
+          "kind": "cover-cheio",
+          "title": "ate-30",
+          "tag": "Amigo secreto",
+          "headline": "Presentes de Natal",
+          "script": "até 30 reais",
+          "subline": "Mimos impressos em 3D aqui no estúdio",
+          "fomo": "Produção limitada para o Natal",
+          "items": [
+            {
+              "sku": "D.014",
+              "photo": "carrossel/D.014-2.png",
+              "name": "Presépio · 12 cm"
+            },
+            {
+              "sku": "B.009",
+              "photo": "carrossel/B.009-2.png",
+              "name": "Mini Jesus · 8 cm"
+            },
+            {
+              "sku": "D.006",
+              "photo": "carrossel/D.006-2.png",
+              "name": "Porta-Joias Canelado"
+            },
+            {
+              "sku": "B.012",
+              "photo": "carrossel/B.012-2.png",
+              "name": "Unicórnio · 9 cm"
+            },
+            {
+              "sku": "D.003",
+              "photo": "carrossel/D.003-2.png",
+              "name": "Vasinho Mãozinhas"
+            },
+            {
+              "sku": "A.001",
+              "photo": "carrossel/A.001-2.png",
+              "name": "Suporte · 7,3 cm"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.014",
+          "photo": "carrossel/D.014-5.png",
+          "label": "Presentes até 30 reais",
+          "name": "Presépio Minimalista",
+          "accent": "o verdadeiro sentido do Natal",
+          "line": "José, Maria e o Menino Jesus sob a estrela de Belém.",
+          "uses": [
+            {
+              "icon": "estrela",
+              "label": "Estrela de Belém"
+            },
+            {
+              "icon": "casa",
+              "label": "Sala ou aparador"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente que emociona"
+            }
+          ],
+          "size": "12 cm de altura"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.009",
+          "photo": "carrossel/B.009-5.png",
+          "label": "Presentes até 30 reais",
+          "name": "Mini Jesus Sentado",
+          "accent": "fé no seu caminho",
+          "line": "Para o carro, a mesa de trabalho ou a estante.",
+          "uses": [
+            {
+              "icon": "carro",
+              "label": "No carro"
+            },
+            {
+              "icon": "monitor",
+              "label": "No trabalho"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente com fé"
+            }
+          ],
+          "size": "cerca de 8 cm de altura"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.006",
+          "photo": "carrossel/D.006-5.png",
+          "label": "Presentes até 30 reais",
+          "name": "Porta-Joias Oval Canelado",
+          "accent": "anéis sempre à mão",
+          "line": "Bandeja fina com borda canelada para o criado-mudo ou a cômoda.",
+          "uses": [
+            {
+              "icon": "coracao",
+              "label": "Anéis e brincos"
+            },
+            {
+              "icon": "casa",
+              "label": "Criado-mudo"
+            },
+            {
+              "icon": "paleta",
+              "label": "4 cores"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.012",
+          "photo": "carrossel/B.012-5.png",
+          "label": "Presentes até 30 reais",
+          "name": "Chaveiro Unicórnio",
+          "accent": "mexe de todo jeito",
+          "line": "Unicórnio articulado, brinquedo sensorial que acalma. 8 cores.",
+          "uses": [
+            {
+              "icon": "mao",
+              "label": "Sensorial"
+            },
+            {
+              "icon": "paleta",
+              "label": "8 cores"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente fofo"
+            }
+          ],
+          "size": "9 cm de altura"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.003",
+          "photo": "carrossel/D.003-3.png",
+          "label": "Presentes até 30 reais",
+          "name": "Vasinho Mãozinhas de Coração",
+          "accent": "carinho em forma de vaso",
+          "line": "Para suculentas e cactos pequenos. Branco, bege ou marrom.",
+          "uses": [
+            {
+              "icon": "folha",
+              "label": "Suculentas e cactos"
+            },
+            {
+              "icon": "coracao",
+              "label": "Mãozinhas de coração"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente de carinho"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "A.001",
+          "photo": "carrossel/A.001-5.png",
+          "label": "Presentes até 30 reais",
+          "name": "Suporte de Celular Dobrável",
+          "accent": "cabe no bolso",
+          "line": "Dobra e apoia o celular para vídeos e chamadas. 8 cores.",
+          "uses": [
+            {
+              "icon": "monitor",
+              "label": "Mesa de trabalho"
+            },
+            {
+              "icon": "mao",
+              "label": "Dobrável"
+            },
+            {
+              "icon": "paleta",
+              "label": "8 cores"
+            }
+          ],
+          "size": "7,3 × 3,5 × 1,2 cm fechado"
+        },
+        {
+          "kind": "cta-cheio",
+          "heading": "Como pedir",
+          "accent": "é rapidinho",
+          "fomo": "Produção limitada — garanta o seu amigo secreto",
+          "signature": "Carinho em cada detalhe"
+        }
+      ],
+      "caption": "Presentes de Natal até 30 reais, para o amigo secreto e para todo mundo da lista. 🎁\n\nNeste carrossel:\n\n• Presépio Minimalista (12 cm)\n• Mini Jesus Sentado (cerca de 8 cm)\n• Porta-Joias Oval Canelado\n• Chaveiro Unicórnio Articulado (9 cm de altura)\n• Vasinho Mãozinhas de Coração\n• Suporte de Celular Dobrável (7,3 × 3,5 cm fechado)\n\nTudo impresso em 3D aqui no estúdio. Arraste para ver preços e cores.\n\n📌 Salve e envie para o grupo do amigo secreto.\nProdução limitada — pedidos pelo link da bio.\n\n#amigosecreto #presentedenatal #presentesbaratos #impressao3d #ac3dstudio"
+    }
+  ]
+}

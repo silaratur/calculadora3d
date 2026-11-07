@@ -1,0 +1,945 @@
+{
+  "pack": "semana-2026-11-09",
+  "posts": [
+    {
+      "id": "01-story-arvore-japandi",
+      "type": "story-cheio",
+      "title": "Story · Árvore Japandi (Black November)",
+      "when": "segunda 09/11, 12h",
+      "sku": "D.026",
+      "background": "stories-fundo/D.026.png",
+      "tag": "Black November",
+      "headline": "Árvore",
+      "script": "Japandi",
+      "subline": "O clima de Natal sem ocupar espaço",
+      "uses": [
+        {
+          "icon": "casa",
+          "label": "Mesa, estante ou aparador"
+        },
+        {
+          "icon": "estrela",
+          "label": "Estrela no topo"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente de Natal"
+        }
+      ],
+      "note": "cabe em\nqualquer cantinho",
+      "noteTarget": [
+        0.3,
+        0.5
+      ],
+      "fomo": "10% OFF na Black November",
+      "scenes": [
+        {
+          "photo": "carrossel/D.026-3.png",
+          "icon": "mesa",
+          "title": "Na ceia",
+          "sub": "Centro de mesa"
+        },
+        {
+          "photo": "carrossel/D.026-5.png",
+          "icon": "regua",
+          "title": "Tamanho real",
+          "sub": "15 ou 20 cm"
+        },
+        {
+          "photo": "carrossel/D.026-2.png",
+          "icon": "paleta",
+          "title": "2 cores",
+          "sub": "Base bege ou marrom"
+        }
+      ],
+      "size": "15 ou 20 cm de altura",
+      "signature": "O Natal começa nos detalhes",
+      "productBox": [
+        355,
+        675,
+        615,
+        1240
+      ]
+    },
+    {
+      "id": "02-story-ponteira-turma",
+      "type": "story-cheio",
+      "title": "Story · Ponteira (lembrancinha da turma)",
+      "when": "terça 10/11, 12h",
+      "sku": "B.018",
+      "background": "stories-fundo/B.018.png",
+      "tag": "Fim de ano da turma",
+      "headline": "Com o nome",
+      "script": "de cada aluno",
+      "subline": "Lembrancinha de encerramento do ano",
+      "uses": [
+        {
+          "icon": "livro",
+          "label": "Material escolar"
+        },
+        {
+          "icon": "estrela",
+          "label": "Nome em relevo"
+        },
+        {
+          "icon": "presente",
+          "label": "Lembrancinha da turma"
+        }
+      ],
+      "note": "ninguém troca\no lápis!",
+      "fomo": "10% OFF · produção limitada",
+      "scenes": [
+        {
+          "photo": "carrossel/B.018-3.png",
+          "icon": "livro",
+          "title": "No estojo",
+          "sub": "Fácil de achar"
+        },
+        {
+          "photo": "carrossel/B.018-4.png",
+          "icon": "paleta",
+          "title": "8 cores",
+          "sub": "Uma para cada um"
+        },
+        {
+          "photo": "carrossel/B.018-6.png",
+          "icon": "regua",
+          "title": "Tamanho real",
+          "sub": "1,5 × 1,3 cm"
+        }
+      ],
+      "colorsNote": "8 cores",
+      "signature": "Cada um com o seu",
+      "productBox": [
+        290,
+        627,
+        862,
+        1215
+      ],
+      "bgScale": 1.06,
+      "bgShift": -57,
+      "fomoTop": 316,
+      "noteTarget": [
+        0.24,
+        0.56
+      ],
+      "size": "1,5 × 1,3 cm · furo de 7 mm"
+    },
+    {
+      "id": "03-carrossel-black-november",
+      "type": "carousel",
+      "title": "Carrossel · Black November: casa em ordem",
+      "when": "terça 10/11, 19h",
+      "slides": [
+        {
+          "kind": "cover-cheio",
+          "title": "black-november",
+          "tag": "Black November",
+          "headline": "Casa em ordem",
+          "script": "com 10% OFF",
+          "subline": "Peças de casa impressas em 3D aqui no estúdio",
+          "fomo": "Black November · produção limitada",
+          "items": [
+            {
+              "sku": "D.001",
+              "photo": "carrossel/D.001-2.png",
+              "name": "Bandeja · 19 × 11 cm"
+            },
+            {
+              "sku": "D.006",
+              "photo": "carrossel/D.006-2.png",
+              "name": "Porta-Joias Canelado"
+            },
+            {
+              "sku": "D.026",
+              "photo": "carrossel/D.026-2.png",
+              "name": "Árvore · 15 ou 20 cm"
+            },
+            {
+              "sku": "D.010",
+              "photo": "carrossel/D.010-3.png",
+              "name": "Renas · 14,5 cm"
+            },
+            {
+              "sku": "B.010",
+              "photo": "carrossel/B.010-2.png",
+              "name": "Checklist de Tarefas"
+            },
+            {
+              "sku": "D.007",
+              "photo": "carrossel/D.007-2.png",
+              "name": "Saboneteira · 11,3 cm"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.001",
+          "photo": "carrossel/D.001-5.png",
+          "label": "Black November",
+          "name": "Bandeja Oval Minimalista",
+          "accent": "tudo no lugar",
+          "line": "Para perfumes, velas, joias e pequenos objetos. 4 cores.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Banheiro ou cômoda"
+            },
+            {
+              "icon": "paleta",
+              "label": "4 cores"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente elegante"
+            }
+          ],
+          "size": "19 × 11 cm"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.006",
+          "photo": "carrossel/D.006-5.png",
+          "label": "Black November",
+          "name": "Porta-Joias Oval Canelado",
+          "accent": "anéis sempre à mão",
+          "line": "Bandeja fina com borda canelada para o criado-mudo ou a cômoda.",
+          "uses": [
+            {
+              "icon": "coracao",
+              "label": "Anéis e brincos"
+            },
+            {
+              "icon": "casa",
+              "label": "Criado-mudo"
+            },
+            {
+              "icon": "paleta",
+              "label": "4 cores"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.026",
+          "photo": "carrossel/D.026-5.png",
+          "label": "Black November",
+          "name": "Árvore de Natal Japandi",
+          "accent": "o clima de Natal em 15 ou 20 cm",
+          "line": "Copa verde em camadas, estrela no topo e base bege ou marrom.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Mesa ou estante"
+            },
+            {
+              "icon": "regua",
+              "label": "2 tamanhos"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente de Natal"
+            }
+          ],
+          "size": "15 ou 20 cm de altura"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.010",
+          "photo": "carrossel/D.010-4.png",
+          "label": "Black November",
+          "name": "Renas Natalinas",
+          "accent": "linhas modernas",
+          "line": "Renas estilizadas de 14,5 cm, para aparador ou estante.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Aparador ou estante"
+            },
+            {
+              "icon": "paleta",
+              "label": "5 cores"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente de Natal"
+            }
+          ],
+          "size": "14,5 cm de altura"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.010",
+          "photo": "carrossel/B.010-5.png",
+          "label": "Black November",
+          "name": "Checklist Infantil de Tarefas",
+          "accent": "rotina vira brincadeira",
+          "line": "Cada tarefa feita é marcada no próprio quadro. 6 cores.",
+          "uses": [
+            {
+              "icon": "estrela",
+              "label": "Mais autonomia"
+            },
+            {
+              "icon": "casa",
+              "label": "No quarto"
+            },
+            {
+              "icon": "paleta",
+              "label": "6 cores"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.007",
+          "photo": "carrossel/D.007-5.png",
+          "label": "Black November",
+          "name": "Saboneteira com Drenagem",
+          "accent": "sabonete sempre seco",
+          "line": "Canaletas escoam a água e o sabonete dura mais. 4 cores.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Pia ou box"
+            },
+            {
+              "icon": "folha",
+              "label": "Fácil de limpar"
+            },
+            {
+              "icon": "paleta",
+              "label": "4 cores"
+            }
+          ],
+          "size": "11,3 × 8,3 cm"
+        },
+        {
+          "kind": "cta-cheio",
+          "heading": "Como pedir",
+          "accent": "é rapidinho",
+          "fomo": "10% OFF aplicado direto na loja — produção limitada",
+          "signature": "Casa em ordem, detalhe por detalhe"
+        }
+      ],
+      "caption": "Black November na AC3D: 10% OFF em peças que deixam a casa em ordem. 🏡\n\nCom desconto:\n\n• Bandeja Decorativa Oval (19 × 11 cm)\n• Porta-Joias Oval Canelado\n• Árvore de Natal Japandi (15 ou 20 cm)\n• Renas Natalinas (14,5 cm)\n• Checklist Infantil de Tarefas\n\nE ainda a Saboneteira com Drenagem (11,3 × 8,3 cm), que mantém o sabonete seco.\n\nO desconto já aparece no preço da loja, sem cupom. Arraste para ver cores e medidas.\n\n📌 Salve e envie para quem está arrumando a casa para o fim de ano.\nProdução limitada — pedidos pelo link da bio.\n\n#blacknovember #organizacao #decoracao #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "04-story-porta-joias",
+      "type": "story-cheio",
+      "title": "Story · Porta-Joias Redondo",
+      "when": "quarta 11/11, 12h",
+      "sku": "D.005",
+      "background": "stories-fundo/D.005.png",
+      "tag": "Organização",
+      "headline": "Tudo no",
+      "script": "lugar certo",
+      "subline": "Bandeja redonda com borda de esferas",
+      "uses": [
+        {
+          "icon": "chave",
+          "label": "Joias, chaves e relógio"
+        },
+        {
+          "icon": "casa",
+          "label": "Penteadeira ou lavabo"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente delicado"
+        }
+      ],
+      "fomo": "Feito à mão · produção limitada",
+      "scenes": [
+        {
+          "photo": "carrossel/D.005-3.png",
+          "icon": "chave",
+          "title": "Na entrada",
+          "sub": "Chaves e óculos à mão"
+        },
+        {
+          "photo": "carrossel/D.005-2.png",
+          "icon": "coracao",
+          "title": "Na penteadeira",
+          "sub": "Joias sempre juntas"
+        },
+        {
+          "photo": "carrossel/D.005-4.png",
+          "icon": "paleta",
+          "title": "3 cores",
+          "sub": "Branco, bege ou marrom"
+        }
+      ],
+      "size": "15 cm de diâmetro",
+      "signature": "Delicadeza em cada detalhe",
+      "productBox": [
+        210,
+        717,
+        836,
+        1185
+      ]
+    },
+    {
+      "id": "05-reel-black-november",
+      "type": "reel-carrossel",
+      "title": "Reel · Black November: casa em ordem",
+      "when": "quarta 11/11, 19h",
+      "source": "03-carrossel-black-november",
+      "music": "trilhas/aconchego-lofi.m4a",
+      "caption": "Casa em ordem para o fim de ano, com 10% OFF na Black November. 🏡\n\nBandeja Oval (19 × 11 cm), Porta-Joias Canelado, Árvore Japandi (15 ou 20 cm), Renas (14,5 cm) e Checklist de Tarefas — impressos em 3D aqui no estúdio. O desconto já está no preço da loja.\n\n📌 Salve e envie para quem ama uma casa organizada.\nPedidos pelo link da bio.\n\n#blacknovember #organizacao #reels #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "06-story-dinossauro",
+      "type": "story-cheio",
+      "title": "Story · Chaveiro Dinossauro (turma)",
+      "sku": "B.011",
+      "background": "stories-fundo/B.011.png",
+      "tag": "Fim de ano da turma",
+      "headline": "Dino",
+      "script": "articulado",
+      "subline": "Mexe, dobra e vai junto na chave",
+      "uses": [
+        {
+          "icon": "mao",
+          "label": "Mexe inteirinho nas mãos"
+        },
+        {
+          "icon": "chave",
+          "label": "Chave, mochila ou estojo"
+        },
+        {
+          "icon": "presente",
+          "label": "Lembrancinha de festa"
+        }
+      ],
+      "note": "8 cm de pura diversão",
+      "noteTarget": [
+        0.2,
+        0.57
+      ],
+      "fomo": "10% OFF · produção limitada",
+      "scenes": [
+        {
+          "photo": "b011-8cm/B.011-3.png",
+          "icon": "presente",
+          "title": "Na festa",
+          "sub": "Sacolinhas surpresa"
+        },
+        {
+          "photo": "b011-8cm/B.011-2.png",
+          "icon": "mao",
+          "title": "Na mão",
+          "sub": "Cabe na palma"
+        },
+        {
+          "photo": "b011-8cm/B.011-1.png",
+          "icon": "chave",
+          "title": "Na chave",
+          "sub": "Vai pra todo lado"
+        }
+      ],
+      "size": "8 cm",
+      "signature": "Diversão que cabe no bolso",
+      "productBox": [
+        232,
+        766,
+        778,
+        1130
+      ],
+      "noteTop": 1152,
+      "noteSize": 40,
+      "noteWidth": 440,
+      "when": "quinta 12/11, 12h",
+      "colorsNote": "6 cores"
+    },
+    {
+      "id": "07-carrossel-turma",
+      "type": "carousel",
+      "title": "Carrossel · Lembrancinhas de fim de ano da turma",
+      "when": "quinta 12/11, 19h",
+      "slides": [
+        {
+          "kind": "cover-cheio",
+          "title": "turma",
+          "tag": "Fim de ano da turma",
+          "headline": "Lembrancinhas de",
+          "script": "fim de ano",
+          "subline": "Para a turma toda, impressas em 3D aqui no estúdio",
+          "fomo": "Para a turma toda · produção limitada",
+          "items": [
+            {
+              "sku": "B.018",
+              "photo": "carrossel/B.018-2.png",
+              "name": "Ponteira · 1,5 cm"
+            },
+            {
+              "sku": "B.013",
+              "photo": "carrossel/B.013-2.png",
+              "name": "Guia de Leitura · 15 cm"
+            },
+            {
+              "sku": "B.011",
+              "photo": "b011-8cm/B.011-1.png",
+              "name": "Dinossauro · 8 cm"
+            },
+            {
+              "sku": "B.023",
+              "photo": "b023-revisao/2.png",
+              "name": "10 Mini Sapos"
+            },
+            {
+              "sku": "B.004",
+              "photo": "carrossel/B.004-2.png",
+              "name": "Chaveiro Estrela"
+            },
+            {
+              "sku": "B.005",
+              "photo": "carrossel/B.005-2.png",
+              "name": "Hexagonal · 3,7 cm"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.018",
+          "photo": "carrossel/B.018-6.png",
+          "label": "Fim de ano da turma",
+          "name": "Ponteira com Nome",
+          "accent": "um para cada aluno",
+          "line": "Com o nome em relevo, encaixa no lápis. 8 cores.",
+          "uses": [
+            {
+              "icon": "livro",
+              "label": "Material escolar"
+            },
+            {
+              "icon": "estrela",
+              "label": "Nome em relevo"
+            },
+            {
+              "icon": "presente",
+              "label": "Lembrança da turma"
+            }
+          ],
+          "size": "1,5 × 1,3 cm · furo de 7 mm"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.013",
+          "photo": "carrossel/B.013-6.png",
+          "label": "Fim de ano da turma",
+          "name": "Guia de Leitura",
+          "accent": "foco linha por linha",
+          "line": "Mostra só a linha que está sendo lida. Ajuda na alfabetização.",
+          "uses": [
+            {
+              "icon": "livro",
+              "label": "Leitura em sala"
+            },
+            {
+              "icon": "estrela",
+              "label": "Mais foco"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente útil"
+            }
+          ],
+          "size": "15 cm de comprimento"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.011",
+          "photo": "b011-8cm/B.011-2.png",
+          "label": "Fim de ano da turma",
+          "name": "Chaveiro Dinossauro",
+          "accent": "mexe inteirinho",
+          "line": "T-Rex articulado de 8 cm, para chave, mochila ou estojo.",
+          "uses": [
+            {
+              "icon": "mao",
+              "label": "Ocupa as mãos"
+            },
+            {
+              "icon": "chave",
+              "label": "Vai no chaveiro"
+            },
+            {
+              "icon": "paleta",
+              "label": "6 cores"
+            }
+          ],
+          "size": "8 cm"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.023",
+          "photo": "b023-revisao/6.png",
+          "label": "Fim de ano da turma",
+          "name": "10 Mini Sapos Articulados",
+          "accent": "dez sapinhos que mudam de pose",
+          "line": "Com argola de chaveiro: enfeite da árvore, lembrancinha ou antiestresse.",
+          "uses": [
+            {
+              "icon": "estrela",
+              "label": "Na árvore de Natal"
+            },
+            {
+              "icon": "chave",
+              "label": "Com argola"
+            },
+            {
+              "icon": "presente",
+              "label": "Amigo secreto"
+            }
+          ],
+          "size": "de 5 × 3 cm a 7 × 4,5 cm"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.004",
+          "photo": "carrossel/B.004-3.png",
+          "label": "Fim de ano da turma",
+          "name": "Chaveiro Estrela Sensorial",
+          "accent": "gira e acalma",
+          "line": "Estrelas encaixadas que giram. Lembrancinha para a turma toda.",
+          "uses": [
+            {
+              "icon": "mao",
+              "label": "Ocupa as mãos"
+            },
+            {
+              "icon": "estrela",
+              "label": "Articulado"
+            },
+            {
+              "icon": "paleta",
+              "label": "8 cores"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.005",
+          "photo": "carrossel/B.005-5.png",
+          "label": "Fim de ano da turma",
+          "name": "Chaveiro Sensorial Hexagonal",
+          "accent": "hexágonos que deslizam",
+          "line": "Leve e fácil de carregar. Muito pedido para brindes. 8 cores.",
+          "uses": [
+            {
+              "icon": "mao",
+              "label": "Antiestresse"
+            },
+            {
+              "icon": "chave",
+              "label": "No chaveiro"
+            },
+            {
+              "icon": "paleta",
+              "label": "8 cores"
+            }
+          ],
+          "size": "3,7 × 3,2 × 0,8 cm"
+        },
+        {
+          "kind": "cta-cheio",
+          "heading": "Como pedir",
+          "accent": "é rapidinho",
+          "fomo": "Produção limitada — garanta as lembrancinhas da turma",
+          "signature": "Cada um com o seu"
+        }
+      ],
+      "caption": "Lembrancinhas de fim de ano para a turma a partir de R$ 3,90 — impressas em 3D aqui no estúdio. 🎒\n\nNeste carrossel:\n\n• Ponteira de Lápis com o nome de cada aluno (1,5 × 1,3 cm) — 10% OFF\n• Guia de Leitura (15 cm) — 10% OFF\n• Chaveiro Dinossauro Articulado (8 cm) — 10% OFF\n• Chaveiro Estrela Sensorial — 10% OFF\n• 10 Mini Sapos Articulados (de 5 a 7 cm), novidade\n• Chaveiro Sensorial Hexagonal (3,7 × 3,2 cm)\n\nPara a turma inteira: cupom TURMA15 dá mais 15% em pedidos a partir de 150 reais, e ainda soma com o desconto por quantidade da loja.\n\n📌 Salve e envie para quem está organizando o encerramento da turma.\nProdução limitada — pedidos pelo link da bio.\n\n#lembrancinhas #formatura #encerramentoescolar #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "08-story-macaquinhos",
+      "type": "story-cheio",
+      "title": "Story · Kit 4 Mini Macacos",
+      "when": "sexta 13/11, 12h",
+      "sku": "B.019",
+      "background": "stories-fundo/B.019.png",
+      "tag": "Lembrancinhas",
+      "headline": "Macaquinhos",
+      "script": "articulados",
+      "subline": "Kit com 4 chaveiros que se mexem",
+      "uses": [],
+      "fomo": "Produção limitada · garanta o seu",
+      "scenes": [
+        {
+          "photo": "b019/B.019-2.png",
+          "icon": "mao",
+          "title": "Na mão",
+          "sub": "8 cm de diversão"
+        },
+        {
+          "photo": "b019/B.019-3.png",
+          "icon": "chave",
+          "title": "Na mochila",
+          "sub": "Vai junto pra escola"
+        },
+        {
+          "photo": "b019/B.019-4.png",
+          "icon": "presente",
+          "title": "Na festa",
+          "sub": "Sacolinha surpresa"
+        }
+      ],
+      "size": "8 cm cada",
+      "signature": "Diversão que cabe no bolso",
+      "productBox": [
+        80,
+        650,
+        905,
+        1246
+      ],
+      "bgScale": 1.03,
+      "bgShift": 29,
+      "fomoTop": 330
+    },
+    {
+      "id": "09-reel-lembrancinhas",
+      "type": "reel-vitrine",
+      "title": "Reel · Lembrancinhas de fim de ano",
+      "when": "sexta 13/11, 19h",
+      "hook": "Lembrancinhas que a turma ama",
+      "music": "trilhas/aconchego-violao.m4a",
+      "scenes": [
+        {
+          "sku": "B.023",
+          "photo": "b023-revisao/2.png",
+          "label": "10 Mini Sapos Articulados · 5 a 7 cm"
+        },
+        {
+          "sku": "B.011",
+          "photo": "b011-8cm/B.011-3.png",
+          "label": "Chaveiro Dinossauro · 8 cm"
+        },
+        {
+          "sku": "B.018",
+          "photo": "carrossel/B.018-3.png",
+          "label": "Ponteira com Nome · 1,5 cm"
+        },
+        {
+          "sku": "B.019",
+          "photo": "b019/B.019-3.png",
+          "label": "Kit 4 Mini Macacos · 8 cm"
+        },
+        {
+          "sku": "B.004",
+          "photo": "carrossel/B.004-3.png",
+          "label": "Chaveiro Estrela Sensorial"
+        }
+      ],
+      "caption": "Lembrancinhas de fim de ano que a turma ama — e que se mexem nas mãos. 🐸\n\n10 Mini Sapos Articulados (de 5 a 7 cm, novidade), Chaveiro Dinossauro (8 cm), Ponteira com Nome (1,5 cm), Kit 4 Mini Macacos (8 cm) e Chaveiro Estrela — tudo impresso em 3D aqui no estúdio.\n\nPara a turma toda, o cupom TURMA15 dá 15% em pedidos a partir de 150 reais.\n\n📌 Salve e envie para quem organiza a festa da turma.\nPedidos pelo link da bio.\n\n#lembrancinhas #articulados #reels #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "10-story-como-pedir",
+      "type": "story",
+      "kind": "cta-cheio",
+      "title": "Story · Como pedir (BEMVINDO10)",
+      "when": "sábado 14/11, 12h",
+      "heading": "Como pedir",
+      "accent": "é rapidinho",
+      "fomo": "1ª compra: cupom BEMVINDO10",
+      "signature": "Feito à mão, camada por camada"
+    },
+    {
+      "id": "11-carrossel-mesa-natal",
+      "type": "carousel",
+      "title": "Carrossel · Mesa de Natal completa",
+      "when": "domingo 15/11, 19h",
+      "slides": [
+        {
+          "kind": "cover-cheio",
+          "title": "mesa-natal",
+          "tag": "Mesa de Natal",
+          "headline": "A ceia começa",
+          "script": "pela mesa",
+          "subline": "Peças para a mesa impressas em 3D aqui no estúdio",
+          "fomo": "Produção limitada para o Natal",
+          "items": [
+            {
+              "sku": "D.013",
+              "photo": "carrossel/D.013-2.png",
+              "name": "Tigelas Árvore"
+            },
+            {
+              "sku": "D.012",
+              "photo": "carrossel/D.012-2.png",
+              "name": "Porta-Guardanapo · 15 cm"
+            },
+            {
+              "sku": "D.009",
+              "photo": "carrossel/D.009-2.png",
+              "name": "Porta-Velas"
+            },
+            {
+              "sku": "D.004",
+              "photo": "carrossel/D.004-2.png",
+              "name": "Porta-Copos Canelado"
+            },
+            {
+              "sku": "D.021",
+              "photo": "carrossel/D.021-2.png",
+              "name": "Porta-Copos Rattan"
+            },
+            {
+              "sku": "D.002",
+              "photo": "carrossel/D.002-3.png",
+              "name": "Placa · 14 a 24 cm"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.013",
+          "photo": "carrossel/D.013-5.png",
+          "label": "Mesa de Natal",
+          "name": "Tigelas Árvore de Natal",
+          "accent": "petiscos da ceia à mão",
+          "line": "Para biscoitos, castanhas e petiscos. Empilháveis.",
+          "uses": [
+            {
+              "icon": "mesa",
+              "label": "Na ceia"
+            },
+            {
+              "icon": "folha",
+              "label": "Empilháveis"
+            },
+            {
+              "icon": "paleta",
+              "label": "4 cores"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.012",
+          "photo": "carrossel/D.012-5.png",
+          "label": "Mesa de Natal",
+          "name": "Porta-Guardanapo Árvore",
+          "accent": "organiza e ainda decora",
+          "line": "Para guardanapos de papel ou de tecido na mesa posta.",
+          "uses": [
+            {
+              "icon": "mesa",
+              "label": "Mesa posta"
+            },
+            {
+              "icon": "estrela",
+              "label": "Decora a ceia"
+            },
+            {
+              "icon": "folha",
+              "label": "Reutilizável"
+            }
+          ],
+          "size": "15 × 15 cm"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.009",
+          "photo": "carrossel/D.009-5.png",
+          "label": "Mesa de Natal",
+          "name": "Jogo de Porta-Velas",
+          "accent": "luz suave na mesa",
+          "line": "Três porta-velas de formas orgânicas e textura canelada.",
+          "uses": [
+            {
+              "icon": "mesa",
+              "label": "Centro de mesa"
+            },
+            {
+              "icon": "estrela",
+              "label": "Use juntos ou separados"
+            },
+            {
+              "icon": "paleta",
+              "label": "3 cores"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.004",
+          "photo": "carrossel/D.004-5.png",
+          "label": "Mesa de Natal",
+          "name": "Kit Porta-Copos Canelado",
+          "accent": "protege e decora",
+          "line": "Seis porta-copos com borda ondulada e suporte canelado.",
+          "uses": [
+            {
+              "icon": "mesa",
+              "label": "Mesa da ceia"
+            },
+            {
+              "icon": "casa",
+              "label": "Com suporte"
+            },
+            {
+              "icon": "paleta",
+              "label": "3 cores"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.021",
+          "photo": "carrossel/D.021-5.png",
+          "label": "Mesa de Natal",
+          "name": "Porta-Copos Rattan",
+          "accent": "textura de palhinha",
+          "line": "Para copos e xícaras. Protege a mesa com charme.",
+          "uses": [
+            {
+              "icon": "mesa",
+              "label": "Mesa posta"
+            },
+            {
+              "icon": "casa",
+              "label": "Sala ou varanda"
+            },
+            {
+              "icon": "paleta",
+              "label": "3 cores"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.002",
+          "photo": "carrossel/D.002-4.png",
+          "label": "Mesa de Natal",
+          "name": "Placa Feliz Natal",
+          "accent": "o Natal já começa aqui",
+          "line": "Com floco de neve, em 3 tamanhos, para mesa, estante ou perto da árvore.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Mesa ou estante"
+            },
+            {
+              "icon": "regua",
+              "label": "P, M ou G"
+            },
+            {
+              "icon": "paleta",
+              "label": "5 cores"
+            }
+          ],
+          "size": "P 14 · M 19 · G 24 cm de altura"
+        },
+        {
+          "kind": "cta-cheio",
+          "heading": "Como pedir",
+          "accent": "é rapidinho",
+          "fomo": "Produção limitada — garanta a sua mesa de Natal",
+          "signature": "Detalhes que fazem a ceia"
+        }
+      ],
+      "caption": "Mesa de Natal completa, com peças impressas em 3D aqui no estúdio. 🎄\n\nNeste carrossel:\n\n• Tigelas Natalinas Árvore de Natal\n• Porta-Guardanapo Árvore (15 × 15 cm)\n• Jogo de Porta-Velas Escultural\n• Kit Porta-Copos Canelado com Suporte\n• Porta-Copos Rattan\n• Placa Feliz Natal (P 14, M 19 ou G 24 cm de altura)\n\nMontando a mesa inteira? O cupom MESA10 dá 10% em pedidos a partir de 120 reais.\n\n📌 Salve para montar a sua ceia e envie para quem vai receber a família.\nProdução limitada — pedidos pelo link da bio.\n\n#mesadenatal #ceiadenatal #decoracaodenatal #impressao3d #ac3dstudio"
+    }
+  ]
+}
