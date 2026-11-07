@@ -1,0 +1,359 @@
+{
+  "pack": "fim-de-semana-2026-11-07",
+  "posts": [
+    {
+      "id": "01-story-tigelas-esquenta",
+      "type": "story-cheio",
+      "title": "Story · Tigelas (Esquenta de Natal)",
+      "when": "sábado 07/11, 16h",
+      "sku": "D.013",
+      "background": "stories-fundo/D.013.png",
+      "tag": "Esquenta de Natal",
+      "headline": "A ceia mais",
+      "script": "gostosa",
+      "subline": "Tigelas em forma de árvore, empilháveis",
+      "uses": [
+        {
+          "icon": "mesa",
+          "label": "Petiscos da ceia"
+        },
+        {
+          "icon": "folha",
+          "label": "Empilháveis"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente para quem recebe"
+        }
+      ],
+      "fomo": "Decore antes: cupom NATAL10",
+      "scenes": [
+        {
+          "photo": "carrossel/D.013-2.png",
+          "icon": "mesa",
+          "title": "Na ceia",
+          "sub": "Petiscos à mão"
+        },
+        {
+          "photo": "carrossel/D.013-4.png",
+          "icon": "folha",
+          "title": "Empilha",
+          "sub": "Guarda fácil"
+        },
+        {
+          "photo": "carrossel/D.013-5.png",
+          "icon": "estrela",
+          "title": "Em conjunto",
+          "sub": "Viram centro de mesa"
+        }
+      ],
+      "signature": "Detalhes que fazem a ceia",
+      "productBox": [
+        125,
+        735,
+        690,
+        1242
+      ]
+    },
+    {
+      "id": "02-reel-esquenta",
+      "type": "reel-vitrine",
+      "title": "Reel · Esquenta de Natal",
+      "when": "sábado 07/11, 19h",
+      "hook": "Decore antes do Natal",
+      "music": "trilhas/natal-suave.m4a",
+      "scenes": [
+        {
+          "sku": "D.026",
+          "photo": "carrossel/D.026-4.png",
+          "label": "Árvore de Natal Japandi · 15 ou 20 cm"
+        },
+        {
+          "sku": "D.018",
+          "photo": "carrossel/D.018-2.png",
+          "label": "Quebra-Nozes Canelado · 20 cm"
+        },
+        {
+          "sku": "D.014",
+          "photo": "carrossel/D.014-2.png",
+          "label": "Presépio Minimalista · 12 cm"
+        },
+        {
+          "sku": "D.013",
+          "photo": "carrossel/D.013-2.png",
+          "label": "Tigelas Árvore de Natal"
+        },
+        {
+          "sku": "B.023",
+          "photo": "b023-revisao/3.png",
+          "label": "10 Mini Sapos Articulados · 5 a 7 cm"
+        }
+      ],
+      "caption": "Esquenta de Natal: decore antes e aproveite o clima a temporada inteira. 🎄\n\nÁrvore de Natal Japandi (15 ou 20 cm), Quebra-Nozes Canelado (cerca de 20 cm), Presépio Minimalista (12 cm), Tigelas Árvore de Natal e os novos Mini Sapos para pendurar na árvore — impressos em 3D aqui no estúdio.\n\nPor tempo limitado, o cupom NATAL10 dá 10% em pedidos a partir de 80 reais.\n\n📌 Salve e envie para quem já está montando a decoração.\nPedidos pelo link da bio.\n\n#decoracaodenatal #natal #reels #impressao3d #ac3dstudio"
+    },
+    {
+      "id": "03-story-presepio-esquenta",
+      "type": "story-cheio",
+      "title": "Story · Presépio (Esquenta de Natal)",
+      "when": "domingo 08/11, 12h",
+      "sku": "D.014",
+      "background": "stories-fundo/D.014.png",
+      "tag": "Esquenta de Natal",
+      "headline": "Presépio",
+      "script": "Sagrada Família",
+      "subline": "Traço minimalista, significado eterno",
+      "uses": [
+        {
+          "icon": "estrela",
+          "label": "Estrela de Belém no topo"
+        },
+        {
+          "icon": "casa",
+          "label": "Sala, aparador ou recepção"
+        },
+        {
+          "icon": "presente",
+          "label": "Presente que emociona"
+        }
+      ],
+      "note": "o centro\ndo seu Natal",
+      "noteTarget": [
+        0.26,
+        0.5
+      ],
+      "fomo": "Decore antes: cupom NATAL10",
+      "scenes": [
+        {
+          "photo": "carrossel/D.014-2.png",
+          "icon": "casa",
+          "title": "Na sala",
+          "sub": "Perto das velas e da árvore"
+        },
+        {
+          "photo": "carrossel/D.014-3.png",
+          "icon": "presente",
+          "title": "De presente",
+          "sub": "Emociona quem recebe"
+        },
+        {
+          "photo": "carrossel/D.014-5.png",
+          "icon": "regua",
+          "title": "Tamanho real",
+          "sub": "12 cm"
+        }
+      ],
+      "size": "12 cm de altura",
+      "signature": "O verdadeiro sentido do Natal",
+      "bgScale": 1.02,
+      "bgShift": 19,
+      "productBox": [
+        310,
+        705,
+        757,
+        1242
+      ],
+      "noteSize": 40,
+      "noteWidth": 220
+    },
+    {
+      "id": "04-carrossel-esquenta",
+      "type": "carousel",
+      "title": "Carrossel · Esquenta de Natal: decore antes",
+      "when": "domingo 08/11, 19h",
+      "slides": [
+        {
+          "kind": "cover-cheio",
+          "title": "esquenta",
+          "tag": "Esquenta de Natal",
+          "headline": "Decore antes,",
+          "script": "curta mais",
+          "subline": "Decoração de Natal impressa em 3D aqui no estúdio",
+          "fomo": "Cupom NATAL10 · produção limitada",
+          "items": [
+            {
+              "sku": "D.026",
+              "photo": "carrossel/D.026-2.png",
+              "name": "Árvore · 15 ou 20 cm"
+            },
+            {
+              "sku": "D.018",
+              "photo": "carrossel/D.018-2.png",
+              "name": "Canelado · 20 cm"
+            },
+            {
+              "sku": "D.014",
+              "photo": "carrossel/D.014-2.png",
+              "name": "Presépio · 12 cm"
+            },
+            {
+              "sku": "D.013",
+              "photo": "carrossel/D.013-2.png",
+              "name": "Tigelas Árvore"
+            },
+            {
+              "sku": "D.012",
+              "photo": "carrossel/D.012-2.png",
+              "name": "Porta-Guardanapo · 15 cm"
+            },
+            {
+              "sku": "B.023",
+              "photo": "b023-revisao/3.png",
+              "name": "10 Mini Sapos"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.026",
+          "photo": "carrossel/D.026-5.png",
+          "label": "Esquenta de Natal",
+          "name": "Árvore de Natal Japandi",
+          "accent": "o clima de Natal em 15 ou 20 cm",
+          "line": "Copa verde em camadas, estrela no topo e base bege ou marrom.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Mesa ou estante"
+            },
+            {
+              "icon": "regua",
+              "label": "2 tamanhos"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente de Natal"
+            }
+          ],
+          "size": "15 ou 20 cm de altura"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.018",
+          "photo": "carrossel/D.018-5.png",
+          "label": "Esquenta de Natal",
+          "name": "Quebra-Nozes Canelado",
+          "accent": "o guardião da estante",
+          "line": "Versão moderna e canelada do soldadinho.",
+          "uses": [
+            {
+              "icon": "casa",
+              "label": "Lareira ou aparador"
+            },
+            {
+              "icon": "paleta",
+              "label": "4 cores"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente de Natal"
+            }
+          ],
+          "size": "cerca de 20 cm de altura"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.014",
+          "photo": "carrossel/D.014-5.png",
+          "label": "Esquenta de Natal",
+          "name": "Presépio Minimalista",
+          "accent": "o verdadeiro sentido do Natal",
+          "line": "José, Maria e o Menino Jesus sob a estrela de Belém.",
+          "uses": [
+            {
+              "icon": "estrela",
+              "label": "Estrela de Belém"
+            },
+            {
+              "icon": "casa",
+              "label": "Sala ou aparador"
+            },
+            {
+              "icon": "presente",
+              "label": "Presente que emociona"
+            }
+          ],
+          "size": "12 cm de altura"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.013",
+          "photo": "carrossel/D.013-5.png",
+          "label": "Esquenta de Natal",
+          "name": "Tigelas Árvore de Natal",
+          "accent": "petiscos da ceia à mão",
+          "line": "Para biscoitos, castanhas e petiscos. Empilháveis.",
+          "uses": [
+            {
+              "icon": "mesa",
+              "label": "Na ceia"
+            },
+            {
+              "icon": "folha",
+              "label": "Empilháveis"
+            },
+            {
+              "icon": "paleta",
+              "label": "4 cores"
+            }
+          ]
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "D.012",
+          "photo": "carrossel/D.012-5.png",
+          "label": "Esquenta de Natal",
+          "name": "Porta-Guardanapo Árvore",
+          "accent": "organiza e ainda decora",
+          "line": "Para guardanapos de papel ou de tecido na mesa posta.",
+          "uses": [
+            {
+              "icon": "mesa",
+              "label": "Mesa posta"
+            },
+            {
+              "icon": "estrela",
+              "label": "Decora a ceia"
+            },
+            {
+              "icon": "folha",
+              "label": "Reutilizável"
+            }
+          ],
+          "size": "15 × 15 cm"
+        },
+        {
+          "kind": "product-cheio",
+          "sku": "B.023",
+          "photo": "b023-revisao/6.png",
+          "label": "Esquenta de Natal",
+          "name": "10 Mini Sapos Articulados",
+          "accent": "dez sapinhos que mudam de pose",
+          "line": "Com argola de chaveiro: enfeite da árvore, lembrancinha ou antiestresse.",
+          "uses": [
+            {
+              "icon": "estrela",
+              "label": "Na árvore de Natal"
+            },
+            {
+              "icon": "chave",
+              "label": "Com argola"
+            },
+            {
+              "icon": "presente",
+              "label": "Amigo secreto"
+            }
+          ],
+          "size": "de 5 × 3 cm a 7 × 4,5 cm"
+        },
+        {
+          "kind": "cta-cheio",
+          "heading": "Como pedir",
+          "accent": "é rapidinho",
+          "fomo": "Cupom NATAL10 por tempo limitado — produção limitada",
+          "signature": "O Natal começa nos detalhes"
+        }
+      ],
+      "caption": "Esquenta de Natal: quem decora antes curte o clima a temporada inteira. 🎄\n\nNeste carrossel:\n\n• Árvore de Natal Japandi (15 ou 20 cm) — 10% OFF na Black November\n• Quebra-Nozes Canelado (cerca de 20 cm)\n• Presépio Minimalista Sagrada Família (12 cm)\n• Tigelas Natalinas Árvore de Natal\n• Porta-Guardanapo Árvore (15 × 15 cm)\n• 10 Mini Sapos Articulados para pendurar na árvore (de 5 a 7 cm)\n\nPor tempo limitado, o cupom NATAL10 dá 10% em pedidos a partir de 80 reais.\n\n📌 Salve para montar a sua decoração e envie para quem já está no clima do Natal.\nProdução limitada — pedidos pelo link da bio.\n\n#decoracaodenatal #arvoredenatal #natal #impressao3d #ac3dstudio"
+    }
+  ]
+}
